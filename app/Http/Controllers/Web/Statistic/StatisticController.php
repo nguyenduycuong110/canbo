@@ -27,10 +27,16 @@ class StatisticController extends BaseController{
         parent::__construct($service);
     }
 
-    public function index(Request $request): View | RedirectResponse{
+
+    public function departmentDay(Request $request){
         try {
-            $users = $this->getUser($request);
-            return view("backend.{$this->namespace}.index", compact(
+            $auth = Auth::user();
+            $isLeader = ($auth->rgt - $auth->lft > 1);
+            $template = $isLeader ? 
+                "backend.{$this->namespace}.department.day.leader" : 
+                "backend.{$this->namespace}.department.day.department";
+            $users = ($isLeader == false) ? $auth : $this->getUser($request, $auth);
+            return view($template , compact(
                 'users'
             ));
         } catch (\Throwable $th) {
@@ -38,8 +44,7 @@ class StatisticController extends BaseController{
         }
     }
 
-    
-    private function getUser($request){
+    private function getUser($request, $auth){
         $auth = Auth::user();
         $request->merge([
             'lft' => [
@@ -51,5 +56,6 @@ class StatisticController extends BaseController{
         ]);
         return $this->userService->paginate($request);
     }
+
 
 }

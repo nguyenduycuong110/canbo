@@ -287,23 +287,27 @@
                 return;
             }
             let option = {user_id : user_id, date : date}
-            $.ajax({
-                url: 'ajax/evaluation/getDepartment', 
-                type: 'GET', 
-                data: option,
-                dataType: 'json', 
-                success: function(res) {
-                    $('.statistic-form').find('.name').text(res.flag.name)
-                    $('.statistic-form').find('.cat_name').text(res.flag.user_catalogues.name + ' - ' + res.flag.units.name)
-                    if(res.flag.evaluations){
-                        HT.renderTd(res.flag.evaluations, res.flag.id)
-                    }
-                },
-                error: function(jqXHR, textStatus, errorThrown) {
-                   
-                }
-            });
+            HT.loadEvaluation(option)
         })
+    }
+
+    HT.loadEvaluation = (option) => {
+        $.ajax({
+            url: 'ajax/evaluation/getDepartment', 
+            type: 'GET', 
+            data: option,
+            dataType: 'json', 
+            success: function(res) {
+                $('.statistic-form').find('.name').text(res.flag.name)
+                $('.statistic-form').find('.cat_name').text(res.flag.user_catalogues.name + ' - ' + res.flag.units.name)
+                if(res.flag.evaluations){
+                    HT.renderTd(res.flag.evaluations, res.flag.id)
+                }
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+               
+            }
+        });
     }
 
     HT.renderTd = (res, user_id) => {
@@ -345,9 +349,6 @@
         
         return $('.statistic-form').find('tbody').append(html);
     }
-
-
-
 
 	$(document).ready(function(){
         HT.triggerDepartment()

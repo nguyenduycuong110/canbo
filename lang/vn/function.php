@@ -41,13 +41,17 @@ $fullMenu = [
             'class' => 'special'
         ],
         [
-            'title' => 'Xếp loại',
+            'title' => 'Xếp loại cán bộ',
             'icon' => 'fa fa-github',
             'name' => ['statistics'],
             'items' => [
                 [
-                    'title' => 'Xếp loại',
-                    'route' => 'statistics'
+                    'title' => 'Theo ngày',
+                    'route' => 'statistics/departmentDay'
+                ],
+                [
+                    'title' => 'Theo tháng',
+                    'route' => 'statistics/departmentMonth'
                 ]
             ]
         ],
@@ -139,7 +143,11 @@ foreach ($fullMenu['module'] as $module) {
                         $filteredItems[] = $item;
                     }
                 }
-            } 
+            } else if(in_array('statistics', $module['name'])){
+                foreach ($module['items'] as $item) {
+                    $filteredItems[] = $item;
+                }
+            }
             else {
                 foreach ($module['items'] as $item) {
                     $route = $item['route'];

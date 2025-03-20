@@ -43,66 +43,6 @@
                     <div class="user-info mt20">
                         <p><span class="label-text">1. Họ Tên</span><span class="value name"> - </span></p>
                         <p><span class="label-text">2. Vị trí, đơn vị công tác</span><span class="value cat_name"> - </span></p>
-                        <p class="uk-flex uk-flex-middle">
-                            <span class="label-text">3. Số ngày làm việc theo quy định của pháp luật trong tháng</span>
-                            <span class="value"> 
-                                <input 
-                                    type="text"
-                                    class="form-control form-control-fix"
-                                    name="" 
-                                > 
-                            </span>
-                        </p>
-                        <p class="uk-flex uk-flex-middle">
-                            <span class="label-text">4. Số ngày nghỉ trong tháng (có phép)</span>
-                            <span class="value"> 
-                                <input 
-                                    type="text"
-                                    class="form-control form-control-fix"
-                                    name="" 
-                                > 
-                            </span>
-                        </p>
-                        <p class="uk-flex uk-flex-middle">
-                            <span class="label-text">5. Số ngày nghỉ trong tháng (không phép)</span>
-                            <span class="value"> 
-                                <input 
-                                    type="text"
-                                    class="form-control form-control-fix"
-                                    name="" 
-                                > 
-                            </span>
-                        </p>
-                        <p class="uk-flex uk-flex-middle">
-                            <span class="label-text">6. Số lần vi phạm qui chế, qui định</span>
-                            <span class="value"> 
-                                <input 
-                                    type="text"
-                                    class="form-control form-control-fix"
-                                    name="" 
-                                > 
-                            </span>
-                        </p>
-                        <p class="uk-flex uk-flex-middle">
-                            <span class="label-text">7. Hành vi vi phạm</span>
-                            <span class="value"> 
-                                <input 
-                                    type="text"
-                                    class="form-control form-control-fix"
-                                    name="" 
-                                > 
-                            </span>
-                        </p>
-                        <p class="uk-flex uk-flex-middle">
-                            <span class="label-text">8. Hình thức kỷ luật</span>
-                            <span class="value"> 
-                                <input 
-                                    type="text"
-                                    class="form-control form-control-fix"
-                                    name="" 
-                                > 
-                            </span>
-                        </p>
                     </div>
                 </div>
             </div>

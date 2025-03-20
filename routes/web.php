@@ -57,6 +57,10 @@ Route::middleware(['auth'])->group(function(){
         Route::get('statuses/{id}/delete', [StatusController::class, 'delete'])->name('statuses.delete');
         Route::resource('statuses', StatusController::class);
 
+        Route::get('statistics/departmentDay', [StatisticController::class, 'departmentDay'])->name('statistics.department.day');
+
+        Route::get('statistics/departmentMonth', [StatisticController::class, 'departmentMonth'])->name('statistics.department.month');
+
         Route::resource('statistics', StatisticController::class);
     
     });
