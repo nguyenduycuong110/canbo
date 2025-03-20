@@ -1,0 +1,33 @@
+<?php  
+namespace App\Services\Impl\{{namespace}};
+
+use App\Services\BaseService;
+use Illuminate\Http\Request;
+use App\Services\Interfaces\{{namespace}}\{{name}}ServiceInterface;
+use App\Repositories\{{namespace}}\{{name}}Repository;
+
+class {{name}}Service extends BaseService implements {{name}}ServiceInterface{
+
+    protected $repository;
+
+    public function __construct(
+        {{name}}Repository $repository
+    )
+    {
+        $this->repository = $repository;
+        parent::__construct($repository);
+    }
+
+    protected function prepareModelData(Request $request): self
+    {
+        return $this->initializeBasicData($request);
+    }
+
+    private function initializeBasicData(Request $request): self {
+        $fillable = $this->repository->getFillable();
+        $this->modelData = $request->only($fillable);
+        return $this;
+    }
+   
+
+}
