@@ -136,6 +136,7 @@
                                         {{ $record->output }}
                                     </td>
                                     <td>
+                                        {{-- @dd($statuses, $status_id) --}}
                                         @if($lock == 0)
                                             <select name="status_id" class="form-control setupSelect2 ">
                                                 <option value="0">[Chọn Đánh Giá]</option>
@@ -150,7 +151,7 @@
                                                 @endif
                                             </select>
                                         @else
-                                            {{ $statuses[$status_id]['name'] }}
+                                            {{ $statuses->where('id', 4)->first()->name }}
                                         @endif
                                     </td>
                                     

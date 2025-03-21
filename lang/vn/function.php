@@ -8,11 +8,16 @@ $user->load(['user_catalogues']);
 $user->load(['user_catalogues.permissions']);
 $user_catalogues = DB::table('user_catalogues')->where('level','>', $user->user_catalogues->level)->get();
 $item = [];
+$rate = [];
 if(isset($user_catalogues) && count($user_catalogues)){
     foreach($user_catalogues as $k => $v){
         $item[] = [
             'title' => "Đánh giá {$v->name}",
             'route' => "evaluations/teams/{$v->id}"
+        ];
+        $rate[] = [
+            'title' => "Đánh giá {$v->name}",
+            'route' => "statistic/leader/{$v->id}"
         ];
     }
 }
@@ -41,18 +46,25 @@ $fullMenu = [
             'class' => 'special'
         ],
         [
-            'title' => 'Xếp loại cán bộ',
+            'title' => 'Kết xuất',
+            'icon' => 'fa fa-database',
+            'name' => ['statistics'],
+            'route' => 'statistics/team/export',
+            'class' => 'special'
+        ],
+        [
+            'title' => 'Xếp loại công chức',
             'icon' => 'fa fa-github',
             'name' => ['statistics'],
             'items' => [
                 [
-                    'title' => 'Theo ngày',
+                    'title' => 'Đánh giá theo ngày',
                     'route' => 'statistics/departmentDay'
                 ],
                 [
-                    'title' => 'Theo tháng',
+                    'title' => 'Đánh giá theo tháng',
                     'route' => 'statistics/departmentMonth'
-                ]
+                ],
             ]
         ],
         [
@@ -118,6 +130,9 @@ $fullMenu = [
         ],
     ]
 ];
+
+
+
 $filteredModule = [];
 foreach ($fullMenu['module'] as $module) {
     if (in_array('dashboard', $module['name'])) {

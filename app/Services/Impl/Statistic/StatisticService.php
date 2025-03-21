@@ -5,6 +5,7 @@ use App\Services\BaseService;
 use Illuminate\Http\Request;
 use App\Services\Interfaces\Statistic\StatisticServiceInterface;
 use App\Repositories\Statistic\StatisticRepository;
+use Illuminate\Support\Facades\DB;
 
 class StatisticService extends BaseService implements StatisticServiceInterface{
 
@@ -29,5 +30,18 @@ class StatisticService extends BaseService implements StatisticServiceInterface{
         return $this;
     }
    
+    public function createOrUpdate($formData){
+        try {
+            DB::beginTransaction();
+            $this->repository->createOrUpdate(['user_id' => $formData['user_id'], 'month' => $formData['month']], $formData);
+
+
+            DB::commit();
+
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            throw $th;
+        }
+    }
 
 }

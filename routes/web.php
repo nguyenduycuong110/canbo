@@ -57,19 +57,30 @@ Route::middleware(['auth'])->group(function(){
         Route::get('statuses/{id}/delete', [StatusController::class, 'delete'])->name('statuses.delete');
         Route::resource('statuses', StatusController::class);
 
-        Route::get('statistics/departmentDay', [StatisticController::class, 'departmentDay'])->name('statistics.department.day');
 
-        Route::get('statistics/departmentMonth', [StatisticController::class, 'departmentMonth'])->name('statistics.department.month');
-
-        Route::resource('statistics', StatisticController::class);
+        Route::get('statistics/departmentMonth', [StatisticController::class, 'evaluationStatisticMonth'])->name('statistics.department.month');
+        Route::get('statistics/departmentDay', [StatisticController::class, 'leaderEvaluationStatisticDay'])->name('statistics.department.day');
+        Route::get('statistics/team/export', [StatisticController::class, 'exportTeamRating'])->name('statistics.exportTeamRating');
+        
+        // Route::resource('statistics', StatisticController::class);
     
     });
+
+    Route::get('temp/{filename}', function ($filename) {
+        $path = sys_get_temp_dir() . '/' . $filename;
+        if (file_exists($path)) {
+            return response()->download($path, $filename)->deleteFileAfterSend(true);
+        }
+        return response()->json(['status' => 'error', 'message' => 'File not found'], 404);
+    })->name('temp.download');
 
     Route::get('evaluations/teams/{user_catalogue}/search', [EvaluationController::class, 'search'])->name('evaluations.teams.search');
     Route::put('evaluations/evaluate/{evaluate}', [AjaxEvaluationController::class, 'evaluate'])->name('evaluations.evaluate');
     /*Ajax*/
     
+    Route::post('ajax/statistics/export', [AjaxEvaluationController::class, 'export'])->name('statistics.export');
     Route::post('ajax/dashboard/changeStatus', [AjaxDashboardController::class, 'changeStatus'])->name('ajax.dashboard.changeStatus');
     Route::get('ajax/location/getLocation', [AjaxLocationController::class, 'getLocation'])->name('ajax.location.index');
     Route::get('ajax/evaluation/getDepartment', [AjaxEvaluationController::class, 'getDepartment'])->name('ajax.evaluation.getDepartment');
+    Route::get('ajax/evaluation/getDepartmentDay', [AjaxEvaluationController::class, 'getDepartmentEvaluationHistory']);
 });

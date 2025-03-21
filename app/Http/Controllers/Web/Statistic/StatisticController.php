@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Web\Statistic;
 use App\Services\Interfaces\Evaluation\EvaluationServiceInterface as EvaluationService;
 use App\Services\Interfaces\User\UserServiceInterface as UserService;
-use Auth;
 use Illuminate\Http\Request;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Auth;
 
 use App\Http\Controllers\Web\BaseController;
 
@@ -27,19 +27,50 @@ class StatisticController extends BaseController{
         parent::__construct($service);
     }
 
+    public function leaderEvaluationStatisticDay(Request $request){
+        try {
+            $auth = Auth::user();
+            $isLeader = ($auth->rgt - $auth->lft > 1);
+            $template =  "backend.{$this->namespace}.department.day";
+            $users = $this->getUser($request, $auth);
 
-    public function departmentDay(Request $request){
+            return view($template , compact(
+                'users',
+                'auth'
+            ));
+
+
+        } catch (\Throwable $th) {
+           dd($th);
+        }
+    }
+
+
+    public function evaluationStatisticMonth(Request $request){
         try {
             $auth = Auth::user();
             $isLeader = ($auth->rgt - $auth->lft > 1);
             $template = $isLeader ? 
-                "backend.{$this->namespace}.department.day.leader" : 
-                "backend.{$this->namespace}.department.day.department";
-            $users = ($isLeader == false) ? $auth : $this->getUser($request, $auth);
+                "backend.{$this->namespace}.department.leader" : 
+                "backend.{$this->namespace}.department.officer";
+            $users = $this->getUser($request, $auth);
+
+
             return view($template , compact(
-                'users'
+                'users',
+                'auth'
             ));
         } catch (\Throwable $th) {
+            dd($th);
+            return $this->handleWebLogException($th);
+        }
+    }
+
+    public function exportTeamRating(Request $request){
+        try {
+            dd(123);
+        } catch (\Throwable $th) {
+            dd($th);
             return $this->handleWebLogException($th);
         }
     }

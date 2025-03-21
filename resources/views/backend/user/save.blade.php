@@ -176,7 +176,7 @@
                                             @foreach($dropdown as $key => $val)
                                                 <option {{ 
                                                     $key == old('parent_id', (isset($model->parent_id)) ? $model->parent_id : '') ? 'selected' : '' 
-                                                    }} value="{{ $key }}">{{ $val }}
+                                                    }} value="{{ $val->id }}">{{ str_repeat('|----', (($val->level > 0)?($val->level - 1):0)).$val->name }}
                                                 </option>
                                             @endforeach
                                         @endif

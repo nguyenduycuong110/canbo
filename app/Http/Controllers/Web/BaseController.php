@@ -78,6 +78,7 @@ class BaseController extends Controller{
             flash()->error($e->getMessage());
             return redirect()->route("{$this->route}.index");
         }catch (\Throwable $th) {
+            dd($th);
             return $this->handleWebLogException($th);
         }
         

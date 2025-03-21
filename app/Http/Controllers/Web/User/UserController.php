@@ -11,6 +11,12 @@ use App\Services\Interfaces\Area\ProvinceServiceInterface as ProvinceService;
 use App\Services\Interfaces\Team\TeamServiceInterface as TeamService;
 use App\Services\Interfaces\Unit\UnitServiceInterface as UnitService;
 use App\Classes\Nestedsetbie;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Request as FacadesRequest;
+use Illuminate\Support\Str;
 
 class UserController extends BaseController{
 
@@ -47,6 +53,25 @@ class UserController extends BaseController{
         ]);
     }
 
+    public function index(Request $request): View | RedirectResponse{
+        try {
+
+            $request = $this->userNode($request);
+            $records = $this->service->paginate($request);
+            $config = $this->config();
+            $config['model'] = Str::studly(Str::singular($this->route));
+            $data = $this->getData();
+            extract($data);
+            return view("backend.{$this->namespace}.index", compact(
+                'records',
+                'config',
+                ...array_keys($data)
+            ));
+        } catch (\Throwable $th) {
+            return $this->handleWebLogException($th);
+        }
+    }
+
     public function store(StoreRequest $request): RedirectResponse{
         return $this->baseSave($request);
     }
@@ -56,12 +81,18 @@ class UserController extends BaseController{
     }
 
     protected function getData(): array{
+        $fakeRequest =  new \Illuminate\Http\Request();
+        $fakeRequest = $this->userNode($fakeRequest);
+        $fakeRequest->merge([
+            'type' => 'all'
+        ]);
+
         return [
             'user_catalogues' => isset($this->userCatalogueService) ? $this->userCatalogueService?->all() : null,
             'provinces' => isset($this->provinceService) ?  $this->provinceService->all() : null,
             'teams' => isset($this->teamService) ? $this->teamService->all() : null,
             'units' => isset($this->unitService) ? $this->unitService->all() : null,
-            'dropdown'  => $this->nestedset?->Dropdown(),
+            'dropdown'  => $this->service->paginate($fakeRequest)
         ];
     }
 
@@ -80,6 +111,19 @@ class UserController extends BaseController{
             ],
             'route' => $this->route
         ];
+    }
+
+    private function userNode($request){
+        $auth = Auth::user();
+        $request->merge([
+            'lft' => [
+                'gte' => $auth->lft
+            ],
+            'rgt' => [
+                'lte' => $auth->rgt
+            ],
+        ]);
+        return $request;
     }
 
 }   

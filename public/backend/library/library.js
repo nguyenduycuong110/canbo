@@ -221,6 +221,33 @@
         
     }
 
+    HT.setupMonthPicker = () => {
+        if ($('.monthPicker').length) {
+            // Lấy ngày hiện tại
+            const today = new Date();
+            const currentMonthYear = (today.getMonth() + 1).toString().padStart(2, '0') + '/' + today.getFullYear(); // Ví dụ: "03/2025"
+    
+            // Lấy ô input
+            const $input = $('.monthPicker');
+    
+            // Kiểm tra giá trị từ old('date'), nếu không có thì dùng tháng hiện tại
+            const oldValue = $input.val();
+            const defaultValue = oldValue || currentMonthYear;
+    
+            // Gán giá trị mặc định cho ô input
+            $input.val(defaultValue);
+    
+            // Khởi tạo Bootstrap Datepicker
+            $input.datepicker({
+                format: 'mm/yyyy', // Định dạng tháng/năm
+                viewMode: 'months', // Hiển thị dạng lưới tháng
+                minViewMode: 'months', // Chỉ cho phép chọn tháng (không chọn ngày)
+                autoclose: true, // Tự động đóng khi chọn xong
+                language: 'vi' // Ngôn ngữ tiếng Việt
+            });
+        }
+    };
+
 
     HT.setupDateRangePicker = () => {
         if($('.rangepicker').length > 0){
@@ -233,18 +260,18 @@
         }
     }
 
-    HT.triggerDate = () => {
-        $(document).ready(function() {
-            var today = new Date();
-            var day = String(today.getDate()).padStart(2, '0');
-            var month = String(today.getMonth() + 1).padStart(2, '0'); // Tháng bắt đầu từ 0
-            var year = today.getFullYear();
-            var currentDate = day + '/' + month + '/' + year;
-            if ($('#date').val() === '') {
-                $('#date').val(currentDate);
-            }
-        });
-    };
+    // HT.triggerDate = () => {
+    //     $(document).ready(function() {
+    //         var today = new Date();
+    //         var day = String(today.getDate()).padStart(2, '0');
+    //         var month = String(today.getMonth() + 1).padStart(2, '0'); // Tháng bắt đầu từ 0
+    //         var year = today.getFullYear();
+    //         var currentDate = day + '/' + month + '/' + year;
+    //         if ($('#date').val() === '') {
+    //             $('#date').val(currentDate);
+    //         }
+    //     });
+    // };
 
     HT.changeStatusEvaluate = () => {
         $(document).ready(function(){
@@ -277,19 +304,17 @@
         });
     }
 
-    HT.triggerDepartment = () => {
-        $(document).on('change','.statistic-form select[name="user_id"]', function(){
-            let user_id = $(this).val();
-            let date = $('input[name="date"]').val();
-            if(!user_id){
-                $('.statistic-form').find('.name').text('')
-                $('.statistic-form').find('.cat_name').text('')
-                return;
-            }
+    HT.triggerEvaluationList = () => {
+        if($('.evaluation-time').length){
+            let date = $('.evaluation-time').val();
+            let user_id = $('.user_id').val()
             let option = {user_id : user_id, date : date}
+            
             HT.loadEvaluation(option)
-        })
+        }
+       
     }
+
 
     HT.loadEvaluation = (option) => {
         $.ajax({
@@ -298,14 +323,18 @@
             data: option,
             dataType: 'json', 
             success: function(res) {
-                $('.statistic-form').find('.name').text(res.flag.name)
-                $('.statistic-form').find('.cat_name').text(res.flag.user_catalogues.name + ' - ' + res.flag.units.name)
-                if(res.flag.evaluations){
-                    HT.renderTd(res.flag.evaluations, res.flag.id)
+                $('.statistic-form').find('.name').text(res.response.name)
+                $('.statistic-form').find('.cat_name').text(res.response.user_catalogues.name + ' - ' + res.response.units.name)
+
+
+                if(res.response.evaluations && res.response.evaluations.length > 0){
+                    HT.renderTd(res.response.evaluations, res.response.id)
+                }else{
+                    $('.statistic-form').find('tbody').html(`<tr><td colspan="11" class="text-danger text-center">Không có dữ liệu phù hợp</td></tr>`);
                 }
             },
             error: function(jqXHR, textStatus, errorThrown) {
-               
+                $('.statistic-form').find('tbody').html(`<tr><td colspan="11" class="text-danger text-center">Không có dữ liệu phù hợp</td></tr>`);
             }
         });
     }
@@ -332,7 +361,7 @@
             });
             html += `
                 <tr>
-                    <td>${index}</td>
+                    <td>${index + 1}</td>
                     <td>${item.tasks.name}</td>
                     <td>${item.start_date}</td>
                     <td>${item.due_date}</td>
@@ -346,13 +375,131 @@
                 </tr>
             `;
         });
+
+        return $('.statistic-form').find('tbody').html(html);
+    }
+
+    HT.MonthChangeStatisticEvaluation = () => {
+        $(document).on('change', '.evaluation-time', function(){
+            HT.triggerEvaluationList()
+        })
+    }
+
+    HT.UserChangeStatisticEvaluation = () => {
+        $(document).on('change', '.user_id', function(){
+            HT.triggerEvaluationList()
+        })
+    }
+
+    HT.exportExcel = () => {
+        $(document).on('click', '.btn-export', function(e){
+            e.preventDefault()
+            let _this = $(this)
+            let exportType = _this.val()
+            const dateType = $('.date-type').val()
+            let date = (dateType === 'month') ? $('.evaluation-time').val() : $('.evaluation-day').val() ;
+            let user_id = (dateType === 'month') ?  $('.user_id').val() : $('.user_day_id').val() ;
+            let option = {user_id : user_id, date : date}
+            HT.setupDataForExport(exportType, option);
+            
+        })
+
+    }
+
+    HT.setupDataForExport = (type, option) => {
+        const loadingOverlay = $('<div class="loading-overlay">Đang tải file...</div>');
+        $('body').append(loadingOverlay);
+
+        const working_days_in_month = $('input[name="working_days_in_month"]').val();
+        const leave_days_with_permission = $('input[name="leave_days_with_permission"]').val();
+        const leave_days_without_permission = $('input[name="leave_days_without_permission"]').val();
+        const violation_count = $('input[name="violation_count"]').val();
+        const violation_behavior = $('input[name="violation_behavior"]').val();
+        const disciplinary_action = $('input[name="disciplinary_action"]').val();
+        const dateType = $('input.date-type').val() ?? 'month'
+
+        $.ajax({
+            url: 'ajax/statistics/export', 
+            type: 'POST', 
+            data: {
+                ...option,
+                exportType: type,
+                working_days_in_month: working_days_in_month,
+                leave_days_with_permission: leave_days_with_permission,
+                leave_days_without_permission: leave_days_without_permission,
+                violation_count: violation_count,
+                violation_behavior: violation_behavior,
+                disciplinary_action: disciplinary_action,
+                dateType: dateType,
+                _token: $('meta[name="csrf-token"]').attr('content') // Thêm CSRF token
+            },
+            dataType: 'json', 
+            success: function(res) {
+                if (res.status === 'success') {
+                    // Tạo một link ẩn để tải file
+                    const link = document.createElement('a');
+                    link.href = res.file_url;
+                    link.download = res.filename; // Sử dụng tên file từ response
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                } else {
+                    console.error('Error:', res.message);
+                }
+    
+                // Ẩn trạng thái loading
+                loadingOverlay.remove();
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                console.error('AJAX Error:', textStatus, errorThrown);
+                loadingOverlay.remove();
+            }
+        });
+    }
+
+
+    HT.dayAndUserChange = () => {
+        $(document).on('change', '.evaluation-day, .user_day_id', function(){
+            let date = $('.evaluation-day').val();
+            let user_id = $('.user_day_id').val()
+            let option = {user_id : user_id, date : date}
+            
+            HT.loadEvaluationDay(option)
+            
+        })
+    }
+
+    HT.loadEvaluationDay = (option) => {
+        if(option.user_id && option.date){
+            $.ajax({
+                url: 'ajax/evaluation/getDepartmentDay', 
+                type: 'GET', 
+                data: option,
+                dataType: 'json', 
+                success: function(res) {
+                    $('.statistic-form').find('.name').text(res.response.name)
+                    $('.statistic-form').find('.cat_name').text(res.response.user_catalogues.name + ' - ' + res.response.units.name)
+    
+    
+                    if(res.response.evaluations && res.response.evaluations.length > 0){
+                        HT.renderTd(res.response.evaluations, res.response.id)
+                    }else{
+                        $('.statistic-form').find('tbody').html(`<tr><td colspan="11" class="text-danger text-center">Không có dữ liệu phù hợp</td></tr>`);
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    $('.statistic-form').find('tbody').html(`<tr><td colspan="11" class="text-danger text-center">Không có dữ liệu phù hợp</td></tr>`);
+                }
+            });
+        }else{
+            $('.statistic-form').find('tbody').html(`<tr><td colspan="11" class="text-danger text-center">Không có dữ liệu phù hợp</td></tr>`);
+        }
         
-        return $('.statistic-form').find('tbody').append(html);
     }
 
 	$(document).ready(function(){
-        HT.triggerDepartment()
-        HT.triggerDate()
+       
+        // HT.triggerDate()
         HT.changeStatusEvaluate()
         HT.switchery()
         HT.select2()
@@ -366,6 +513,15 @@
         HT.intCid()
         HT.setupDatepicker()
         HT.setupDateRangePicker()
+        // HT.setupMonthPicker()
+        // HT.StatisticEvaluation()
+        HT.setupMonthPicker()
+        HT.triggerEvaluationList()
+        HT.MonthChangeStatisticEvaluation()
+        HT.UserChangeStatisticEvaluation()
+
+        HT.exportExcel();
+        HT.dayAndUserChange()
         
 	});
 

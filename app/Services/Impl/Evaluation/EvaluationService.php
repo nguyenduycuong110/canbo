@@ -13,10 +13,14 @@ use Illuminate\Support\Facades\DB;
 class EvaluationService extends BaseService implements EvaluationServiceInterface{
 
     protected $repository;
+    protected $userRepository;
+    protected $statusRepository;
 
     protected $with = ['users', 'tasks'];
 
     protected $simpleFilter = ['user_id']; 
+
+    protected $dateFilter = ['created_at', 'start_date'];
 
     public function __construct(
         EvaluationRepository $repository,
@@ -73,18 +77,54 @@ class EvaluationService extends BaseService implements EvaluationServiceInterfac
         }
     }
 
-    public function getDepartment(Request $request){
+    public function getDepartment($request, $dateType = 'month'){
         try {
             $user_id = $request->user_id;
             $date = $request->date;
-            $inputDate = \Carbon\Carbon::createFromFormat('d/m/Y', $date);
+
+            if($dateType === 'month'){
+                $inputDate = \Carbon\Carbon::createFromFormat('m/Y', $date);
+
+                $startOfMonth = $inputDate->copy()->startOfMonth()->toDateTimeString();
+                $endOfMonth = $inputDate->copy()->endOfMonth()->toDateTimeString();
+    
+                $request->merge([
+                    'user_id' => $user_id,
+                    'start_date' => [
+                        'gte' => $startOfMonth,
+                        'lte' => $endOfMonth 
+                    ],
+                    'type' => 'all'
+                ]);
+            }else if($dateType === 'day'){
+
+                $inputDate = \Carbon\Carbon::createFromFormat('d/m/Y', $date);
+
+                $startOfDate = $inputDate->copy()->startOfDay()->toDateTimeString();
+                $endOfDate = $inputDate->copy()->endOfDay()->toDateTimeString();
+    
+                $request->merge([
+                    'user_id' => $user_id,
+                    'start_date' => [
+                        'gte' => $startOfDate,
+                        'lte' => $endOfDate 
+                    ],
+                    'type' => 'all'
+                ]);
+            }
+           
+
             $user = $this->userRepository->findById($user_id);
             $user->load('user_catalogues');
             $user->load('teams');
             $user->load('units');
-            $evaluations = $this->repository->findByCondition($user_id , $inputDate);
-            $evaluations->load('tasks');
-            $evaluations->load('statuses');
+
+            // $evaluations = $this->repository->findByCondition($user_id , $inputDate);
+            $evaluations = $this->paginate($request);
+
+
+            // $evaluations->load('tasks');
+            // $evaluations->load('statuses');
             $leadershipApproval = [];
             $assessmentLeader = [];
             if(count($evaluations)){
@@ -118,6 +158,7 @@ class EvaluationService extends BaseService implements EvaluationServiceInterfac
             $user['evaluations'] = $evaluations;
             return $user;
         } catch (\Throwable $th) {
+            dd($th);
            return false;
         }
     }

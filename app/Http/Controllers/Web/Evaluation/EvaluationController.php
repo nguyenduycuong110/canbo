@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
-
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class EvaluationController extends BaseController{
 
@@ -56,6 +56,7 @@ class EvaluationController extends BaseController{
             $data = $this->getData();
             extract($data);
             $template = ($user->rgt - $user->lft > 1) ? "backend.{$this->namespace}.indexSuperior" : "backend.{$this->namespace}.index";
+            
             return view($template, compact(
                 'records',
                 'config',
@@ -125,8 +126,8 @@ class EvaluationController extends BaseController{
 
     protected function getData(): array{
         return [
-            'tasks' =>  $this->taskService?->checkTask(),
-            'statuses' => $this->statusService?->all(),
+            'tasks' =>  $this->taskService->checkTask(),
+            'statuses' => $this->statusService->all(),
         ];
     }
 

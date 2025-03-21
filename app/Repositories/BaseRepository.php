@@ -71,5 +71,9 @@ class BaseRepository {
         return $this->model->select('*')->get();
     }
     
+    public function createOrUpdate($where = [], $payload = []){
+        return $this->model->updateOrCreate($where, $payload);
+    }
+
 
 }
