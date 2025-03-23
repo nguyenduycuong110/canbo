@@ -49,7 +49,7 @@ Route::middleware(['auth'])->group(function(){
         Route::get('tasks/{id}/delete', [TaskController::class, 'delete'])->name('tasks.delete');
         Route::resource('tasks', TaskController::class);
 
-        Route::get('evaluations/teams/{user_catalogue}', [EvaluationController::class, 'teams'])->name('evaluations.teams');
+        Route::get('evaluations/teams/{level}', [EvaluationController::class, 'teams'])->name('evaluations.teams');
         
         Route::get('evaluations/{id}/delete', [EvaluationController::class, 'delete'])->name('evaluations.delete');
         Route::resource('evaluations', EvaluationController::class);
@@ -58,12 +58,14 @@ Route::middleware(['auth'])->group(function(){
         Route::resource('statuses', StatusController::class);
 
 
-        Route::get('statistics/departmentMonth', [StatisticController::class, 'evaluationStatisticMonth'])->name('statistics.department.month');
-        Route::get('statistics/departmentDay', [StatisticController::class, 'leaderEvaluationStatisticDay'])->name('statistics.department.day');
-        Route::get('statistics/team/export', [StatisticController::class, 'exportTeamRating'])->name('statistics.exportTeamRating');
+        Route::get('statistics/departmentMonth/{level}', [StatisticController::class, 'evaluationStatisticMonth'])->name('statistics.department.month');
+        Route::get('statistics/departmentDay/{level}', [StatisticController::class, 'leaderEvaluationStatisticDay'])->name('statistics.department.day');
+        Route::get('team/export', [StatisticController::class, 'exportHistory'])->name('statistics.exportHistory');
+
+        Route::get('statistics/departmentMonth/leader/{level}', [StatisticController::class, 'leaderStatisticMonth'])->name('statistics.leader.month');
+        Route::get('statistics/departmentDay/leader/{level}', [StatisticController::class, 'leaderStatisticDay'])->name('statistics.leader.day');
+
         
-        // Route::resource('statistics', StatisticController::class);
-    
     });
 
     Route::get('temp/{filename}', function ($filename) {
@@ -74,11 +76,11 @@ Route::middleware(['auth'])->group(function(){
         return response()->json(['status' => 'error', 'message' => 'File not found'], 404);
     })->name('temp.download');
 
-    Route::get('evaluations/teams/{user_catalogue}/search', [EvaluationController::class, 'search'])->name('evaluations.teams.search');
     Route::put('evaluations/evaluate/{evaluate}', [AjaxEvaluationController::class, 'evaluate'])->name('evaluations.evaluate');
     /*Ajax*/
     
     Route::post('ajax/statistics/export', [AjaxEvaluationController::class, 'export'])->name('statistics.export');
+    Route::post('ajax/statistics/exportHistory', [AjaxEvaluationController::class, 'exportHistory'])->name('statistics.exportHistory');
     Route::post('ajax/dashboard/changeStatus', [AjaxDashboardController::class, 'changeStatus'])->name('ajax.dashboard.changeStatus');
     Route::get('ajax/location/getLocation', [AjaxLocationController::class, 'getLocation'])->name('ajax.location.index');
     Route::get('ajax/evaluation/getDepartment', [AjaxEvaluationController::class, 'getDepartment'])->name('ajax.evaluation.getDepartment');

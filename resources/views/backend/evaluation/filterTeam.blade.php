@@ -1,8 +1,8 @@
 @props(['config'])
 @php
-    $userCatalogueId = $config['userCatalogue']->id;
+    $level = $config['level'];
 @endphp
-<form action="{{ route($config['route'].'.teams.search', ['user_catalogue' => $userCatalogueId]) }}">
+<form action="{{ route('evaluations.teams', ['level' => $level]) }}">
     <div class="filter-wrapper">
         <div class="uk-flex uk-flex-middle uk-flex-space-between">
             <div class="perpage">
@@ -28,34 +28,7 @@
             <div class="action">
                 <div class="uk-flex uk-flex-middle">
                     <div class="uk-search uk-flex uk-flex-middle mr10">
-                        <select name="created_at[eq]" class="form-control setupSelect2">
-                            <option value="0">Chọn ngày</option>
-                            @for($i = 1 ; $i <= 31 ; $i++)
-                                @php
-                                    $dateValue = str_pad($i, 2, '0', STR_PAD_LEFT) . '-' . date('m') . '-' . date('Y');
-                                @endphp
-                                <option
-                                    value="{{ $dateValue }}"
-                                    {{ $selectedDay == $i ? 'selected' : '' }}
-                                >
-                                    Ngày {{ $i }}
-                                </option>
-                            @endfor
-                        </select>
-                        <select name="created_at[between]" class="form-control setupSelect2">
-                            <option value="0">Chọn tháng</option>
-                            @for($i = 1 ; $i <= 12 ; $i++)
-                                @php
-                                    $monthValue = "01-" . str_pad($i, 2, '0', STR_PAD_LEFT) . "-" . date('Y') . ", 31-" . str_pad($i, 2, '0', STR_PAD_LEFT) . "-" . date('Y');
-                                @endphp
-                                <option
-                                    value="{{ $monthValue }}"
-                                    {{ $selectedMonth == $i ? 'selected' : '' }}
-                                >
-                                    Tháng {{ $i }}
-                                </option>
-                            @endfor
-                        </select>
+                        <input type="text" value="{{ request('start_date.eq') ?: old('start_date.eq') }}"  placeholder="Chọn ngày giao việc" name="start_date[eq]" class="datepicker mr10 form-control">
                         <select name="user_id" class="form-control setupSelect2 ">
                             <option value="0">Chọn {{ isset($config['userCatalogue']) ? $config['userCatalogue']->name : '' }}</option>
                             @foreach($config['usersOnBranch'] as $record)

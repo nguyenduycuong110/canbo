@@ -141,7 +141,7 @@
                                     </td>
                                     <td>
                                         @if($lock == 0)
-                                            <select name="status_id" class="form-control setupSelect2 ">
+                                            <select name="status_id" class="form-control setupSelect2" data-record-id="{{ $record->id }}">
                                                 <option value="0">[Chọn Đánh Giá]</option>
                                                 @if(isset($statuses))
                                                     @foreach($statuses as $key => $val)

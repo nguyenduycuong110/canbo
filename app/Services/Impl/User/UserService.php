@@ -15,7 +15,9 @@ class UserService extends BaseService implements UserServiceInterface{
 
     protected $sort = ['lft', 'asc'];
 
-    protected $complexFilter = ['rgt' , 'lft'];
+    protected $complexFilter = ['rgt' , 'lft', 'user_catalogue_id'];
+
+    protected $simpleFilter = ['level'];
 
     public function __construct(
         UserRepository $repository

@@ -37,12 +37,40 @@
                 @if(isset($val['items']))
                     <ul class="nav nav-second-level">
                         @foreach($val['items'] as $module)
-                        <li><a href="{{ $module['route'] }}">{{ $module['title'] }}</a></li>
+                            <?php
+                                // Kiểm tra xem có menu cấp 3 nào đang active không
+                                $isSubMenuActive = false;
+                                if (isset($module['items']) && count($module['items'])) {
+                                    foreach ($module['items'] as $subItem) {
+                                        if (request()->is($subItem['route'] . '*')) {
+                                            $isSubMenuActive = true;
+                                            break;
+                                        }
+                                    }
+                                } else {
+                                    // Nếu không có menu cấp 3, kiểm tra route của menu cấp 2
+                                    $isSubMenuActive = request()->is($module['route'] . '*');
+                                }
+                            ?>
+                            <li class="{{ (isset($module['items']) && count($module['items'])) ? 'has-submenu' : '' }} {{ $isSubMenuActive ? 'active' : '' }}">
+                                @if(isset($module['items']) && count($module['items']))
+                                    <a href="#">{{ $module['title'] }} <span class="fa arrow"></span></a>
+                                    <ul class="nav nav-third-level">
+                                        @foreach($module['items'] as $subItem)
+                                        <li class="{{ (request()->is($subItem['route'] . '*')) ? 'active' : '' }}">
+                                            <a href="{{ $subItem['route'] }}">{{ $subItem['title'] }}</a>
+                                        </li>
+                                        @endforeach
+                                    </ul>
+                                @else
+                                    <a href="{{ $module['route'] }}">{{ $module['title'] }}</a>
+                                @endif
+                            </li>
                         @endforeach
                     </ul>
                 @endif
             </li>
-            @endforeach
+        @endforeach
         </ul>
     </div>
 </nav>

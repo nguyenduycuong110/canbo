@@ -27,12 +27,12 @@ class StatisticController extends BaseController{
         parent::__construct($service);
     }
 
-    public function leaderEvaluationStatisticDay(Request $request){
+    public function leaderEvaluationStatisticDay(Request $request, $level){
         try {
             $auth = Auth::user();
             $isLeader = ($auth->rgt - $auth->lft > 1);
             $template =  "backend.{$this->namespace}.department.day";
-            $users = $this->getUser($request, $auth);
+            $users = $this->getUser($request, $auth, $level);
 
             return view($template , compact(
                 'users',
@@ -46,14 +46,15 @@ class StatisticController extends BaseController{
     }
 
 
-    public function evaluationStatisticMonth(Request $request){
+    public function evaluationStatisticMonth(Request $request, int $level){
         try {
             $auth = Auth::user();
             $isLeader = ($auth->rgt - $auth->lft > 1);
             $template = $isLeader ? 
                 "backend.{$this->namespace}.department.leader" : 
                 "backend.{$this->namespace}.department.officer";
-            $users = $this->getUser($request, $auth);
+
+            $users = $this->getUser($request, $auth, $level);
 
 
             return view($template , compact(
@@ -66,24 +67,52 @@ class StatisticController extends BaseController{
         }
     }
 
-    public function exportTeamRating(Request $request){
+    public function leaderStatisticDay(Request $request, int $level){
         try {
-            dd(123);
+            $auth = Auth::user();
+            $users = $this->getUser($request, $auth, $level);
+            return view("backend.{$this->namespace}.leader.day", compact(
+                'auth',
+                'users',
+                'level'
+            ));
         } catch (\Throwable $th) {
             dd($th);
-            return $this->handleWebLogException($th);
         }
     }
 
-    private function getUser($request, $auth){
+    public function leaderStatisticMonth(Request $request, int $level){
+        try {
+            $auth = Auth::user();
+            $users = $this->getUser($request, $auth, $level);
+            return view("backend.{$this->namespace}.leader.month", compact(
+                'auth',
+                'users',
+                'level'
+            ));
+        } catch (\Throwable $th) {
+            dd($th);
+        }
+    }
+
+    public function exportHistory(Request $request){
+        return view("backend.{$this->namespace}.export.index");
+    }
+
+    private function getUser($request, $auth, $level = null){
         $auth = Auth::user();
         $request->merge([
             'lft' => [
-                'gt' => $auth->lft
+                'gte' => $auth->lft
             ],
             'rgt' => [
-                'lt' => $auth->rgt
+                'lte' => $auth->rgt
             ],
+            'relationFilter' => [
+                'user_catalogues' => [
+                    'level' => ['eq' => $level]
+                ]
+            ]
         ]);
         return $this->userService->paginate($request);
     }

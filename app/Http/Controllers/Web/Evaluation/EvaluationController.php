@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\Request as CustomRequest;
 
 class EvaluationController extends BaseController{
 
@@ -26,6 +27,8 @@ class EvaluationController extends BaseController{
     protected $statusService;
     protected $userService;
     protected $userCatalogueService;
+
+    private const CANBO_LEVEL = 5;
 
 
     public function __construct(
@@ -131,12 +134,22 @@ class EvaluationController extends BaseController{
         ];
     }
 
-    public function teams(Request $request, $userCatalogueId)
+    public function teams(Request $request, $level)
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
         $user->load(['user_catalogues']);
+        
+        $fakeRequest = new CustomRequest();
+        $fakeRequest->merge([
+            'level' => $level,
+            'type' => 'all'
+        ]);
 
+        // dd($fakeRequest->all());
+
+        $userCataloguesByLevel = $this->userCatalogueService->paginate($fakeRequest);
+        $userCataloguesId = $userCataloguesByLevel->pluck('id')->toArray();
         /** Lấy ra nhóm của người đang đăng nhập */
         $currentUserCatalogueLevel = $user->user_catalogues->level ?? null;
 
@@ -149,23 +162,34 @@ class EvaluationController extends BaseController{
                     'rgt' => [
                         'lt' => $user->rgt
                     ],
-                    'user_catalogue_id' =>[
-                        'eq' => $userCatalogueId
+                    'user_catalogue_id' => [
+                        'in' => 'user_catalogue_id|'.implode(',', $userCataloguesId)
                     ],
                 ],
+            ],
+            'time' => [
+                'statuses' => [
+                    'created_at' => [
+                        'month' => $request?->month_id 
+                    ]
+                ]
             ]
         ]);
+
         
         try {
             $records = $this->service->paginate($request);
             /** Lấy ra nhóm đang muốn hiển thị đánh giá */
-            $userEvaluatedCatalogue = $this->userCatalogueService->findById($userCatalogueId);
-            $evaluatedCatalogueLevel = $userEvaluatedCatalogue->level ?? null;
+            $evaluatedCatalogueLevel = $level;
+
+
             foreach($records as $key => $record){
                 // Mặc định không cho đánh giá
                 $canEvaluate = false;
                 // Đánh dấu xem có bị khóa bởi cấp trên không
                 $isLockedByHigherLevel = false;
+
+
                 // Kiểm tra xem có bất kỳ cấp nào cao hơn người đăng nhập đã đánh giá chưa
                 if (!is_null($currentUserCatalogueLevel)) {
                     $higherLevelEvaluations = DB::table('evaluation_status')
@@ -194,25 +218,35 @@ class EvaluationController extends BaseController{
                 $record->canEvaluate = $canEvaluate;
                 $record->isLockedByHigherLevel = $isLockedByHigherLevel;
             }
-            $usersOnBranch = $this->userService?->getUsersOnBranch($user, $userCatalogueId);
             $config = $this->config();
+
+
+            $fakeRequestForUsers = new CustomRequest();
+            $fakeRequestForUsers->merge([
+                'lft' => ['gt' => $user->lft],
+                'rgt' => ['lt' => $user->rgt],
+                'user_catalogue_id' => ['in' => 'user_catalogue_id|' . implode(',', $userCataloguesId)],
+                'type' => 'all'
+            ]);
+            $usersOnBranch = $this->userService->paginate($fakeRequestForUsers);
+
             $config = [
                 'route' => $this->route,
                 'isCreate' => false,
                 'filter' => false,
                 'usersOnBranch' => $usersOnBranch,
-                'userCatalogue' => $this->userCatalogueService?->findById($userCatalogueId)
+                'level' => $level
             ];
             $data = $this->getData();
             extract($data);
-            $userCatalogueId = $userCatalogueId;
-            $template = ($userCatalogueId != config('apps.general.officer')) ? "backend.{$this->namespace}.teamSuperior" : "backend.{$this->namespace}.team";
+            $template = ($level != self::CANBO_LEVEL) ? "backend.{$this->namespace}.teamSuperior" : "backend.{$this->namespace}.team";
             return view($template, compact(
                 'records',
                 'config',
                 ...array_keys($data),
             ));
         } catch (\Throwable $th) {
+            dd($th);
             return $this->handleWebLogException($th);
         }
     }

@@ -10,6 +10,8 @@ class UserCatalogueService extends BaseService implements UserCatalogueServiceIn
 
     protected $repository;
 
+    protected $simpleFilter = ['level'];
+
     public function __construct(
         UserCatalogueRepository $repository
     )

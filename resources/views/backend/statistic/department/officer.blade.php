@@ -120,9 +120,7 @@
                                 <th>Sản phẩm đầu ra</th>
                                 <th style="width:220px;">Cá nhân tự đánh giá</th>
                                 <th>Lãnh đạo trực tiếp đánh giá</th>
-                                <th>Tên lạnh đạo trực tiếp đánh giá</th>
                                 <th>Lãnh đạo phê duyệt</th>
-                                <th>Tên lãnh đạo phê duyệt</th>
                             </tr>
                         </thead>
                         <tbody>

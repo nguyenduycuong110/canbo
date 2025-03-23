@@ -64,37 +64,86 @@ trait HasQuery {
         return $query;
     }
 
-    public function scopeDateFilter($query, array $dateFilter = []){
-        if(count($dateFilter)){
-            foreach($dateFilter as $field => $condition){
-                foreach($condition as $operator => $date){
-                    if($date == 0) { continue; }
-                    switch ($operator) {
-                        case 'gt':
-                            $query->whereDate($field, '>', Carbon::parse($date)->startOfDay());
-                            break;
-                        case 'gte':
-                            $query->whereDate($field, '>=', Carbon::parse($date)->startOfDay());
-                            break;
-                        case 'lt':
-                            $query->whereDate($field, '<', Carbon::parse($date)->startOfDay());
-                            break;
-                        case 'lte':
-                            $query->whereDate($field, '<=', Carbon::parse($date)->startOfDay());
-                            break;
-                        case 'eq':
-                            $query->whereDate($field, '=', Carbon::parse($date)->startOfDay());
-                            break;
-                        case 'between':
-                            [$startDate, $endDate] = explode(',', $date); 
-                            $query->whereBetween($field, [
-                                Carbon::parse($startDate)->startOfDay(),
-                                Carbon::parse($endDate)->endOfDay(),
-                            ]);
-                            break;
-                        default:
-                            # code...
-                            break;
+    public function scopeDateFilter($query, array $dateFilter = [])
+    {
+        if (count($dateFilter)) {
+            foreach ($dateFilter as $field => $condition) {
+                foreach ($condition as $operator => $date) {
+                    if ($date == 0) {
+                        continue;
+                    }
+
+                    // Hàm helper để chuẩn hóa định dạng ngày
+                    $parseDate = function ($dateString) {
+                        // Danh sách các định dạng ngày phổ biến
+                        $possibleFormats = [
+                            'Y-m-d',        // 2025-03-16
+                            'd-m-Y',        // 16-03-2025
+                            'd/m/Y',        // 16/03/2025
+                            'Y/m/d',        // 2025/03/16
+                            'd.m.Y',        // 16.03.2025
+                            'Y-m-d H:i:s',
+                            'Y-m-d H:i',
+                            'Y-m-d H'
+                        ];
+
+                        // Thử parse với từng định dạng
+                        foreach ($possibleFormats as $format) {
+                            try {
+                                $parsedDate = Carbon::createFromFormat($format, $dateString);
+                                if ($parsedDate) {
+                                    return $parsedDate->format('Y-m-d'); // Chuẩn hóa về Y-m-d
+                                }
+                            } catch (\Exception $e) {
+                                // Bỏ qua nếu không parse được với định dạng này
+                                continue;
+                            }
+                        }
+
+                        // Nếu không parse được với bất kỳ định dạng nào, ném ngoại lệ
+                        throw new \Exception("Không thể parse ngày: $dateString. Định dạng không hợp lệ.");
+                    };
+
+                    try {
+                        switch ($operator) {
+                            case 'gt':
+                                $parsedDate = $parseDate($date);
+                                $query->whereDate($field, '>', Carbon::parse($parsedDate)->startOfDay());
+                                break;
+                            case 'gte':
+                                $parsedDate = $parseDate($date);
+                                $query->whereDate($field, '>=', Carbon::parse($parsedDate)->startOfDay());
+                                break;
+                            case 'lt':
+                                $parsedDate = $parseDate($date);
+                                $query->whereDate($field, '<', Carbon::parse($parsedDate)->startOfDay());
+                                break;
+                            case 'lte':
+                                $parsedDate = $parseDate($date);
+                                $query->whereDate($field, '<=', Carbon::parse($parsedDate)->startOfDay());
+                                break;
+                            case 'eq':
+                                $parsedDate = $parseDate($date);
+                                $query->whereDate($field, '=', Carbon::parse($parsedDate)->startOfDay());
+                                break;
+                            case 'between':
+                                [$startDate, $endDate] = array_map('trim', explode(',', $date));
+                                $parsedStartDate = $parseDate($startDate);
+                                $parsedEndDate = $parseDate($endDate);
+                                $query->whereBetween($field, [
+                                    Carbon::parse($parsedStartDate)->startOfDay(),
+                                    Carbon::parse($parsedEndDate)->endOfDay(),
+                                ]);
+                                break;
+                            default:
+                                break;
+                        }
+                    } catch (\Exception $e) {
+                        // Ghi log lỗi nếu cần
+                        // \Log::error('Lỗi parse ngày trong scopeDateFilter: ' . $e->getMessage());
+                        // Bỏ qua điều kiện này để không làm gián đoạn truy vấn
+                        // dd($e);
+                        continue;
                     }
                 }
             }

@@ -3,24 +3,54 @@
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
+
+/** @var \App\Models\User|null $user */
 $user = Auth::user();
-$user->load(['user_catalogues']);
 $user->load(['user_catalogues.permissions']);
-$user_catalogues = DB::table('user_catalogues')->where('level','>', $user->user_catalogues->level)->get();
+$user_catalogues = DB::table('user_catalogues')
+                    ->select(
+                        'level',
+                        DB::raw('GROUP_CONCAT(id) as ids'), 
+                        DB::raw('MAX(name) as names') 
+                    )
+                    ->where('level','>=', $user->user_catalogues->level)
+                    ->groupBy(['level'])
+                    ->get();
 $item = [];
-$rate = [];
+
+$userLevel = $user->user_catalogues->level;
+
+$statisticItems = [];
+
 if(isset($user_catalogues) && count($user_catalogues)){
     foreach($user_catalogues as $k => $v){
-        $item[] = [
-            'title' => "Đánh giá {$v->name}",
-            'route' => "evaluations/teams/{$v->id}"
+        $displayName = str_replace(',', ',', $v->names);
+        if($userLevel !== $v->level){
+            $item[] = [
+                'title' => "{$displayName}",
+                'route' => "evaluations/teams/{$v->level}"
+            ];
+        }
+       
+        $statisticItems[] = [
+            'title' => "{$displayName}", 
+            'route' => '#',
+            'items' => [ 
+                [
+                    'title' => 'Đánh giá theo ngày',
+                    'route' => "statistics/departmentDay".(($v->level !== 5) ? '/leader' : '')."/{$v->level}"
+                ],
+                [
+                    'title' => 'Đánh giá theo tháng',
+                    'route' => "statistics/departmentMonth".(($v->level !== 5) ? '/leader' : '')."/{$v->level}"
+                ],
+            ]
         ];
-        $rate[] = [
-            'title' => "Đánh giá {$v->name}",
-            'route' => "statistic/leader/{$v->id}"
-        ];
+      
     }
 }
+
+
 $dashboardMenu  = [
     'title' => 'Dashboard',
     'icon' => 'fa fa-database',
@@ -49,23 +79,14 @@ $fullMenu = [
             'title' => 'Kết xuất',
             'icon' => 'fa fa-database',
             'name' => ['statistics'],
-            'route' => 'statistics/team/export',
+            'route' => 'team/export',
             'class' => 'special'
         ],
         [
-            'title' => 'Xếp loại công chức',
+            'title' => 'Lịch sử đánh giá',
             'icon' => 'fa fa-github',
             'name' => ['statistics'],
-            'items' => [
-                [
-                    'title' => 'Đánh giá theo ngày',
-                    'route' => 'statistics/departmentDay'
-                ],
-                [
-                    'title' => 'Đánh giá theo tháng',
-                    'route' => 'statistics/departmentMonth'
-                ],
-            ]
+            'items' => $statisticItems
         ],
         [
             'title' => 'QL Cán Bộ',

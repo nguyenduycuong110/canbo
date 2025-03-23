@@ -275,10 +275,11 @@
 
     HT.changeStatusEvaluate = () => {
         $(document).ready(function(){
-            $('select[name=status_id]').on('change', function(){
+            $('.evaluations select[name=status_id]').on('change', function(){
                 let _this = $(this)
                 let recordId = _this.data('record-id')
                 let statusId = _this.val()
+
                 $.ajax({
                     url: '/evaluations/evaluate/' + recordId,
                     type: 'POST',
@@ -323,12 +324,13 @@
             data: option,
             dataType: 'json', 
             success: function(res) {
+                
                 $('.statistic-form').find('.name').text(res.response.name)
                 $('.statistic-form').find('.cat_name').text(res.response.user_catalogues.name + ' - ' + res.response.units.name)
 
 
                 if(res.response.evaluations && res.response.evaluations.length > 0){
-                    HT.renderTd(res.response.evaluations, res.response.id)
+                    HT.renderTd(res.response.evaluations, res.response.id, res)
                 }else{
                     $('.statistic-form').find('tbody').html(`<tr><td colspan="11" class="text-danger text-center">Không có dữ liệu phù hợp</td></tr>`);
                 }
@@ -339,11 +341,24 @@
         });
     }
 
-    HT.renderTd = (res, user_id) => {
+    HT.formatDate = (isoDate) => {
+        if (!isoDate) return 'N/A'; // Xử lý trường hợp không có ngày
+        const date = new Date(isoDate);
+        const day = String(date.getDate()).padStart(2, '0'); // Đảm bảo 2 chữ số
+        const month = String(date.getMonth() + 1).padStart(2, '0'); // getMonth() bắt đầu từ 0
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+    };
+
+    HT.renderTd = (res, user_id, resOriginal = null) => {
         if(res.length == 0){
             return;
         }
         let html = ``;
+
+        console.log(resOriginal);
+        
+
         res.forEach((item, index) => {
             let leadershipApprovalName = (item.leadershipApproval && Object.keys(item.leadershipApproval).length > 0) ? 
             item.leadershipApproval.infoUser.name : '';
@@ -359,21 +374,57 @@
                     statuesUser = val;
                 }
             });
-            html += `
-                <tr>
-                    <td>${index + 1}</td>
-                    <td>${item.tasks.name}</td>
-                    <td>${item.start_date}</td>
-                    <td>${item.due_date}</td>
-                    <td>${item.completion_date}</td>
-                    <td>${item.output}</td>
-                    <td>${statuesUser.name}</td>
-                    <td>${assessmentLeaderStatus}</td>
-                    <td>${assessmentLeaderName}</td>
-                    <td>${leadershipApprovalStatus}</td>
-                    <td>${leadershipApprovalName}</td>
-                </tr>
-            `;
+            let selfAssessmentName = item.selfAssessment?.infoUser?.name || '';
+            let selfAssessmentStatus = item.selfAssessment?.infoStatus?.name || '';
+
+            
+
+            if(resOriginal.response.user_catalogues.level == 5){
+                html += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${item.tasks.name}</td>
+                        <td>${item.start_date}</td>
+                        <td>${item.due_date}</td>
+                        <td>${item.completion_date}</td>
+                        <td>${item.output}</td>
+                        <td>${statuesUser.name}</td>
+                        <td>
+                            ${assessmentLeaderStatus}
+                            <br>
+                            <span class="text-success">Họ Tên: ${assessmentLeaderName}</span>
+                        </td>
+                        <td>
+                            ${leadershipApprovalStatus}
+                            <br>
+                            <span class="text-success">Họ Tên: ${leadershipApprovalName}</span>
+                        </td>
+                    </tr>
+                `;
+            }else{
+                html += `<tr>
+                        <td>${index + 1}</td>
+                        <td>${item.tasks.name}</td>
+                        <td>${HT.formatDate(item.created_at)}</td>
+                        <td>${item.total_tasks}</td>
+                        <td>${item.overachieved_tasks}</td>
+                        <td>${item.completed_tasks_ontime}</td>
+                        <td>${item.failed_tasks_count}</td>
+                        <td>${statuesUser.name}</td>
+                        <td>
+                            ${assessmentLeaderStatus || 'Chưa đánh giá'}
+                            <br>
+                            <span class="text-success">Họ Tên: ${assessmentLeaderName}</span>
+                        </td>
+                        <td>
+                            ${leadershipApprovalStatus}
+                            <br>
+                            <span class="text-success">Họ Tên: ${leadershipApprovalName}</span>
+                        </td>
+                    </tr>`
+            }
+
+            
         });
 
         return $('.statistic-form').find('tbody').html(html);
@@ -404,6 +455,49 @@
             
         })
 
+    }
+
+    HT.exportStatistic = () => {
+        $(document).on('click', '.btn-export-total', function(e){
+            e.preventDefault()
+            let _this = $(this)
+            let date = $('.evaluation-time').val()
+            let option = {date : date}
+            HT.setupDataForStatisticExport(option);
+            
+        })
+    }
+
+    HT.setupDataForStatisticExport = (option) => {
+        $.ajax({
+            url: 'ajax/statistics/exportHistory', 
+            type: 'POST', 
+            data: {
+                ...option,
+                _token: $('meta[name="csrf-token"]').attr('content') // Thêm CSRF token
+            },
+            dataType: 'json', 
+            success: function(res) {
+                if (res.status === 'success') {
+                    // Tạo một link ẩn để tải file
+                    const link = document.createElement('a');
+                    link.href = res.file_url;
+                    link.download = res.filename; // Sử dụng tên file từ response
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                } else {
+                    console.error('Error:', res.message);
+                }
+    
+                // Ẩn trạng thái loading
+                loadingOverlay.remove();
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                console.error('AJAX Error:', textStatus, errorThrown);
+                loadingOverlay.remove();
+            }
+        })
     }
 
     HT.setupDataForExport = (type, option) => {
@@ -477,12 +571,13 @@
                 data: option,
                 dataType: 'json', 
                 success: function(res) {
+
                     $('.statistic-form').find('.name').text(res.response.name)
                     $('.statistic-form').find('.cat_name').text(res.response.user_catalogues.name + ' - ' + res.response.units.name)
     
     
                     if(res.response.evaluations && res.response.evaluations.length > 0){
-                        HT.renderTd(res.response.evaluations, res.response.id)
+                        HT.renderTd(res.response.evaluations, res.response.id, res)
                     }else{
                         $('.statistic-form').find('tbody').html(`<tr><td colspan="11" class="text-danger text-center">Không có dữ liệu phù hợp</td></tr>`);
                     }
@@ -522,6 +617,8 @@
 
         HT.exportExcel();
         HT.dayAndUserChange()
+
+        HT.exportStatistic()
         
 	});
 

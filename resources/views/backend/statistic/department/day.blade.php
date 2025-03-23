@@ -25,6 +25,8 @@
                                     style="height:32px;"
                                 />
                                 <input type="hidden" value="day" class="date-type">
+
+                                @if($auth->rgt - $auth->lft > 1)
                                 <select name="user_id" class="setupSelect2 user_day_id">
                                     <option value="">[Chọn cán bộ]</option>
                                     @foreach($users as $user)
@@ -33,6 +35,9 @@
                                         @endif
                                     @endforeach
                                 </select>
+                                @else
+                                <input type="text" class="hidden user_day_id" value="{{ $auth->id }}">
+                                @endif
                             </div>
                             <div class="action">
                                 <div class="uk-flex uk-flex-middle">
@@ -128,9 +133,7 @@
                                 <th>Sản phẩm đầu ra</th>
                                 <th style="width:220px;">Cá nhân tự đánh giá</th>
                                 <th>Lãnh đạo trực tiếp đánh giá</th>
-                                <th>Tên lạnh đạo trực tiếp đánh giá</th>
                                 <th>Lãnh đạo phê duyệt</th>
-                                <th>Tên lãnh đạo phê duyệt</th>
                             </tr>
                         </thead>
                         <tbody>

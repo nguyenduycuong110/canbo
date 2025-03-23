@@ -68,7 +68,7 @@ abstract class BaseService implements BaseServiceInterface{
                 'simple' => $this->buildFilter($request, $this->simpleFilter),
                 'complex' => $this->buildFilter($request, $this->complexFilter),
                 'date' => $this->buildFilter($request, $this->dateFilter),
-                'relation' => $request->relationFilter,
+                'relation' => $request->relationFilter ?? [],
             ],
             'with' => $this->with,
         ];  

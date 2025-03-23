@@ -25,14 +25,17 @@
                                     style="height:32px;"
                                 />
                                 <input type="hidden" value="month" class="date-type">
+
+                                @if($auth->rgt - $auth->lft > 1 && $auth->level !== $level)
                                 <select name="user_id" class="setupSelect2 user_id">
                                     <option value="">[Chọn cán bộ]</option>
                                     @foreach($users as $user)
-                                        @if($user->user_catalogue_id == config('apps.general.officer'))
-                                            <option value="{{ $user->id }}">{{ $user->name }} - {{ $user->account }}</option>
-                                        @endif
+                                        <option value="{{ $user->id }}">{{ $user->name }} - {{ $user->account }}</option>
                                     @endforeach
                                 </select>
+                                @else
+                                <input type="text" class="hidden user_id" value="{{ $auth->id }}">
+                                @endif
                             </div>
                             <div class="action">
                                 <div class="uk-flex uk-flex-middle">
@@ -120,15 +123,16 @@
                     <table class="table table-striped table-bordered">
                         <thead>
                             <tr>
-                                <th class="col-stt">STT</th>
+                                <th  class="col-stt">STT</th>
                                 <th>Nội dung công việc</th>
-                                <th>Ngày giao việc</th>
-                                <th>Ngày hoàn thành</th>
-                                <th>Thời gian thực tế</th>
-                                <th>Sản phẩm đầu ra</th>
-                                <th style="width:220px;">Cá nhân tự đánh giá</th>
+                                <th>Ngày</th>
+                                <th>Tổng số công việc / nhiệm vụ được giao</th>
+                                <th>Số công việc / nhiệm vụ hoàn thành <br> vượt mức về thời gian hoặc chất lượng</th>
+                                <th>Số công việc / nhiệm vụ hoàn thành <br> đúng hạn , đảm bảo chất lượng</th>
+                                <th>Số công việc / nhiệm vụ không hoàn thành <br> đúng hạn hoặc không đảm bảo yêu cầu</th>
+                                <th>Cá nhân tự đánh giá</th>
                                 <th>Lãnh đạo trực tiếp đánh giá</th>
-                                <th>Lãnh đạo phê duyệt</th>
+                                <th class="text-center">Lãnh đạo đánh giá</th>
                             </tr>
                         </thead>
                         <tbody>

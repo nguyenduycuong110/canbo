@@ -74,7 +74,7 @@
                             <th>Nội dung công việc</th>
                             <th>Ngày giao việc</th>
                             <th>Ngày hoàn thành</th>
-                            <th>Thời gian thực tế</th>
+                            <th style="width:50px;">Thời gian thực tế</th>
                             <th>Sản phẩm đầu ra</th>
                             <th style="width:220px;">Cá nhân tự đánh giá</th>
                             @foreach($positions as $position)
@@ -84,6 +84,9 @@
                         </tr>
                         </thead>
                         <tbody>
+                            @php
+                                $totalCompleteTime = 0;
+                            @endphp
                             @if(isset($records) && (is_object($records) || is_array($records)) && count($records) > 0)
                                 @foreach($records as $key => $record)
                                 @php
@@ -93,6 +96,7 @@
                                     // Lấy đánh giá theo từng vị trí
                                     $positionEvaluations = [];
                                     $evaluations = $record->statuses;
+                                    $totalCompleteTime += $record->completion_date;
                                     
                                     foreach($evaluations as $evaluation) {
                                         $userId = $evaluation->pivot->user_id;
@@ -129,7 +133,7 @@
                                     <td>
                                         {{ $record->due_date }}
                                     </td>
-                                    <td>
+                                    <td style="width:50px;">
                                         {{ $record->completion_date }}
                                     </td>
                                     <td>
@@ -138,7 +142,7 @@
                                     <td>
                                         {{-- @dd($statuses, $status_id) --}}
                                         @if($lock == 0)
-                                            <select name="status_id" class="form-control setupSelect2 ">
+                                            <select name="status_id" class="form-control setupSelect2" data-record-id="{{ $record->id }}">
                                                 <option value="0">[Chọn Đánh Giá]</option>
                                                 @if(isset($statuses))
                                                     @foreach($statuses as $key => $val)
@@ -178,6 +182,10 @@
                                     </td>
                                 </tr>
                                 @endforeach
+                                <tr>
+                                    <td colspan="4" class="text-right">Tổng thời gian</td>
+                                    <td class="text-success text-bold">{{ $totalCompleteTime  }}</td>
+                                </tr>
                             @else
                                 <tr>
                                     <td colspan="{{ 8 + count($positions) }}" class="text-center text-danger">Không tìm thấy bản ghi phù hợp</td>

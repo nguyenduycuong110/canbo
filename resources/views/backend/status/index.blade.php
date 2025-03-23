@@ -19,6 +19,7 @@
                             <input type="checkbox" value="" id="checkAll" class="input-checkbox">
                         </th>
                         <th>Trạng thái</th>
+                        <th>Điểm</th>
                         <th class="text-center">Mô tả</th>
                         <th class="text-center">Tình trạng</th>
                         <th class="text-center">Thao tác</th>
@@ -33,6 +34,9 @@
                                 </td>
                                 <td>
                                     {{ $record->name }}
+                                </td>
+                                <td>
+                                    {{ $record->point }}
                                 </td>
                                 <td>
                                     {{ $record->description }}

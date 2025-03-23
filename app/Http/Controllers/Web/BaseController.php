@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 
+
 class BaseController extends Controller{
 
     protected $baseRedirect = 'dashboard.index';
@@ -45,6 +46,7 @@ class BaseController extends Controller{
                 ...array_keys($data)
             ));
         } catch (\Throwable $th) {
+            dd($th);
             return $this->handleWebLogException($th);
         }
     }
@@ -59,6 +61,7 @@ class BaseController extends Controller{
                 return redirect()->back();
             }
         } catch (\Throwable $th) {
+            dd($th);
             return $this->handleWebLogException($th);
         }
     }
