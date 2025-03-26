@@ -54,7 +54,6 @@
                                     >
                                 </div>
                             </div>
-                            <input type="hidden" name="user_id" value="{{ $config['user_id'] }}">
                         </div>
                     </div>
                 </div>

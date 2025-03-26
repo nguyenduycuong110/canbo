@@ -28,7 +28,7 @@
                 <div class="ibox">
                     <div class="ibox-content">
                         <div class="row mb15">
-                            <div class="col-lg-4">
+                            <div class="col-lg-3">
                                 <div class="form-row">
                                     <label for="" class="control-label text-left">Trạng thái<span class="text-danger">(*)</span></label>
                                     <input 
@@ -41,7 +41,7 @@
                                     >
                                 </div>
                             </div>
-                            <div class="col-lg-4">
+                            <div class="col-lg-3">
                                 <div class="form-row">
                                     <label for="" class="control-label text-left">Điểm<span class="text-danger">(*)</span></label>
                                     <input 
@@ -54,7 +54,20 @@
                                     >
                                 </div>
                             </div>
-                            <div class="col-lg-4">
+                            <div class="col-lg-3">
+                                <div class="form-row">
+                                    <label for="" class="control-label text-left">Level<span class="text-danger">(*)</span></label>
+                                    <input 
+                                        type="text"
+                                        name="level"
+                                        value="{{ old('level', ($model->level) ?? 0 ) }}"
+                                        class="form-control"
+                                        placeholder=""
+                                        autocomplete="off"
+                                    >
+                                </div>
+                            </div>
+                            <div class="col-lg-3">
                                 <div class="form-row">
                                     <label for="" class="control-label text-left">Mô tả</label>
                                     <input 

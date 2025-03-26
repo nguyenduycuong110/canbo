@@ -15,6 +15,8 @@ class TeamRepository extends  BaseRepository{
         parent::__construct($model);
     }
 
-    
+    public function teamPublish(){
+        return $this->model->where('publish', 2)->get();
+    }
 
 }

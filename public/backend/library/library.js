@@ -351,35 +351,43 @@
     };
 
     HT.renderTd = (res, user_id, resOriginal = null) => {
-        if(res.length == 0){
+        if (res.length == 0) {
             return;
         }
         let html = ``;
-
+    
         console.log(resOriginal);
-        
-
+    
         res.forEach((item, index) => {
-            let leadershipApprovalName = (item.leadershipApproval && Object.keys(item.leadershipApproval).length > 0) ? 
-            item.leadershipApproval.infoUser.name : '';
-            let leadershipApprovalStatus = (item.leadershipApproval && Object.keys(item.leadershipApproval).length > 0) ? 
-            item.leadershipApproval.infoStatus.name : '';
-            let assessmentLeaderName = (item.assessmentLeader && Object.keys(item.assessmentLeader).length > 0) ? 
-            item.assessmentLeader.infoUser.name : '';
-            let assessmentLeaderStatus = (item.assessmentLeader && Object.keys(item.assessmentLeader).length > 0) ? 
-            item.assessmentLeader.infoStatus.name : '';
+            // Lãnh đạo phê duyệt (cấp cao nhất)
+            let leadershipApprovalName = (item.leadershipApproval && Object.keys(item.leadershipApproval).length > 0) 
+                ? item.leadershipApproval.infoUser.name 
+                : '';
+            let leadershipApprovalStatus = (item.leadershipApproval && Object.keys(item.leadershipApproval).length > 0) 
+                ? item.leadershipApproval.infoStatus.name 
+                : '';
+    
+            // Đánh giá của Đội phó (mới nhất)
+            let deputyAssessmentName = (item.deputyAssessment && Object.keys(item.deputyAssessment).length > 0) 
+                ? item.deputyAssessment.infoUser.name 
+                : '';
+            let deputyAssessmentStatus = (item.deputyAssessment && Object.keys(item.deputyAssessment).length > 0) 
+                ? item.deputyAssessment.infoStatus.name 
+                : '';
+    
+            // Tự đánh giá của công chức
+            let selfAssessmentName = item.selfAssessment?.infoUser?.name || '';
+            let selfAssessmentStatus = item.selfAssessment?.infoStatus?.name || '';
+    
+            // Tìm trạng thái của người dùng hiện tại (nếu cần)
             let statuesUser = null;
             item.statuses.forEach((val, key) => {
-                if(val.pivot.user_id === user_id) {
+                if (val.pivot.user_id === user_id) {
                     statuesUser = val;
                 }
             });
-            let selfAssessmentName = item.selfAssessment?.infoUser?.name || '';
-            let selfAssessmentStatus = item.selfAssessment?.infoStatus?.name || '';
-
-            
-
-            if(resOriginal.response.user_catalogues.level == 5){
+    
+            if (resOriginal.response.user_catalogues.level == 5) {
                 html += `
                     <tr>
                         <td>${index + 1}</td>
@@ -388,21 +396,26 @@
                         <td>${item.due_date}</td>
                         <td>${item.completion_date}</td>
                         <td>${item.output}</td>
-                        <td>${statuesUser.name}</td>
                         <td>
-                            ${assessmentLeaderStatus}
+                            ${selfAssessmentStatus || 'Chưa tự đánh giá'}
                             <br>
-                            <span class="text-success">Họ Tên: ${assessmentLeaderName}</span>
+                            <span class="text-success">Họ Tên: ${selfAssessmentName}</span>
                         </td>
                         <td>
-                            ${leadershipApprovalStatus}
+                            ${deputyAssessmentStatus || 'Chưa đánh giá'}
+                            <br>
+                            <span class="text-success">Họ Tên: ${deputyAssessmentName}</span>
+                        </td>
+                        <td>
+                            ${leadershipApprovalStatus || 'Chưa phê duyệt'}
                             <br>
                             <span class="text-success">Họ Tên: ${leadershipApprovalName}</span>
                         </td>
                     </tr>
                 `;
-            }else{
-                html += `<tr>
+            } else {
+                html += `
+                    <tr>
                         <td>${index + 1}</td>
                         <td>${item.tasks.name}</td>
                         <td>${HT.formatDate(item.created_at)}</td>
@@ -410,23 +423,26 @@
                         <td>${item.overachieved_tasks}</td>
                         <td>${item.completed_tasks_ontime}</td>
                         <td>${item.failed_tasks_count}</td>
-                        <td>${statuesUser.name}</td>
                         <td>
-                            ${assessmentLeaderStatus || 'Chưa đánh giá'}
+                            ${selfAssessmentStatus || 'Chưa tự đánh giá'}
                             <br>
-                            <span class="text-success">Họ Tên: ${assessmentLeaderName}</span>
+                            <span class="text-success">Họ Tên: ${selfAssessmentName}</span>
                         </td>
                         <td>
-                            ${leadershipApprovalStatus}
+                            ${deputyAssessmentStatus || 'Chưa đánh giá'}
+                            <br>
+                            <span class="text-success">Họ Tên: ${deputyAssessmentName}</span>
+                        </td>
+                        <td>
+                            ${leadershipApprovalStatus || 'Chưa phê duyệt'}
                             <br>
                             <span class="text-success">Họ Tên: ${leadershipApprovalName}</span>
                         </td>
-                    </tr>`
+                    </tr>;
+                `
             }
-
-            
         });
-
+    
         return $('.statistic-form').find('tbody').html(html);
     }
 
@@ -592,6 +608,20 @@
         
     }
 
+
+    HT.manager = () => {
+        $(document).ready(function(){
+            $(document).on('change', 'select[name=user_catalogue_id]', function(){
+                let _this = $(this)
+                if(_this.val() == 31){
+                    $('.manager-select').prop('disabled', false)
+                }else{
+                    $('.manager-select').val(null).trigger('change').prop('disabled', true);
+                }
+            })
+        })
+    }
+
 	$(document).ready(function(){
        
         // HT.triggerDate()
@@ -619,6 +649,7 @@
         HT.dayAndUserChange()
 
         HT.exportStatistic()
+        HT.manager()
         
 	});
 

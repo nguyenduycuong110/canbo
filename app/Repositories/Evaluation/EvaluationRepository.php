@@ -24,4 +24,14 @@ class EvaluationRepository extends  BaseRepository{
         return $this->model->where('user_id', $user_id)->whereDate('created_at', $date)->get();
     }
 
+    public function getEvaluationsByUserIdsAndMonth($usersId, $month){
+        $startOfMonth = $month->copy()->startOfMonth()->toDateTimeString();
+        $endOfMonth = $month->copy()->endOfMonth()->toDateTimeString();
+        return $this->model
+            ->whereIn('user_id', $usersId)
+            ->whereBetween('created_at', [$startOfMonth, $endOfMonth])
+            ->with('statuses') // Load quan hệ statuses để lấy level
+            ->get();
+    }
+
 }

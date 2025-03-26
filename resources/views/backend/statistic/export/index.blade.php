@@ -29,7 +29,7 @@
                                 </div>
                                 <div class="action">
                                     <div class="uk-flex uk-flex-middle">
-                                        <button type="submit" value="pdf" class="btn-export-total btn btn-warning mr10">Xuất ra PDF</button>
+                                        {{-- <button type="submit" value="pdf" class="btn-export-total btn btn-warning mr10">Xuất ra PDF</button> --}}
                                         <button type="submit" value="excel" class="btn-export-total btn btn-primary">Xuất ra Excel</button>
                                     </div>
                                 </div>

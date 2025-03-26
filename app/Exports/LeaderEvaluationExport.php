@@ -7,6 +7,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Font;
+use Illuminate\Support\Facades\Log;
 
 class LeaderEvaluationExport
 {
@@ -30,12 +31,12 @@ class LeaderEvaluationExport
         $spreadsheet->getDefaultStyle()->getFont()->setName('Times New Roman')->setSize(13);
 
         // Tiêu đề
-        $sheet->mergeCells('A1:L1');
+        $sheet->mergeCells('A1:M1'); // Cập nhật mergeCells để phù hợp với số cột mới (13 cột: A đến M)
         $sheet->setCellValue('A1', 'CỤC HẢI QUAN TỈNH HÀ TĨNH');
         $sheet->getStyle('A1')->getFont()->setBold(true);
         $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-        $sheet->mergeCells('A2:L2');
+        $sheet->mergeCells('A2:M2');
         $sheet->setCellValue('A2', 'CHI CỤC HẢI QUAN CỬA KHẨU QUỐC TẾ CẦU TREO');
         $sheet->getStyle('A2')->getFont()->setBold(true);
         $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
@@ -43,17 +44,17 @@ class LeaderEvaluationExport
         $sheet->setCellValue('A3', 'Phụ lục I');
         $sheet->getStyle('A3')->getFont()->setItalic(true);
 
-        $sheet->mergeCells('A4:L4');
+        $sheet->mergeCells('A4:M4');
         $sheet->setCellValue('A4', 'PHIẾU TỰ ĐÁNH GIÁ CÔNG VIỆC HÀNG THÁNG');
         $sheet->getStyle('A4')->getFont()->setBold(true);
         $sheet->getStyle('A4')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-        $sheet->mergeCells('A5:L5');
+        $sheet->mergeCells('A5:M5');
         $sheet->setCellValue('A5', 'Tháng ' . $this->month);
         $sheet->getStyle('A5')->getFont()->setItalic(true);
         $sheet->getStyle('A5')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-        $sheet->mergeCells('A6:L6');
+        $sheet->mergeCells('A6:M6');
         $sheet->setCellValue('A6', '(Dùng cho công chức giữ chức vụ lãnh đạo)');
         $sheet->getStyle('A6')->getFont()->setItalic(true);
         $sheet->getStyle('A6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
@@ -82,6 +83,7 @@ class LeaderEvaluationExport
             'Số công việc/ nhiệm vụ hoàn thành vượt mức về thời gian hoặc chất lượng',
             'Số công việc/ nhiệm vụ hoàn thành đúng hạn, đảm bảo chất lượng',
             'Số công việc/ nhiệm vụ không hoàn thành đúng hạn hoặc không đảm bảo yêu cầu',
+            'Tự đánh giá', // Thêm cột "Tự đánh giá"
             'Lãnh đạo trực tiếp đánh giá',
             'Tên lãnh đạo trực tiếp đánh giá',
             'Lãnh đạo phê duyệt',
@@ -90,10 +92,10 @@ class LeaderEvaluationExport
         ];
 
         $sheet->fromArray($headings, null, 'A15');
-        $sheet->getStyle('A15:L15')->getFont()->setBold(true);
-        $sheet->getStyle('A15:L15')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('A15:L15')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
-        $sheet->getStyle('A15:L15')->getAlignment()->setWrapText(true);
+        $sheet->getStyle('A15:M15')->getFont()->setBold(true); // Cập nhật phạm vi cột (A đến M)
+        $sheet->getStyle('A15:M15')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A15:M15')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+        $sheet->getStyle('A15:M15')->getAlignment()->setWrapText(true);
 
         // Dữ liệu bảng
         $evaluations = $this->evaluationList->evaluations;
@@ -103,21 +105,48 @@ class LeaderEvaluationExport
         foreach ($evaluations as $evaluation) {
             $taskName = $evaluation->tasks->name ?? 'Không xác định';
 
+            // Tự đánh giá
+            $selfAssessmentRating = 'Chưa tự đánh giá';
+            if (!empty($evaluation->selfAssessment) && is_array($evaluation->selfAssessment)) {
+                $selfAssessmentRating = isset($evaluation->selfAssessment['infoStatus']) && !empty($evaluation->selfAssessment['infoStatus']->name)
+                    ? $evaluation->selfAssessment['infoStatus']->name
+                    : 'Chưa tự đánh giá';
+            }
+
             // Lãnh đạo trực tiếp đánh giá và tên lãnh đạo trực tiếp
-            $leaderRating = '';
+            $leaderRating = 'Chưa đánh giá';
             $leaderName = '';
-            if (!empty($evaluation->assessmentLeader) && is_array($evaluation->assessmentLeader)) {
-                $leaderRating = $evaluation->assessmentLeader['infoStatus']['name'] ?? '';
-                $leaderName = $evaluation->assessmentLeader['infoUser']['name'] ?? '';
+            if (!empty($evaluation->deputyAssessment) && is_array($evaluation->deputyAssessment)) {
+                $leaderRating = isset($evaluation->deputyAssessment['infoStatus']) && !empty($evaluation->deputyAssessment['infoStatus']->name)
+                    ? $evaluation->deputyAssessment['infoStatus']->name
+                    : 'Chưa đánh giá';
+                $leaderName = isset($evaluation->deputyAssessment['infoUser']) && !empty($evaluation->deputyAssessment['infoUser']->name)
+                    ? $evaluation->deputyAssessment['infoUser']->name
+                    : '';
             }
 
             // Lãnh đạo phê duyệt và tên lãnh đạo phê duyệt
-            $approvalRating = '';
+            $approvalRating = 'Chưa phê duyệt';
             $approverName = '';
             if (!empty($evaluation->leadershipApproval) && is_array($evaluation->leadershipApproval)) {
-                $approvalRating = $evaluation->leadershipApproval['infoStatus']['name'] ?? '';
-                $approverName = $evaluation->leadershipApproval['infoUser']['name'] ?? '';
+                $approvalRating = isset($evaluation->leadershipApproval['infoStatus']) && !empty($evaluation->leadershipApproval['infoStatus']->name)
+                    ? $evaluation->leadershipApproval['infoStatus']->name
+                    : 'Chưa phê duyệt';
+                $approverName = isset($evaluation->leadershipApproval['infoUser']) && !empty($evaluation->leadershipApproval['infoUser']->name)
+                    ? $evaluation->leadershipApproval['infoUser']->name
+                    : '';
             }
+
+            // Log để kiểm tra dữ liệu
+            Log::info('LeaderEvaluationExport Data:', [
+                'evaluation_id' => $evaluation->id,
+                'task_name' => $taskName,
+                'self_assessment_rating' => $selfAssessmentRating,
+                'leader_rating' => $leaderRating,
+                'leader_name' => $leaderName,
+                'approval_rating' => $approvalRating,
+                'approver_name' => $approverName,
+            ]);
 
             // Định dạng ngày tháng
             $startDateFormatted = $evaluation->created_at ? \Carbon\Carbon::parse($evaluation->created_at)->format('d/m/Y') : '';
@@ -130,6 +159,7 @@ class LeaderEvaluationExport
                 $evaluation->overachieved_tasks ?? '',
                 $evaluation->completed_tasks_ontime ?? '',
                 $evaluation->failed_tasks_count ?? '',
+                $selfAssessmentRating, // Thêm dữ liệu cho cột "Tự đánh giá"
                 $leaderRating,
                 $leaderName,
                 $approvalRating,
@@ -151,7 +181,7 @@ class LeaderEvaluationExport
                 ],
             ],
         ];
-        $sheet->getStyle('A15:L' . $lastRow)->applyFromArray($styleArray);
+        $sheet->getStyle('A15:M' . $lastRow)->applyFromArray($styleArray); // Cập nhật phạm vi cột (A đến M)
 
         // Điều chỉnh độ rộng cột
         $sheet->getColumnDimension('A')->setWidth(5); // STT
@@ -161,16 +191,17 @@ class LeaderEvaluationExport
         $sheet->getColumnDimension('E')->setWidth(15); // Số công việc/nhiệm vụ hoàn thành vượt mức
         $sheet->getColumnDimension('F')->setWidth(15); // Số công việc/nhiệm vụ hoàn thành đúng hạn
         $sheet->getColumnDimension('G')->setWidth(15); // Số công việc/nhiệm vụ không hoàn thành
-        $sheet->getColumnDimension('H')->setWidth(30); // Lãnh đạo trực tiếp đánh giá
-        $sheet->getColumnDimension('I')->setWidth(20); // Tên lãnh đạo trực tiếp
-        $sheet->getColumnDimension('J')->setWidth(30); // Lãnh đạo phê duyệt
-        $sheet->getColumnDimension('K')->setWidth(20); // Tên lãnh đạo phê duyệt
-        $sheet->getColumnDimension('L')->setWidth(15); // Ghi chú
+        $sheet->getColumnDimension('H')->setWidth(30); // Tự đánh giá (mới thêm)
+        $sheet->getColumnDimension('I')->setWidth(30); // Lãnh đạo trực tiếp đánh giá
+        $sheet->getColumnDimension('J')->setWidth(20); // Tên lãnh đạo trực tiếp
+        $sheet->getColumnDimension('K')->setWidth(30); // Lãnh đạo phê duyệt
+        $sheet->getColumnDimension('L')->setWidth(20); // Tên lãnh đạo phê duyệt
+        $sheet->getColumnDimension('M')->setWidth(15); // Ghi chú
 
         // Căn giữa các cột trong bảng
-        $sheet->getStyle('A15:L' . $lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('A15:L' . $lastRow)->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
-        $sheet->getStyle('A15:L' . $lastRow)->getAlignment()->setWrapText(true);
+        $sheet->getStyle('A15:M' . $lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A15:M' . $lastRow)->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+        $sheet->getStyle('A15:M' . $lastRow)->getAlignment()->setWrapText(true);
 
         // Thêm dòng "10. Kết quả xếp loại chất lượng tháng" và "Cán bộ lập phiếu"
         $sheet->setCellValue('A' . ($lastRow + 2), '10. Kết quả xếp loại chất lượng tháng:');

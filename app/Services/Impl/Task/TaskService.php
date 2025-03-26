@@ -36,7 +36,7 @@ class TaskService extends BaseService implements TaskServiceInterface{
     public function checkTask(){
         $user = Auth::user();
         if($user->parent_id == 0){
-            return $this->all();
+            return $this->repository->getPublishTask();
         }
         $rootNode = DB::table('users')->where('parent_id', 0)->first();
         $branchNodes = DB::table('users')->where('parent_id', $rootNode->id)->get();

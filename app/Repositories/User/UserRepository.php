@@ -21,4 +21,16 @@ class UserRepository extends  BaseRepository{
             ->where('user_catalogue_id','=', $userCatalogueId)->get();
     }
 
+    public function getUserInNodeLowerThanEqualLevel4($currentUser){
+        return $this->model->where('lft', '>=', $currentUser->lft)->where('rgt', '<=', $currentUser->rgt)->where('level', '<=', 4)->orderBy('lft', 'asc')->get();
+    }
+
+    public function findByField($field, $value){
+        return $this->model->where($field, $value)->get();
+    }
+
+    public function findWhereIn($field, $in){
+        return $this->model->whereIn($field, $in)->get();
+    }
+
 }

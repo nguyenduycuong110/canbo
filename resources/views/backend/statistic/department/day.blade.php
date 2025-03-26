@@ -26,7 +26,7 @@
                                 />
                                 <input type="hidden" value="day" class="date-type">
 
-                                @if($auth->rgt - $auth->lft > 1)
+                                @if($auth->user_catalogues->level < 5)
                                 <select name="user_id" class="setupSelect2 user_day_id">
                                     <option value="">[Chọn cán bộ]</option>
                                     @foreach($users as $user)
@@ -47,68 +47,9 @@
                             </div>
                         </div>
                         <div class="user-info mt20">
-                            <p><span class="label-text">1. Họ Tên</span><span class="value name"> {{  $auth->name }} </span></p>
+                            <p><span class="label-text">1. Họ Tên</span><span class="value name"> {{ ($auth->user_catalogues->level === 5) ? $auth->name : '-'  }} </span></p>
                             <p><span class="label-text">2. Vị trí, đơn vị công tác</span><span class="value cat_name"> {{ $auth->teams->name }}, {{ $auth->units->name }} </span></p>
-                            <p class="uk-flex uk-flex-middle">
-                                <span class="label-text">3. Số ngày làm việc theo quy định của pháp luật trong tháng</span>
-                                <span class="value"> 
-                                    <input 
-                                        type="text"
-                                        class="form-control form-control-fix"
-                                        name="working_days_in_month" 
-                                    > 
-                                </span>
-                            </p>
-                            <p class="uk-flex uk-flex-middle">
-                                <span class="label-text">4. Số ngày nghỉ trong tháng (có phép)</span>
-                                <span class="value"> 
-                                    <input 
-                                        type="text"
-                                        class="form-control form-control-fix"
-                                        name="leave_days_with_permission" 
-                                    > 
-                                </span>
-                            </p>
-                            <p class="uk-flex uk-flex-middle">
-                                <span class="label-text">5. Số ngày nghỉ trong tháng (không phép)</span>
-                                <span class="value"> 
-                                    <input 
-                                        type="text"
-                                        class="form-control form-control-fix"
-                                        name="leave_days_without_permission" 
-                                    > 
-                                </span>
-                            </p>
-                            <p class="uk-flex uk-flex-middle">
-                                <span class="label-text">6. Số lần vi phạm qui chế, qui định</span>
-                                <span class="value"> 
-                                    <input 
-                                        type="text"
-                                        class="form-control form-control-fix"
-                                        name="violation_count" 
-                                    > 
-                                </span>
-                            </p>
-                            <p class="uk-flex uk-flex-middle">
-                                <span class="label-text">7. Hành vi vi phạm</span>
-                                <span class="value"> 
-                                    <input 
-                                        type="text"
-                                        class="form-control form-control-fix"
-                                        name="violation_behavior" 
-                                    > 
-                                </span>
-                            </p>
-                            <p class="uk-flex uk-flex-middle">
-                                <span class="label-text">8. Hình thức kỷ luật</span>
-                                <span class="value"> 
-                                    <input 
-                                        type="text"
-                                        class="form-control form-control-fix"
-                                        name="disciplinary_action" 
-                                    > 
-                                </span>
-                            </p>
+                            
                         </div>
                         
                     </div>

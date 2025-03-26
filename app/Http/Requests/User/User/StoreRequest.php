@@ -70,4 +70,19 @@ class StoreRequest extends FormRequest
             'unit_id.gt' => 'Bạn chưa nhập :attribute',
         ];
     }
+
+    protected function prepareForValidation(){
+        $managers = $this->input('managers', []);
+        if(!is_array($managers)){
+            $managers = [];
+        }
+
+        $parentId = $this->input('parent_id');
+        if(!is_null($parentId) && !in_array($parentId, $managers)){
+            $managers[] = (int) $parentId;
+        }
+        $this->merge([
+            'managers' => $managers
+        ]);
+    }
 }

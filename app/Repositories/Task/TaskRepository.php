@@ -17,7 +17,11 @@ class TaskRepository extends  BaseRepository{
     }
 
     public function getTaskByCondition(array $parentIds = []){
-        return $this->model->whereIn('user_id', $parentIds)->get();
+        return $this->model->where('publish', 2)->whereIn('user_id', $parentIds)->get();
+    }
+
+    public function getPublishTask(){
+        return $this->model->where('publish', 2)->get(); 
     }
 
 }

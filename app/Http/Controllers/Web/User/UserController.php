@@ -56,6 +56,8 @@ class UserController extends BaseController{
     public function index(Request $request): View | RedirectResponse{
         try {
 
+
+
             $request = $this->userNode($request);
             $records = $this->service->paginate($request);
             $config = $this->config();
@@ -90,9 +92,9 @@ class UserController extends BaseController{
         return [
             'user_catalogues' => isset($this->userCatalogueService) ? $this->userCatalogueService?->all() : null,
             'provinces' => isset($this->provinceService) ?  $this->provinceService->all() : null,
-            'teams' => isset($this->teamService) ? $this->teamService->all() : null,
+            'teams' => isset($this->teamService) ? $this->teamService->teamPublish() : null,
             'units' => isset($this->unitService) ? $this->unitService->all() : null,
-            'dropdown'  => $this->service->paginate($fakeRequest)
+            'dropdown'  => $this->service->paginate($fakeRequest),
         ];
     }
 

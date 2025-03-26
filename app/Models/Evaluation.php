@@ -44,7 +44,7 @@ class Evaluation extends Model
             ->withPivot([
                 'user_id',
                 'lock'
-            ]);
+            ])->withTimestamps();
     }
 
     public function users(): BelongsTo{

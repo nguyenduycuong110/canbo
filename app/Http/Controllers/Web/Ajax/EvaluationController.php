@@ -15,6 +15,8 @@ use App\Exports\LeaderEvaluationExport;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Exports\MonthRateExport;
+use App\Repositories\User\UserRepository;
+use Illuminate\Support\Facades\Log;
 
 class EvaluationController extends BaseController
 {
@@ -23,15 +25,19 @@ class EvaluationController extends BaseController
     protected $evaluationService;
     protected $statisticService;
     protected $userService;
+    protected $userRepository;
 
     public function __construct(
         EvaluationService $evaluationService,
         StatisticService $statisticService,
-        UserService $userService
+        UserService $userService,
+        UserRepository $userRepository,
+
     ){
         $this->evaluationService = $evaluationService;
         $this->statisticService = $statisticService;
         $this->userService = $userService;
+        $this->userRepository = $userRepository;
     }
 
     public function evaluate(Request $request, $id){
@@ -60,6 +66,7 @@ class EvaluationController extends BaseController
             return $this->handleWebLogException($th);
         }
     }
+    
     
     public function export(Request $request){
         try {
@@ -138,16 +145,32 @@ class EvaluationController extends BaseController
             $monthInput = $request->month ?? now()->format('m/Y');
             $month = Carbon::createFromFormat('m/Y', $monthInput)->startOfMonth();
 
-            $users = $this->getUser($request, $currentUser);
-
-            $statistics = $this->getStatisticsForTeamMembers($users, $month);
+            $users = $this->userService->getUserInNode($currentUser);
             
+            $userIds = $users->pluck('id')->toArray();
+            $evaluations = $this->evaluationService->getEvaluationsByUserIdsAndMonth($userIds, $month);
 
-            // Tính toán xếp loại cho từng thành viên
-            $evaluations = $this->calculateEvaluations($statistics, $month);
-            // dd($evaluations);
+            // Tính xếp loại cho từng người dùng
+            $ratedUsers = [];
+            foreach ($users as $user) {
+                $rating = $this->calculateUserRating($user, $month, $evaluations);
 
-            $export = new MonthRateExport($evaluations, $monthInput);
+                $statistic = $user->statistics->where('month', $month->format('Y-m-d'))->first();
+
+                $ratedUsers[] = [
+                    'user' => $user,
+                    'working_days' => $statistic ? $statistic->working_days_in_month : 0,
+                    'leave_days' => $statistic ? $statistic->leave_days_with_permission : 0,
+                    'violation_count' => $statistic ? $statistic->violation_count : 0,
+                    'disciplinary_action' => $statistic ? $statistic->disciplinary_action : '',
+                    'self_rating' => $rating['self_rating'],
+                    'completion_percentage' => $rating['completion_percentage'],
+                    'final_rating' => $rating['final_rating'],
+                    'totalTask' => $rating['totalTask']
+                ];
+            }
+            
+            $export = new MonthRateExport($ratedUsers, $monthInput);
             $temp_file = $export->export();
             $filename = "excel_rating_report_{$monthInput}.xlsx";
 
@@ -156,7 +179,6 @@ class EvaluationController extends BaseController
                 'file_url' => url('temp/' . basename($temp_file)), // URL của file tạm thời
                 'filename' => $filename,
             ]);
-            // Trả về file để tải xuống
             return response()->download($filePath)->deleteFileAfterSend(true);
 
         } catch (\Throwable $th) {
@@ -164,223 +186,200 @@ class EvaluationController extends BaseController
         }
     }
 
-    /**
-     * Tính toán xếp loại cho từng thành viên
-     */
-    private function calculateEvaluations($statistics, $month)
+    private function calculateUserRating($user, $month, $evaluations)
     {
-        $evaluations = [];
-        $currentUser = Auth::user();
+        // Khởi tạo biến kết quả
+        $selfRating = null;
+        $subordinateRating = null; // Khai báo mặc định
+        $completionPercentage = 0;
+        $finalRating = 'D';
 
-        // Lấy danh sách trạng thái từ bảng statuses, bao gồm cột point
-        $statuses = DB::table('statuses')->get()->keyBy('id');
+        // Lấy statistic của user trong tháng
+        $statistic = $user->statistics->where('month', $month->format('Y-m-d'))->first();
 
-        foreach ($statistics as $item) {
-            $user = $item->user;
-            $stat = $item->statistics;
+        // Sử dụng $month cố định
+        $evaluationMonth = $month;
 
-            // Bỏ qua user hiện tại (lãnh đạo) để tránh trùng lặp
-            if ($user->id === $currentUser->id) {
-                continue;
-            }
+        // Bước 1: Lấy evaluations của user trong tháng
+        $userEvaluations = $evaluations->filter(function ($evaluation) use ($user, $evaluationMonth) {
+            return $evaluation->user_id == $user->id &&
+                Carbon::parse($evaluation->created_at)->format('m/Y') == $evaluationMonth->format('m/Y');
+        });
 
-            // Lấy dữ liệu trạng thái của user trong tháng từ bảng evaluation_status, sắp xếp theo created_at
-            $userEvaluationStatuses = DB::table('evaluation_status')
-                ->where('user_id', $user->id)
-                ->whereMonth('created_at', $month->month)
-                ->whereYear('created_at', $month->year)
-                ->orderBy('created_at', 'asc')
-                ->get();
+        // Bước 2: Tính totalTasks
+        $totalTasks = $userEvaluations->count();
 
-            // 1. Tính tự xếp loại (self_rating) dựa trên bản ghi đầu tiên (giả định là tự đánh giá)
-            $selfEvaluation = $userEvaluationStatuses->first(); // Bản ghi đầu tiên
-            $selfRating = '';
-            if ($selfEvaluation) {
-                $selfTotalRecords = 1; // Chỉ lấy 1 bản ghi đầu tiên
-                $selfOverachievedRecords = 0;
-                $selfOnTimeRecords = 0;
-                $selfFailedRecords = 0;
+        // Bước 3: Tính completion_percentage và tự đánh giá
+        $level3And4Tasks = 0;
+        $level4Tasks = 0;
+        $level3Tasks = 0;
+        $level2Tasks = 0;
+        $level1Tasks = 0;
 
-                $statusId = $selfEvaluation->status_id;
-                if (isset($statuses[$statusId])) {
-                    $point = $statuses[$statusId]->point;
-                    if ($point == 100) {
-                        $selfOverachievedRecords++;
-                        $selfOnTimeRecords++;
-                    } elseif ($point >= 80) {
-                        $selfOnTimeRecords++;
-                    } else {
-                        $selfFailedRecords++;
-                    }
+        foreach ($userEvaluations as $evaluation) {
+            $statuses = $evaluation->statuses;
+
+            $finalStatus = null;
+            $selfStatus = null;
+
+            foreach ($statuses as $status) {
+                $lock = $status->pivot->lock ?? 1;
+                if ($lock == 0) {
+                    $finalStatus = $status;
+                    break;
                 }
-
-                $selfOverachievedPercentage = $selfTotalRecords > 0 ? ($selfOverachievedRecords / $selfTotalRecords) * 100 : 0;
-                $selfOnTimePercentage = $selfTotalRecords > 0 ? ($selfOnTimeRecords / $selfTotalRecords) * 100 : 0;
-                $selfFailedPercentage = $selfTotalRecords > 0 ? ($selfFailedRecords / $selfTotalRecords) * 100 : 0;
-
-                if ($selfTotalRecords > 0) {
-                    if ($selfOnTimePercentage == 100 && $selfOverachievedPercentage >= 50) {
-                        $selfRating = 'A';
-                    } elseif ($selfOnTimePercentage == 100 && $selfOverachievedPercentage >= 20) {
-                        $selfRating = 'B';
-                    } elseif ($selfFailedPercentage <= 20) {
-                        $selfRating = 'C';
-                    } else {
-                        $selfRating = 'D';
-                    }
+                if ($status->pivot->user_id == $user->id) {
+                    $selfStatus = $status;
                 }
             }
 
-            // 2. Tính xếp loại của lãnh đạo (rating) và % mức độ hoàn thành (overachieved_percentage) dựa trên bản ghi mới nhất (lock = 0)
-            $leaderEvaluation = $userEvaluationStatuses->where('lock', 0)->first(); // Bản ghi mới nhất (lock = 0)
-            $rating = '';
-            $overachievedPercentage = '';
-            if ($leaderEvaluation) {
-                $leaderTotalRecords = 1; // Chỉ lấy 1 bản ghi mới nhất
-                $leaderOverachievedRecords = 0;
-                $leaderOnTimeRecords = 0;
-                $leaderFailedRecords = 0;
+            $effectiveStatus = $finalStatus ?? $selfStatus;
+            $statusLevel = $effectiveStatus ? ($effectiveStatus->level ?? 1) : 1;
 
-                $statusId = $leaderEvaluation->status_id;
-                if (isset($statuses[$statusId])) {
-                    $point = $statuses[$statusId]->point;
-                    if ($point == 100) {
-                        $leaderOverachievedRecords++;
-                        $leaderOnTimeRecords++;
-                    } elseif ($point >= 80) {
-                        $leaderOnTimeRecords++;
-                    } else {
-                        $leaderFailedRecords++;
-                    }
-                }
+            if ($statusLevel == 4) {
+                $level4Tasks += 1;
+                $level3And4Tasks += 1;
+            } elseif ($statusLevel == 3) {
+                $level3Tasks += 1;
+                $level3And4Tasks += 1;
+            } elseif ($statusLevel == 2) {
+                $level2Tasks += 1;
+            } elseif ($statusLevel == 1) {
+                $level1Tasks += 1;
+            }
+        }
 
-                $leaderOverachievedPercentage = $leaderTotalRecords > 0 ? ($leaderOverachievedRecords / $leaderTotalRecords) * 100 : 0;
-                $leaderOnTimePercentage = $leaderTotalRecords > 0 ? ($leaderOnTimeRecords / $leaderTotalRecords) * 100 : 0;
-                $leaderFailedPercentage = $leaderTotalRecords > 0 ? ($leaderFailedRecords / $leaderTotalRecords) * 100 : 0;
+        $completionPercentage = $totalTasks > 0 ? ($level3And4Tasks / $totalTasks) * 100 : 0;
 
-                if ($leaderTotalRecords > 0) {
-                    if ($leaderOnTimePercentage == 100 && $leaderOverachievedPercentage >= 50) {
-                        $rating = 'A';
-                    } elseif ($leaderOnTimePercentage == 100 && $leaderOverachievedPercentage >= 20) {
-                        $rating = 'B';
-                    } elseif ($leaderFailedPercentage <= 20) {
-                        $rating = 'C';
-                    } else {
-                        $rating = 'D';
-                    }
-                    $overachievedPercentage = round($leaderOverachievedPercentage, 2);
+        // Bước 4: Kiểm tra kỷ luật
+        if ($statistic && (!empty($statistic->disciplinary_action) && $statistic->disciplinary_action !== '0')) {
+            return [
+                'self_rating' => 'D',
+                'subordinate_rating' => null,
+                'completion_percentage' => round($completionPercentage, 2),
+                'final_rating' => 'D',
+                'totalTask' => $totalTasks,
+            ];
+        }
+
+        // Bước 5: Tính tự đánh giá
+        $level4Percentage = $totalTasks > 0 ? ($level4Tasks / $totalTasks) * 100 : 0;
+        $level3Percentage = $totalTasks > 0 ? (($level3Tasks + $level4Tasks) / $totalTasks) * 100 : 0;
+        $level2Percentage = $totalTasks > 0 ? ($level2Tasks / $totalTasks) * 100 : 0;
+        $level1Percentage = $totalTasks > 0 ? ($level1Tasks / $totalTasks) * 100 : 0;
+
+        if ($level3Percentage == 100 && $level4Percentage >= 50) {
+            $selfRating = 'A';
+        } elseif ($level3Percentage == 100) {
+            $selfRating = 'B';
+        } elseif ($level2Percentage <= 20) {
+            $selfRating = 'C';
+        } else {
+            $selfRating = 'D';
+        }
+
+        // Bước 6: Đánh giá theo cấp dưới
+        $user->load('user_catalogues');
+        $level = $user->user_catalogues->level ?? 5;
+
+        if ($level < 5) {
+            $subordinates = collect();
+            if ($level <= 3) {
+                $subordinates = $this->userRepository->findByField('parent_id', $user->id);
+            } elseif ($level == 4) {
+                $subordinateIds = DB::table('user_subordinate')
+                    ->where('manager_id', $user->id)
+                    ->pluck('subordinate_id')
+                    ->toArray();
+
+                Log::info('Subordinate IDs for User', [
+                    'user_id' => $user->id,
+                    'subordinate_ids' => $subordinateIds,
+                ]);
+
+                if (!empty($subordinateIds)) {
+                    $subordinates = $this->userRepository->findWhereIn('id', $subordinateIds);
                 }
             }
 
-            $evaluations[] = (object)[
-                'user' => $user,
-                'position' => $user->user_catalogues->name ?? '',
-                'team' => $user->teams->name ?? 'Không xác định',
-                'working_days' => $stat->working_days_in_month ?? '',
-                'leave_days_with_permission' => $stat->leave_days_with_permission ?? '',
-                'leave_days_without_permission' => $stat->leave_days_without_permission ?? '',
-                'violation_count' => $stat->violation_count ?? '',
-                'violation_behavior' => $stat->violation_behavior ?? '',
-                'disciplinary_action' => $stat->disciplinary_action ?? '',
+            $subordinateRatings = [];
+            foreach ($subordinates as $subordinate) {
+                $subordinateRating = $this->calculateUserRating($subordinate, $month, $evaluations);
+                $subordinateRatings[] = $subordinateRating['final_rating'];
+            }
+
+            Log::info('Subordinate Ratings for User', [
+                'user_id' => $user->id,
+                'subordinate_ratings' => $subordinateRatings,
+            ]);
+
+            $totalSubordinates = count($subordinateRatings);
+            if ($totalSubordinates > 0) {
+                $typeACount = count(array_filter($subordinateRatings, fn($rating) => $rating == 'A'));
+                $typeBCount = count(array_filter($subordinateRatings, fn($rating) => $rating == 'B'));
+                $typeCCount = count(array_filter($subordinateRatings, fn($rating) => $rating == 'C'));
+                $typeDCount = count(array_filter($subordinateRatings, fn($rating) => $rating == 'D'));
+
+                $typeAPercentage = ($typeACount / $totalSubordinates) * 100;
+                $typeBPercentage = ($typeBCount / $totalSubordinates) * 100;
+                $typeCOrBetterPercentage = (($typeACount + $typeBCount + $typeCCount) / $totalSubordinates) * 100;
+                $typeDPercentage = ($typeDCount / $totalSubordinates) * 100;
+
+                if ($typeAPercentage >= 70) {
+                    $subordinateRating = 'A';
+                } elseif ($typeBPercentage >= 70 && $typeDCount == 0) {
+                    $subordinateRating = 'B';
+                } elseif ($typeCOrBetterPercentage >= 70) {
+                    $subordinateRating = 'C';
+                } elseif ($typeDPercentage > 30) {
+                    $subordinateRating = 'D';
+                } else {
+                    $subordinateRating = 'C'; // Giá trị mặc định nếu không thỏa mãn điều kiện nào
+                }
+            }
+
+            $finalRating = $this->combineRatings($selfRating, $subordinateRating, $totalTasks);
+            Log::info('Final Rating for User', [
+                'user_id' => $user->id,
                 'self_rating' => $selfRating,
-                'overachieved_percentage' => $overachievedPercentage,
-                'rating' => $rating,
-                'note' => '',
-            ];
+                'subordinate_rating' => $subordinateRating,
+                'total_tasks' => $totalTasks,
+                'final_rating' => $finalRating,
+            ]);
+        } else {
+            $finalRating = $selfRating;
         }
 
-        // Xếp loại cho lãnh đạo (nếu user hiện tại là lãnh đạo)
-        $currentUserStat = collect($statistics)->firstWhere('user.id', $currentUser->id);
-        if ($currentUserStat && $currentUserStat->user->level != 5) { // Giả sử level != 5 là lãnh đạo
-            $totalMembers = count($evaluations);
-            $aCount = count(array_filter($evaluations, fn($e) => $e->rating === 'A'));
-            $bCount = count(array_filter($evaluations, fn($e) => $e->rating === 'B'));
-            $cCount = count(array_filter($evaluations, fn($e) => $e->rating === 'C'));
-            $dCount = count(array_filter($evaluations, fn($e) => $e->rating === 'D'));
-
-            $aPercentage = $totalMembers > 0 ? ($aCount / $totalMembers) * 100 : 0;
-            $bPercentage = $totalMembers > 0 ? ($bCount / $totalMembers) * 100 : 0;
-            $cPercentage = $totalMembers > 0 ? ($cCount / $totalMembers) * 100 : 0;
-            $dPercentage = $totalMembers > 0 ? ($dCount / $totalMembers) * 100 : 0;
-
-            $leaderRating = '';
-            if ($totalMembers > 0) {
-                if ($aPercentage >= 70 && $dPercentage == 0) {
-                    $leaderRating = 'A';
-                } elseif ($bPercentage >= 70 && $dPercentage == 0) {
-                    $leaderRating = 'B';
-                } elseif ($cPercentage > 30) {
-                    $leaderRating = 'C';
-                } elseif ($dPercentage > 30) {
-                    $leaderRating = 'D';
-                }
-            }
-
-            // Tính tự xếp loại cho lãnh đạo
-            $leaderEvaluations = DB::table('evaluation_status')
-                ->where('user_id', $currentUser->id)
-                ->whereMonth('created_at', $month->month)
-                ->whereYear('created_at', $month->year)
-                ->orderBy('created_at', 'asc')
-                ->get();
-
-            $leaderSelfEvaluation = $leaderEvaluations->first(); // Bản ghi đầu tiên (tự đánh giá)
-            $leaderSelfRating = '';
-            if ($leaderSelfEvaluation) {
-                $leaderSelfTotalRecords = 1;
-                $leaderSelfOverachievedRecords = 0;
-                $leaderSelfOnTimeRecords = 0;
-                $leaderSelfFailedRecords = 0;
-
-                $statusId = $leaderSelfEvaluation->status_id;
-                if (isset($statuses[$statusId])) {
-                    $point = $statuses[$statusId]->point;
-                    if ($point == 100) {
-                        $leaderSelfOverachievedRecords++;
-                        $leaderSelfOnTimeRecords++;
-                    } elseif ($point >= 80) {
-                        $leaderSelfOnTimeRecords++;
-                    } else {
-                        $leaderSelfFailedRecords++;
-                    }
-                }
-
-                $leaderSelfOverachievedPercentage = $leaderSelfTotalRecords > 0 ? ($leaderSelfOverachievedRecords / $leaderSelfTotalRecords) * 100 : 0;
-                $leaderSelfOnTimePercentage = $leaderSelfTotalRecords > 0 ? ($leaderSelfOnTimeRecords / $leaderSelfTotalRecords) * 100 : 0;
-                $leaderSelfFailedPercentage = $leaderSelfTotalRecords > 0 ? ($leaderSelfFailedRecords / $leaderSelfTotalRecords) * 100 : 0;
-
-                if ($leaderSelfTotalRecords > 0) {
-                    if ($leaderSelfOnTimePercentage == 100 && $leaderSelfOverachievedPercentage >= 50) {
-                        $leaderSelfRating = 'A';
-                    } elseif ($leaderSelfOnTimePercentage == 100 && $leaderSelfOverachievedPercentage >= 20) {
-                        $leaderSelfRating = 'B';
-                    } elseif ($leaderSelfFailedPercentage <= 20) {
-                        $leaderSelfRating = 'C';
-                    } else {
-                        $leaderSelfRating = 'D';
-                    }
-                }
-            }
-
-            $evaluations[] = (object)[
-                'user' => $currentUserStat->user,
-                'position' => $currentUserStat->user->user_catalogues->name ?? '',
-                'team' => $currentUserStat->user->teams->name ?? 'Không xác định',
-                'working_days' => $currentUserStat->statistics->working_days_in_month ?? '',
-                'leave_days_with_permission' => $currentUserStat->statistics->leave_days_with_permission ?? '',
-                'leave_days_without_permission' => $currentUserStat->statistics->leave_days_without_permission ?? '',
-                'violation_count' => $currentUserStat->statistics->violation_count ?? '',
-                'violation_behavior' => $currentUserStat->statistics->violation_behavior ?? '',
-                'disciplinary_action' => $currentUserStat->statistics->disciplinary_action ?? '',
-                'self_rating' => $leaderSelfRating,
-                'overachieved_percentage' => '', // Lãnh đạo không tính % mức độ hoàn thành
-                'rating' => $leaderRating,
-                'note' => '',
-            ];
-        }
-
-        return $evaluations;
+        return [
+            'self_rating' => $selfRating,
+            'subordinate_rating' => $subordinateRating,
+            'completion_percentage' => round($completionPercentage, 2),
+            'final_rating' => $finalRating,
+            'totalTask' => $totalTasks,
+        ];
     }
+
+    private function combineRatings($selfRating, $subordinateRating, $totalTasks)
+    {
+        // Nếu không có selfRating, trả về subordinateRating (mặc định là 'D' nếu không có)
+        if (!$selfRating) {
+            return $subordinateRating ?? 'D';
+        }
+
+        // Nếu không có subordinateRating, trả về selfRating
+        if (!$subordinateRating) {
+            return $selfRating;
+        }
+
+        // Nếu lãnh đạo không có evaluation (totalTasks = 0), lấy theo subordinateRating
+        if ($totalTasks == 0) {
+            return $subordinateRating;
+        }
+
+        // Nếu lãnh đạo có evaluation (totalTasks > 0), lấy theo selfRating
+        return $selfRating;
+    }
+
 
     private function getUser($request, $auth, $level = null){
         $auth = Auth::user();
@@ -398,43 +397,6 @@ class EvaluationController extends BaseController
         return $this->userService->paginate($request);
     }
 
-    private function getStatisticsForTeamMembers($teamMembers, $month)
-    {
-        // Loại bỏ trùng lặp dựa trên id
-        $teamMembers = collect($teamMembers)->unique('id')->values();
-        $userIds = $teamMembers->pluck('id')->toArray();
-
-        // Đảm bảo $month có định dạng YYYY-MM-DD
-        $monthFormatted = $month instanceof \Carbon\Carbon
-            ? $month->format('Y-m-d')
-            : \Carbon\Carbon::parse($month)->format('Y-m-d');
-
-        // Lấy dữ liệu từ bảng statistics
-        $statistics = DB::table('statistics')
-            ->whereIn('user_id', $userIds)
-            ->where('month', $monthFormatted)
-            ->get()
-            ->keyBy('user_id'); // Lập chỉ mục theo user_id để tra cứu nhanh
-
-        // Kết hợp dữ liệu statistics với thông tin user
-        $result = [];
-        foreach ($teamMembers as $member) {
-            $stat = $statistics->get($member->id) ?? (object)[
-                'working_days_in_month' => null, // Sử dụng null để phân biệt với giá trị 0 thực tế
-                'leave_days_with_permission' => null,
-                'leave_days_without_permission' => null,
-                'violation_count' => null,
-                'violation_behavior' => '',
-                'disciplinary_action' => '',
-            ];
-
-            $result[] = (object)[
-                'user' => $member,
-                'statistics' => $stat,
-            ];
-        }
-
-        return $result;
-    }
+   
 
 }

@@ -29,6 +29,7 @@ class EvaluationController extends BaseController{
     protected $userCatalogueService;
 
     private const CANBO_LEVEL = 5;
+    private const DOIPHO_LEVEL = 4;
 
 
     public function __construct(
@@ -134,166 +135,252 @@ class EvaluationController extends BaseController{
         ];
     }
 
-    public function teams(Request $request, $level)
+    public function teams(Request $request, int $level)
     {
-        /** @var \App\Models\User $user */
-        $user = Auth::user();
-        $user->load(['user_catalogues']);
-        
-        $fakeRequest = new CustomRequest();
-        $fakeRequest->merge([
-            'level' => $level,
-            'type' => 'all'
-        ]);
-
-        // dd($fakeRequest->all());
-
-        $userCataloguesByLevel = $this->userCatalogueService->paginate($fakeRequest);
-        $userCataloguesId = $userCataloguesByLevel->pluck('id')->toArray();
-        /** Lấy ra nhóm của người đang đăng nhập */
-        $currentUserCatalogueLevel = $user->user_catalogues->level ?? null;
-
-        $request->merge([
-            'relationFilter' => [ 
-                'users' => [
-                    'lft' => [
-                        'gt' => $user->lft
-                    ],
-                    'rgt' => [
-                        'lt' => $user->rgt
-                    ],
-                    'user_catalogue_id' => [
-                        'in' => 'user_catalogue_id|'.implode(',', $userCataloguesId)
-                    ],
-                ],
-            ],
-            'time' => [
-                'statuses' => [
-                    'created_at' => [
-                        'month' => $request?->month_id 
-                    ]
-                ]
-            ]
-        ]);
-
-        
         try {
-            $records = $this->service->paginate($request);
-            /** Lấy ra nhóm đang muốn hiển thị đánh giá */
-            $evaluatedCatalogueLevel = $level;
+            $auth = Auth::user();
+            $currentUserCatalogue = $auth->user_catalogues;
+            $currentUserPosition = $currentUserCatalogue->name;
+            $currentUserLevel = $currentUserCatalogue->level;
+            $isDeputyTeamLeader = $currentUserLevel == 4;
 
+            $records = match ($level) {
+                5 => $this->getCongChucInsideNodeEvaluation($request, $level),
+                default => $this->getInsideNodeEvaluation($request, $level),
+            };
 
-            foreach($records as $key => $record){
-                // Mặc định không cho đánh giá
-                $canEvaluate = false;
-                // Đánh dấu xem có bị khóa bởi cấp trên không
-                $isLockedByHigherLevel = false;
+            $allPositionsData = [];
+            $hasCurrentUserEvaluated = false;
 
+            if (!is_null($records)) {
+                $records->load(['tasks', 'statuses', 'users.user_catalogues']);
 
-                // Kiểm tra xem có bất kỳ cấp nào cao hơn người đăng nhập đã đánh giá chưa
-                if (!is_null($currentUserCatalogueLevel)) {
-                    $higherLevelEvaluations = DB::table('evaluation_status')
-                        ->join('users', 'evaluation_status.user_id', '=', 'users.id')
-                        ->join('user_catalogue_user', 'users.id', '=', 'user_catalogue_user.user_id')
-                        ->join('user_catalogues', 'user_catalogue_user.user_catalogue_id', '=', 'user_catalogues.id')
-                        ->where('evaluation_status.evaluation_id', $record->id)
-                        ->where('user_catalogues.level', '<', $currentUserCatalogueLevel) // Cấp cao hơn (level nhỏ hơn)
-                        ->where('evaluation_status.lock', 1)
-                        ->exists();
-                    // Nếu có bất kỳ cấp cao hơn đã đánh giá, đánh dấu đã bị khóa
-                    if ($higherLevelEvaluations) {
-                        $isLockedByHigherLevel = true;
-                        $canEvaluate = false; // Đảm bảo không cho phép đánh giá
+                foreach ($records as $record) {
+                    $record->selfEvaluation = $record->statuses()->where('user_id', $record->user_id)->first()?->pivot->status_id;
+                    $currentUserEvaluation = $record->statuses()
+                        ->where('user_id', $auth->id)
+                        ->first();
+                    $record->currentUserStatusId = $currentUserEvaluation ? $currentUserEvaluation->pivot->status_id : 0;
+                    $record->lock = $currentUserEvaluation ? $currentUserEvaluation->pivot->lock : 0;
+
+                    if ($currentUserEvaluation) {
+                        $hasCurrentUserEvaluated = true;
                     }
-                    // Nếu không có cấp cao hơn đánh giá, kiểm tra quyền dựa trên level
-                    else if (!is_null($evaluatedCatalogueLevel)) {
-                        $levelDifference = $evaluatedCatalogueLevel - $currentUserCatalogueLevel;
-                        // Nếu là cấp trên trực tiếp hoặc cao hơn, luôn cho phép đánh giá
-                        // Không cần kiểm tra cấp dưới đã đánh giá đủ chưa
-                        if ($levelDifference >= 1) {
-                            $canEvaluate = true;
+
+                    $positionEvaluations = [];
+                    $record->deputyEvaluation = null;
+                    $evaluations = $record->statuses;
+
+                    // Lấy đánh giá mới nhất của Đội phó theo updated_at
+                    $deputyEvaluations = $evaluations->filter(function ($evaluation) use ($record) {
+                        $userId = $evaluation->pivot->user_id;
+                        if ($userId == $record->user_id) return false;
+                        $user = $this->userService->findById($userId);
+                        if ($user) {
+                            $user->load('user_catalogues');
+                            $userCatalogue = $user->user_catalogues()->first();
+                            return $userCatalogue && $userCatalogue->name === 'Đội phó';
+                        }
+                        return false;
+                    })->sortByDesc('pivot.updated_at'); // Sắp xếp theo updated_at (mới nhất trước)
+
+                    if ($deputyEvaluations->isNotEmpty()) {
+                        $latestDeputyEvaluation = $deputyEvaluations->first();
+                        $userId = $latestDeputyEvaluation->pivot->user_id;
+                        $user = $this->userService->findById($userId);
+                        $record->deputyEvaluation = [
+                            'status_id' => $latestDeputyEvaluation->pivot->status_id,
+                            'user_id' => $userId,
+                            'user_name' => $user->name
+                        ];
+                    }
+
+                    foreach ($evaluations as $evaluation) {
+                        $userId = $evaluation->pivot->user_id;
+
+                        if ($userId == $record->user_id) {
+                            continue;
+                        }
+
+                        $user = $this->userService->findById($userId);
+                        if ($user) {
+                            $user->load('user_catalogues');
+                            $userCatalogue = $user->user_catalogues()->first();
+                            if ($userCatalogue) {
+                                $positionName = $userCatalogue->name;
+                                $positionLevel = $userCatalogue->level;
+
+                                if ($positionName !== 'Đội phó') { // Bỏ qua Đội phó vì đã xử lý ở trên
+                                    if (!isset($allPositionsData[$positionName])) {
+                                        $allPositionsData[$positionName] = [
+                                            'name' => $positionName,
+                                            'level' => $positionLevel,
+                                            'is_current_user' => ($positionName == $currentUserPosition)
+                                        ];
+                                    }
+
+                                    $positionEvaluations[$positionName] = [
+                                        'status_id' => $evaluation->pivot->status_id,
+                                        'user_name' => $user->name
+                                    ];
+                                }
+                            }
+                        }
+                    }
+
+                    $record->positionEvaluations = $positionEvaluations;
+
+                    $record->higherLevelEvaluated = false;
+                    if ($currentUserLevel !== null) {
+                        foreach ($record->statuses as $status) {
+                            $evaluatorId = $status->pivot->user_id;
+
+                            if ($evaluatorId == $auth->id || $evaluatorId == $record->user_id) {
+                                continue;
+                            }
+
+                            $evaluator = $this->userService->findById($evaluatorId);
+                            if ($evaluator) {
+                                $evaluator->load('user_catalogues');
+                                $evaluatorCatalogue = $evaluator->user_catalogues()->first();
+                                $evaluatorLevel = $evaluatorCatalogue ? $evaluatorCatalogue->level : null;
+
+                                if ($evaluatorLevel !== null && $evaluatorLevel < $currentUserLevel) {
+                                    $record->higherLevelEvaluated = true;
+                                    break;
+                                }
+                            }
                         }
                     }
                 }
-                $record->canEvaluate = $canEvaluate;
-                $record->isLockedByHigherLevel = $isLockedByHigherLevel;
             }
-            $config = $this->config();
 
+            if (!$hasCurrentUserEvaluated && !$isDeputyTeamLeader) {
+                $allPositionsData['__CURRENT_USER__'] = [
+                    'name' => 'Đánh giá của bạn',
+                    'level' => $currentUserLevel,
+                    'is_current_user' => true
+                ];
+            }
 
-            $fakeRequestForUsers = new CustomRequest();
-            $fakeRequestForUsers->merge([
-                'lft' => ['gt' => $user->lft],
-                'rgt' => ['lt' => $user->rgt],
-                'user_catalogue_id' => ['in' => 'user_catalogue_id|' . implode(',', $userCataloguesId)],
-                'type' => 'all'
-            ]);
-            $usersOnBranch = $this->userService->paginate($fakeRequestForUsers);
+            $allPositionsData = array_filter($allPositionsData, function ($position) use ($currentUserLevel) {
+                return $position['level'] >= $currentUserLevel;
+            });
+
+            uasort($allPositionsData, function ($a, $b) {
+                return $b['level'] - $a['level'];
+            });
 
             $config = [
                 'route' => $this->route,
                 'isCreate' => false,
                 'filter' => false,
-                'usersOnBranch' => $usersOnBranch,
+                'usersOnBranch' => [],
                 'level' => $level
             ];
+
             $data = $this->getData();
             extract($data);
-            $template = ($level != self::CANBO_LEVEL) ? "backend.{$this->namespace}.teamSuperior" : "backend.{$this->namespace}.team";
+            $template = ($level != self::CANBO_LEVEL) ? "backend.{$this->namespace}.team.teamSuperior" : "backend.{$this->namespace}.team.team";
             return view($template, compact(
                 'records',
                 'config',
+                'allPositionsData',
+                'isDeputyTeamLeader',
+                'statuses',
                 ...array_keys($data),
             ));
         } catch (\Throwable $th) {
             dd($th);
-            return $this->handleWebLogException($th);
         }
     }
 
-    public function search(Request $request, $user_catalogue){
-        $user = Auth::user();
-        $request->merge([
-            'relationFilter' => [ 
+   
+    public function getCongChucInsideNodeEvaluation($request, $level){
+        /** @var \App\Models\User $auth */
+        $auth = Auth::user();
+        $auth->load(['subordinates']);
+
+        $subordinateIds = [];
+        if($auth->user_catalogues->level < 4){
+            $request->merge([
+                'lft' => ['gt' => $auth->lft],
+                'rgt' => ['lt' => $auth->rgt],
+                'level' => $level - 1,  // 4 --> là level của đội phó
+                'type' => 'all'
+            ]);
+            $users = $this->userService->paginate($request);
+            if(!is_null($users) && count($users)){
+                foreach($users as $key => $deputy){ 
+                    $subordinates = $deputy->subordinates()->get()->pluck('id')->toArray();
+                    $subordinateIds = array_merge($subordinateIds, $subordinates);
+                }
+            }
+            $subordinateIds = array_unique($subordinateIds);
+        }else{
+            if($auth->user_catalogues->level == 4){
+                $subordinateIds = $auth->subordinates()->get()->pluck('id')->toArray();
+            }
+        }
+
+
+        $evaluationRequest = new CustomRequest();
+        $evaluationRequest->merge([
+            'relationFilter' => [
                 'users' => [
-                    'lft' => [
-                        'gt' => $user->lft
-                    ],
-                    'rgt' => [
-                        'lt' => $user->rgt
-                    ],
-                    'user_catalogue_id' =>[
-                        'eq' => $user_catalogue
-                    ],
-                ],
-            ],
-            'time' => [
-                'statuses' => [
-                    'created_at' => [
-                        'month' => $request?->month_id 
+                    'user_id' => [
+                        'in' => 'user_id|' . implode(',', $subordinateIds)
                     ]
                 ]
             ]
         ]);
-        $records = $this->service->paginate($request);
-        $data = $this->getData();
-        $usersOnBranch = $this->userService?->getUsersOnBranch($user, $user_catalogue);
-        $config = $this->config();
-        $config = [
-            'route' => $this->route,
-            'isCreate' => false,
-            'filter' => false,
-            'usersOnBranch' => $usersOnBranch,
-            'userCatalogue' => $this->userCatalogueService?->findById($user_catalogue)
-        ];
-        extract($data);
-        return view("backend.{$this->namespace}.team", compact(
-            'records',
-            'config',
-            ...array_keys($data),
-        ));
+        
+
+        $evaluations = $this->service->paginate($evaluationRequest);
+        return $evaluations;
+    }
+
+    public function getInsideNodeEvaluation($request, $level)
+    {
+        /** @var \App\Models\User $user */
+        $auth = Auth::user();
+    
+        // Lấy danh sách user thuộc cấp $level trong nhánh của người đăng nhập
+        $userIds = [];
+        $request->merge([
+            'lft' => ['gt' => $auth->lft],
+            'rgt' => ['lt' => $auth->rgt],
+            'level' => $level, // Lấy user ở cấp $level (ví dụ: 4 cho Đội phó)
+            'type' => 'all'
+        ]);
+    
+        $users = $this->userService->paginate($request);
+
+
+        if (!is_null($users) && count($users)) {
+            $userIds = $users->pluck('id')->toArray();
+        }
+    
+        // Nếu không có user nào, trả về null
+        if (empty($userIds)) {
+            return null;
+        }
+    
+        // Lấy danh sách đánh giá của các user này
+        $evaluationRequest = new CustomRequest();
+        $evaluationRequest->merge([
+            'relationFilter' => [
+                'users' => [
+                    'user_id' => [
+                        'in' => 'user_id|' . implode(',', $userIds)
+                    ]
+                ]
+            ]
+        ]);
+    
+        $evaluations = $this->service->paginate($evaluationRequest);
+        return $evaluations;
     }
    
-
 
 }   

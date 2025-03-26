@@ -168,37 +168,59 @@
                         </div>
                         <hr>
                         <div class="row mb15">
-                            <div class="col-lg-4">
+                            <div class="col-lg-6">
                                 <div class="form-row">
                                     <label for="" class="control-label text-left">Người quản lý<span class="text-danger">(*)</span></label>
                                     <select name="parent_id" class="form-control setupSelect2" id="">
                                         @if(isset($dropdown))
                                             @foreach($dropdown as $key => $val)
-                                                <option {{ 
-                                                    $key == old('parent_id', (isset($model->parent_id)) ? $model->parent_id : '') ? 'selected' : '' 
-                                                    }} value="{{ $val->id }}">{{ str_repeat('|----', (($val->level > 0)?($val->level - 1):0)).$val->name }}
+                                                <option 
+                                                    {{ $val->id == old('parent_id', (isset($model->parent_id)) ? $model->parent_id : '') ? 'selected' : '' }}
+                                                    value="{{ $val->id }}">{{ str_repeat('|----', (($val->level > 0)?($val->level - 1):0)).$val->name }}
                                                 </option>
                                             @endforeach
                                         @endif
                                     </select>
                                 </div>
                             </div>
-                            <div class="col-lg-4">
+                            
+                            <div class="col-lg-6 mb15">
                                 <div class="form-row">
                                     <label for="" class="control-label text-left">Đội <span class="text-danger">(*)</span></label>
                                     <select name="team_id" class="form-control setupSelect2">
                                         <option value="0">Chọn đội</option>
                                         @if(isset($teams))
                                             @foreach($teams as $key => $val)
+                                            @php
+                                                if($auth->user_catalogues->level > 2 && $auth->teams->id !== $val->id) continue;
+                                            @endphp
                                                 <option {{ 
-                                                    $val->id == old('team_id', (isset($model->team_id)) ? $model->team_id : '') ? 'selected' : '' 
+                                                    $val->id == old('team_id', (isset($model->team_id)) ? $model->team_id : $auth->teams->id) ? 'selected' : '' 
                                                     }}  value="{{ $val->id }}">{{ $val->name }}</option>
                                             @endforeach
                                         @endif
                                     </select>
                                 </div>
                             </div>
-                            <div class="col-lg-4">
+                            <div class="col-lg-6 uk-hidden">
+                                <div class="form-row">
+                                    <label for="" class="control-label text-left">Người quản lý khác (chỉ sử dụng khi tạo công chức)<span class="text-danger">(*)</span></label>
+                                    <select {{ (isset($model) && $model->user_catalogues->level == 5 ) ? '' : 'disabled' }} multiple name="managers[]" class="form-control setupSelect2 manager-select">
+                                        @if(isset($dropdown))
+                                            @foreach($dropdown as $key => $val)
+                                            @if($val->user_catalogues->level !== 4) @continue @endif
+                                                <option
+                                                @if(isset($model->managers))
+                                                    {{ in_array($val->id, $model->managers->pluck('id')->toArray()) ? 'selected' : '' }}
+                                                @endif 
+                                                    value="{{ $val->id }}">{{ $val->name }}
+                                                </option>
+                                            @endforeach
+                                        @endif
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
                                 <div class="form-row">
                                     <label for="" class="control-label text-left">Phòng / chi cục <span class="text-danger">(*)</span></label>
                                     <select name="unit_id" class="form-control setupSelect2">
@@ -206,7 +228,7 @@
                                         @if(isset($units))
                                             @foreach($units as $key => $val)
                                                 <option {{ 
-                                                    $val->id == old('unit_id', (isset($model->units->id)) ? $model->units->id : '') ? 'selected' : '' 
+                                                    $val->id == old('unit_id', (isset($model->units->id)) ? $model->units->id : $auth->units->id) ? 'selected' : '' 
                                                     }}  value="{{ $val->id }}">{{ $val->name }}</option>
                                             @endforeach
                                         @endif

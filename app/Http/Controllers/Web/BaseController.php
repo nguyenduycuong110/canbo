@@ -68,6 +68,7 @@ class BaseController extends Controller{
 
     public function create(Request $request){
         try {
+            $auth = Auth::user();
             $config = $this->config();
             $config['user_id'] = Auth::user()->id;
             $config['method'] = 'create';
@@ -75,6 +76,7 @@ class BaseController extends Controller{
             extract($data);
             return view("backend.{$this->namespace}.save", compact(
                 'config',
+                'auth',
                 ...array_keys($data)
             ));
         }catch (ModelNotFoundException $e) {
@@ -89,6 +91,7 @@ class BaseController extends Controller{
 
     public function edit(Request $request, int $id) : View | RedirectResponse{
         try {
+            $auth = Auth::user();
             $model = $this->service->findById($id);
             $config = $this->config();
             $data = $this->getData();
@@ -96,6 +99,7 @@ class BaseController extends Controller{
             $config['method'] = 'update';
             return view("backend.{$this->namespace}.save", compact(
                 'config',
+                'auth',
                 'model',
                 ...array_keys($data)
             ));

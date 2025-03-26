@@ -58,6 +58,9 @@ class EvaluationService extends BaseService implements EvaluationServiceInterfac
     public function evaluate(Request $request, int $id){
         try {
             DB::beginTransaction();
+
+
+            $now = now();
             DB::table('evaluation_status')
             ->where('evaluation_id', $id)
             ->update(['lock' => 1]);
@@ -68,7 +71,9 @@ class EvaluationService extends BaseService implements EvaluationServiceInterfac
                 ],
                 [
                     'status_id' => $request->status_id,
-                    'lock' => 0
+                    'lock' => 0,
+                    'created_at' => $now,
+                    'updated_at' => $now
                 ]
             );
             DB::commit();
@@ -182,6 +187,7 @@ class EvaluationService extends BaseService implements EvaluationServiceInterfac
             $user_id = $request->user_id;
             $date = $request->date;
 
+            // Xử lý khoảng thời gian theo tháng hoặc ngày
             if ($dateType === 'month') {
                 $inputDate = \Carbon\Carbon::createFromFormat('m/Y', $date);
                 $startOfMonth = $inputDate->copy()->startOfMonth()->toDateTimeString();
@@ -210,64 +216,145 @@ class EvaluationService extends BaseService implements EvaluationServiceInterfac
                 ]);
             }
 
+            // Lấy thông tin user và các quan hệ
             $user = $this->userRepository->findById($user_id);
             $user->load('user_catalogues');
             $user->load('teams');
             $user->load('units');
 
+            // Lấy danh sách đánh giá
             $evaluations = $this->paginate($request);
-
-            // Nếu evaluations là đối tượng phân trang, lấy data; nếu không, dùng trực tiếp
             $evaluationList = is_array($evaluations) ? $evaluations : (isset($evaluations->data) ? $evaluations->data : $evaluations);
 
             if (!empty($evaluationList)) {
                 foreach ($evaluationList as $evaluation) {
-                    $leadershipApproval = [];
-                    $assessmentLeader = [];
-                    $selfAssessment = [];
-                    $directLeaderParentId = null; // Để tìm lãnh đạo trực tiếp (parent_id lớn nhất nhưng không phải cao nhất)
+                    $selfAssessment = []; // Tự đánh giá của công chức
+                    $deputyAssessment = []; // Đánh giá của lãnh đạo trực tiếp (dựa trên level)
+                    $leadershipApproval = []; // Đánh giá của lãnh đạo cấp cao nhất
 
-                    // In ra statuses để kiểm tra
-                    Log::info('Statuses for evaluation:', ['evaluation_id' => $evaluation->id, 'statuses' => $evaluation->statuses->toArray()]);
+                    // Lấy tất cả statuses của evaluation
+                    $statuses = $evaluation->statuses;
 
-                    foreach ($evaluation->statuses as $k => $v) {
-                        // Bỏ điều kiện lock để xử lý tất cả trạng thái
-                        // if ($v->pivot->lock == 1) {
-                        //     continue;
-                        // }
+                    // Log để kiểm tra dữ liệu gốc của $statuses
+                    Log::info('Raw Statuses:', [
+                        'evaluation_id' => $evaluation->id,
+                        'statuses' => $statuses->toArray(),
+                    ]);
 
-                        $user_id = $v->pivot->user_id;
-                        $status_id = $v->pivot->status_id;
-                        $userInfo = $this->userRepository->findById($user_id);
-
-                        if ($user_id == $evaluation->user_id) {
-                            $selfAssessment = [
-                                'infoUser' => $userInfo,
-                                'infoStatus' => $this->statusRepository->findById($status_id),
-                            ];
-                            continue;
-                        }
-
-                        if ($userInfo->parent_id == 0) {
-                            $leadershipApproval = [
-                                'infoUser' => $userInfo,
-                                'infoStatus' => $this->statusRepository->findById($status_id),
-                            ];
-                        } else {
-                            // Chọn parent_id lớn nhất để tìm lãnh đạo trực tiếp
-                            if ($directLeaderParentId === null || $userInfo->parent_id > $directLeaderParentId) {
-                                $directLeaderParentId = $userInfo->parent_id;
-                                $assessmentLeader = [
-                                    'infoUser' => $userInfo,
-                                    'infoStatus' => $this->statusRepository->findById($status_id),
-                                ];
-                            }
-                        }
+                    // 1. Tự đánh giá của công chức
+                    $selfAssessmentStatus = $statuses->firstWhere('pivot.user_id', $evaluation->user_id);
+                    if ($selfAssessmentStatus) {
+                        $selfAssessment = [
+                            'infoUser' => $this->userRepository->findById($evaluation->user_id),
+                            'infoStatus' => $this->statusRepository->findById($selfAssessmentStatus->pivot->status_id),
+                        ];
                     }
 
-                    $evaluation->assessmentLeader = $assessmentLeader;
-                    $evaluation->leadershipApproval = $leadershipApproval;
+                    // Lấy level của người tự đánh giá
+                    $selfUser = $this->userRepository->findById($evaluation->user_id);
+                    $selfUser->load('user_catalogues');
+                    $selfLevel = $selfUser->user_catalogues->level ?? null;
+
+                    // 2. Đánh giá của lãnh đạo trực tiếp (người có level cao hơn người tự đánh giá 1 cấp)
+                    $directLeaderStatuses = $statuses->filter(function ($status) use ($evaluation, $selfLevel) {
+                        $userId = $status->pivot->user_id;
+                        if ($userId == $evaluation->user_id) {
+                            return false; // Bỏ qua tự đánh giá
+                        }
+                        $user = $this->userRepository->findById($userId);
+                        $user->load('user_catalogues');
+                        $catalogue = $user->user_catalogues;
+                        if (!$catalogue || !isset($catalogue->level)) {
+                            return false;
+                        }
+                        // Lấy người có level cao hơn người tự đánh giá 1 cấp
+                        return $catalogue->level == ($selfLevel - 1);
+                    })->sortByDesc('pivot.updated_at');
+
+                    if ($directLeaderStatuses->isNotEmpty()) {
+                        $latestDirectLeaderStatus = $directLeaderStatuses->first();
+                        $directLeaderUserId = $latestDirectLeaderStatus->pivot->user_id;
+                        $deputyAssessment = [
+                            'infoUser' => $this->userRepository->findById($directLeaderUserId),
+                            'infoStatus' => $this->statusRepository->findById($latestDirectLeaderStatus->pivot->status_id),
+                        ];
+                    } else {
+                        Log::warning('No direct leader found for evaluation_id: ' . $evaluation->id . ' with level: ' . ($selfLevel - 1));
+                    }
+
+                    // 3. Đánh giá của lãnh đạo cấp cao nhất (ưu tiên lock = 0 và updated_at mới nhất)
+                    $leadershipStatuses = $statuses->filter(function ($status) use ($evaluation) {
+                        $userId = $status->pivot->user_id;
+                        if ($userId == $evaluation->user_id) {
+                            return false; // Bỏ qua tự đánh giá
+                        }
+                        $user = $this->userRepository->findById($userId);
+                        $user->load('user_catalogues');
+                        $status->user = $user; // Gán user vào status để sử dụng sau
+                        return true; // Lấy tất cả các lãnh đạo còn lại
+                    });
+
+                    // Ưu tiên bản ghi có lock = 0 và updated_at mới nhất
+                    $leadershipStatuses = $leadershipStatuses->sortByDesc('pivot.updated_at') // Sắp xếp theo updated_at (mới nhất trước)
+                        ->sortByDesc(function ($status) {
+                            return $status->pivot->lock == 0 ? 1 : 0; // Ưu tiên lock = 0
+                        });
+
+                    // Log để kiểm tra leadershipStatuses
+                    Log::info('Leadership Statuses after sorting:', [
+                        'evaluation_id' => $evaluation->id,
+                        'statuses' => $leadershipStatuses->map(function ($status) {
+                            return [
+                                'user_id' => $status->pivot->user_id,
+                                'name' => $status->user->name,
+                                'level' => $status->user->user_catalogues->level ?? 'N/A',
+                                'lock' => $status->pivot->lock,
+                                'updated_at' => $status->pivot->updated_at,
+                            ];
+                        })->toArray(),
+                    ]);
+
+                    if ($leadershipStatuses->isNotEmpty()) {
+                        // Lấy bản ghi đầu tiên (có updated_at mới nhất và lock = 0)
+                        $highestLeaderStatus = $leadershipStatuses->first();
+
+                        // Nếu có nhiều bản ghi cùng updated_at, sắp xếp lại theo level
+                        $latestStatuses = $leadershipStatuses->filter(function ($status) use ($highestLeaderStatus) {
+                            return $status->pivot->updated_at == $highestLeaderStatus->pivot->updated_at;
+                        })->sortBy(function ($status) {
+                            return $status->user->user_catalogues->level ?? PHP_INT_MAX; // Sắp xếp theo level (nhỏ nhất trước)
+                        });
+
+                        if ($latestStatuses->isNotEmpty()) {
+                            $highestLeaderStatus = $latestStatuses->first();
+                        }
+
+                        $leaderUserId = $highestLeaderStatus->pivot->user_id;
+                        $leadershipApproval = [
+                            'infoUser' => $this->userRepository->findById($leaderUserId),
+                            'infoStatus' => $this->statusRepository->findById($highestLeaderStatus->pivot->status_id),
+                        ];
+
+                        // Log lãnh đạo được chọn
+                        Log::info('Selected Leader:', [
+                            'user_id' => $leaderUserId,
+                            'name' => $leadershipApproval['infoUser']->name,
+                            'level' => $leadershipApproval['infoUser']->user_catalogues->level ?? 'N/A',
+                        ]);
+                    }
+
+                    // Gán dữ liệu vào evaluation
                     $evaluation->selfAssessment = $selfAssessment;
+                    $evaluation->deputyAssessment = $deputyAssessment;
+                    $evaluation->leadershipApproval = $leadershipApproval;
+
+                    // Log dữ liệu cuối cùng
+                    Log::info('Evaluation Data:', [
+                        'evaluation_id' => $evaluation->id,
+                        'selfAssessment' => $selfAssessment,
+                        'deputyAssessment' => $deputyAssessment,
+                        'leadershipApproval' => $leadershipApproval,
+                    ]);
                 }
             }
 
@@ -275,12 +362,13 @@ class EvaluationService extends BaseService implements EvaluationServiceInterfac
             return $user;
         } catch (\Throwable $th) {
             Log::error('Error in getDepartment:', ['error' => $th->getMessage()]);
-            dd($th);
             return false;
         }
     }
-
-   
+    
+    public function getEvaluationsByUserIdsAndMonth($usersId, $month){
+        return $this->repository->getEvaluationsByUserIdsAndMonth($usersId, $month);
+    }
     
 
 }

@@ -29,5 +29,7 @@ class TeamService extends BaseService implements TeamServiceInterface{
         return $this;
     }
    
-
+    public function teamPublish(){
+        return $this->repository->teamPublish();
+    }
 }

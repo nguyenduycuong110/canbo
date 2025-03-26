@@ -15,7 +15,8 @@ class Status extends Model
         'name',
         'description',
         'publish',
-        'point'
+        'point',
+        'level'
     ];
 
 

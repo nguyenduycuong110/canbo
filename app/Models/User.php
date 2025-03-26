@@ -57,7 +57,10 @@ class User extends Authenticatable
     protected $with = [
         'units',
         'teams',
-        'user_catalogues'
+        'user_catalogues',
+        // 'managers',
+        'subordinates',
+        'statistics'
     ];
 
     /**
@@ -73,9 +76,7 @@ class User extends Authenticatable
         ];
     }
 
-    public function getRelations(): array {
-        return ['user_catalogues','teams','units','departments'];
-    }
+   
 
     public function user_catalogues(): BelongsTo{
         return $this->belongsTo(UserCatalogue::class, 'user_catalogue_id', 'id');
@@ -87,6 +88,29 @@ class User extends Authenticatable
 
     public function units(): BelongsTo{
         return $this->belongsTo(Unit::class, 'unit_id', 'id');
+    }
+
+    public function evaluations(){
+        return $this->hasMany(Evaluation::class, 'user_id');
+    }
+
+    public function statistics(){
+        return $this->hasMany(Statistic::class, 'user_id');
+    }
+
+    public function subordinates() // 
+    {
+        return $this->belongsToMany(User::class, 'user_subordinate', 'manager_id', 'subordinate_id');
+    }
+    
+    // Quan hệ với cấp trên (nhiều đội phó)
+    public function managers()
+    {
+        return $this->belongsToMany(User::class, 'user_subordinate', 'subordinate_id', 'manager_id');
+    }
+
+    public function getRelations(): array {
+        return ['user_catalogues','teams','units','departments', 'managers'];
     }
 
 }

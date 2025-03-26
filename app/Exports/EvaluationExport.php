@@ -7,6 +7,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Font;
+use Illuminate\Support\Facades\Log;
 
 class EvaluationExport
 {
@@ -105,34 +106,58 @@ class EvaluationExport
             $taskName = $evaluation->tasks->name ?? 'Không xác định';
 
             // Tự đánh giá
-            $selfRating = 'Không xác định';
-            if ($evaluation->statuses) {
-                $selfStatus = collect($evaluation->statuses)->firstWhere('pivot.user_id', $evaluation->user_id);
-                $selfRating = $selfStatus ? $selfStatus->name : 'Không xác định';
+            $selfRating = 'Chưa tự đánh giá';
+            $selfName = '';
+            if (!empty($evaluation->selfAssessment)) {
+                $selfRating = isset($evaluation->selfAssessment['infoStatus']) && !empty($evaluation->selfAssessment['infoStatus']->name)
+                    ? $evaluation->selfAssessment['infoStatus']->name
+                    : 'Chưa tự đánh giá';
+                $selfName = isset($evaluation->selfAssessment['infoUser']) && !empty($evaluation->selfAssessment['infoUser']->name)
+                    ? $evaluation->selfAssessment['infoUser']->name
+                    : '';
             }
+            $selfAssessmentDisplay = $selfRating;
 
             // Lãnh đạo trực tiếp đánh giá và tên lãnh đạo trực tiếp
-            $leaderRating = '';
+            $leaderRating = 'Chưa đánh giá';
             $leaderName = '';
-            if (!empty($evaluation->assessmentLeader) && is_array($evaluation->assessmentLeader)) {
-                $leaderRating = $evaluation->assessmentLeader['infoStatus']['name'] ?? '';
-                $leaderName = $evaluation->assessmentLeader['infoUser']['name'] ?? '';
+            if (!empty($evaluation->deputyAssessment)) { // Sử dụng deputyAssessment thay vì assessmentLeader
+                $leaderRating = isset($evaluation->deputyAssessment['infoStatus']) && !empty($evaluation->deputyAssessment['infoStatus']->name)
+                    ? $evaluation->deputyAssessment['infoStatus']->name
+                    : 'Chưa đánh giá';
+                $leaderName = isset($evaluation->deputyAssessment['infoUser']) && !empty($evaluation->deputyAssessment['infoUser']->name)
+                    ? $evaluation->deputyAssessment['infoUser']->name
+                    : '';
             }
+            $leaderAssessmentDisplay = $leaderRating ;
 
             // Lãnh đạo phê duyệt và tên lãnh đạo phê duyệt
-            $approvalRating = '';
+            $approvalRating = 'Chưa phê duyệt';
             $approverName = '';
-            if (!empty($evaluation->leadershipApproval) && is_array($evaluation->leadershipApproval)) {
-                $approvalRating = $evaluation->leadershipApproval['infoStatus']['name'] ?? '';
-                $approverName = $evaluation->leadershipApproval['infoUser']['name'] ?? '';
+            if (!empty($evaluation->leadershipApproval)) {
+                $approvalRating = isset($evaluation->leadershipApproval['infoStatus']) && !empty($evaluation->leadershipApproval['infoStatus']->name)
+                    ? $evaluation->leadershipApproval['infoStatus']->name
+                    : 'Chưa phê duyệt';
+                $approverName = isset($evaluation->leadershipApproval['infoUser']) && !empty($evaluation->leadershipApproval['infoUser']->name)
+                    ? $evaluation->leadershipApproval['infoUser']->name
+                    : '';
             }
+            $approvalAssessmentDisplay = $approvalRating;
+
+            // Log để kiểm tra
+            Log::info('Evaluation Data for Export:', [
+                'evaluation_id' => $evaluation->id,
+                'self_assessment' => $selfAssessmentDisplay,
+                'leader_assessment' => $leaderAssessmentDisplay,
+                'approval_assessment' => $approvalAssessmentDisplay,
+            ]);
 
             // Định dạng ngày tháng
             $startDateFormatted = $evaluation->start_date ? \Carbon\Carbon::parse($evaluation->start_date)->format('d/m/Y') : '';
             $dueDateFormatted = $evaluation->due_date ? \Carbon\Carbon::parse($evaluation->due_date)->format('d/m/Y') : '';
-           
-            // Thời gian thực tế thực hiện công việc (lấy trực tiếp từ database, không format)
-            $actualDays = $evaluation->completion_date ?? ''; // Giả sử cột trong database là completion_date
+            
+            // Thời gian thực tế thực hiện công việc
+            $actualDays = $evaluation->completion_date ?? '';
 
             $dataRow = [
                 $index++,
@@ -140,14 +165,14 @@ class EvaluationExport
                 $startDateFormatted,
                 $startDateFormatted, // Ngày giao việc
                 $dueDateFormatted,
-                $actualDays, // Hiển thị trực tiếp giá trị từ database
+                $actualDays,
                 $evaluation->output ?? '',
-                $selfRating,
-                $leaderRating,
-                $leaderName,
-                $approvalRating,
-                $approverName,
-                '', // Cột "Ghi chú" để trống nếu không có dữ liệu
+                $selfAssessmentDisplay,
+                $leaderAssessmentDisplay,
+                $leaderName, // Tên lãnh đạo trực tiếp (giữ riêng để khớp với cột tiêu đề)
+                $approvalAssessmentDisplay,
+                $approverName, // Tên lãnh đạo phê duyệt (giữ riêng để khớp với cột tiêu đề)
+                '', // Cột "Ghi chú"
             ];
 
             $sheet->fromArray($dataRow, null, 'A' . $currentRow);

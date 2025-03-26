@@ -19,6 +19,8 @@ class UserService extends BaseService implements UserServiceInterface{
 
     protected $simpleFilter = ['level'];
 
+    protected $with = ['evaluations'];
+
     public function __construct(
         UserRepository $repository
     )
@@ -55,5 +57,31 @@ class UserService extends BaseService implements UserServiceInterface{
         return $this->repository->getUsersOnBranch($user, $userCatalogueId);
     }
 
+    public function findByIds($ids){
+        return $this->repository->findByIds($ids);
+    }
+
+    public function getUserInNode($currentUser){
+        
+        $userLevel1To4 = $this->repository->getUserInNodeLowerThanEqualLevel4($currentUser);
+        $allUser = $userLevel1To4;
+
+        $level4User = $userLevel1To4->filter(function ($user) {
+            return $user->user_catalogues->level == 4;
+        });
+
+        $level5User = collect();
+        if(!is_null($level4User)){
+            foreach($level4User as $key => $val){
+                $val->load(['subordinates']);
+                $subordinates = $val->subordinates()->get();
+                $level5User = $level5User->merge($subordinates);
+            }
+        }
+
+        $allUsers = $allUser->merge($level5User);
+        return $allUsers;
+
+    }
 
 }
