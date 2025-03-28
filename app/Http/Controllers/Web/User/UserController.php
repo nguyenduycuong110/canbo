@@ -56,8 +56,6 @@ class UserController extends BaseController{
     public function index(Request $request): View | RedirectResponse{
         try {
 
-
-
             $request = $this->userNode($request);
             $records = $this->service->paginate($request);
             $config = $this->config();
@@ -86,7 +84,10 @@ class UserController extends BaseController{
         $fakeRequest =  new \Illuminate\Http\Request();
         $fakeRequest = $this->userNode($fakeRequest);
         $fakeRequest->merge([
-            'type' => 'all'
+            'type' => 'all',
+            'user_catalogues' => [
+                'level' => [ 'lte' => 4 ]
+            ]
         ]);
 
         return [

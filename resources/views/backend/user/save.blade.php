@@ -211,7 +211,7 @@
                                             @if($val->user_catalogues->level !== 4) @continue @endif
                                                 <option
                                                 @if(isset($model->managers))
-                                                    {{ in_array($val->id, $model->managers->pluck('id')->toArray()) ? 'selected' : '' }}
+                                                    {{ (in_array($val->id, $model->managers->pluck('id')->toArray()) && $val->id != $model->parent_id) ? 'selected' : '' }}
                                                 @endif 
                                                     value="{{ $val->id }}">{{ $val->name }}
                                                 </option>
