@@ -85,17 +85,19 @@ class EvaluationExport
             'Sản phẩm đầu ra',
             'Cá nhân tự đánh giá',
             'Lãnh đạo trực tiếp đánh giá',
+            'Điểm',
             'Tên lãnh đạo trực tiếp đánh giá',
             'Lãnh đạo phê duyệt',
+            'Điểm',
             'Tên lãnh đạo phê duyệt',
             'Ghi chú',
         ];
 
         $sheet->fromArray($headings, null, 'A15');
-        $sheet->getStyle('A15:M15')->getFont()->setBold(true);
-        $sheet->getStyle('A15:M15')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('A15:M15')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
-        $sheet->getStyle('A15:M15')->getAlignment()->setWrapText(true);
+        $sheet->getStyle('A15:O15')->getFont()->setBold(true);
+        $sheet->getStyle('A15:O15')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A15:O15')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+        $sheet->getStyle('A15:O15')->getAlignment()->setWrapText(true);
 
         // Dữ liệu bảng
         $evaluations = $this->evaluationList->evaluations;
@@ -128,6 +130,9 @@ class EvaluationExport
                 $leaderName = isset($evaluation->deputyAssessment['infoUser']) && !empty($evaluation->deputyAssessment['infoUser']->name)
                     ? $evaluation->deputyAssessment['infoUser']->name
                     : '';
+                $leaderPoint = isset($evaluation->deputyAssessment['point']) && !empty($evaluation->deputyAssessment['point'])
+                ? $evaluation->deputyAssessment['point']
+                : '';
             }
             $leaderAssessmentDisplay = $leaderRating ;
 
@@ -141,6 +146,9 @@ class EvaluationExport
                 $approverName = isset($evaluation->leadershipApproval['infoUser']) && !empty($evaluation->leadershipApproval['infoUser']->name)
                     ? $evaluation->leadershipApproval['infoUser']->name
                     : '';
+                $approverPoint = isset($evaluation->leadershipApproval['point']) && !empty($evaluation->leadershipApproval['point'])
+                ? $evaluation->leadershipApproval['point']
+                : '';
             }
             $approvalAssessmentDisplay = $approvalRating;
 
@@ -169,8 +177,10 @@ class EvaluationExport
                 $evaluation->output ?? '',
                 $selfAssessmentDisplay,
                 $leaderAssessmentDisplay,
+                $leaderPoint ?? '',
                 $leaderName, // Tên lãnh đạo trực tiếp (giữ riêng để khớp với cột tiêu đề)
                 $approvalAssessmentDisplay,
+                $approverPoint ?? '',
                 $approverName, // Tên lãnh đạo phê duyệt (giữ riêng để khớp với cột tiêu đề)
                 '', // Cột "Ghi chú"
             ];
@@ -189,7 +199,7 @@ class EvaluationExport
                 ],
             ],
         ];
-        $sheet->getStyle('A15:M' . $lastRow)->applyFromArray($styleArray);
+        $sheet->getStyle('A15:O' . $lastRow)->applyFromArray($styleArray);
 
         // Điều chỉnh độ rộng cột
         $sheet->getColumnDimension('A')->setWidth(5); // STT
@@ -205,11 +215,13 @@ class EvaluationExport
         $sheet->getColumnDimension('K')->setWidth(30); // Lãnh đạo phê duyệt
         $sheet->getColumnDimension('L')->setWidth(20); // Tên lãnh đạo phê duyệt
         $sheet->getColumnDimension('M')->setWidth(15); // Ghi chú
+        $sheet->getColumnDimension('N')->setWidth(15);
+        $sheet->getColumnDimension('O')->setWidth(15);
 
         // Căn giữa các cột trong bảng
-        $sheet->getStyle('A15:M' . $lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('A15:M' . $lastRow)->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
-        $sheet->getStyle('A15:M' . $lastRow)->getAlignment()->setWrapText(true);
+        $sheet->getStyle('A15:O' . $lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A15:O' . $lastRow)->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+        $sheet->getStyle('A15:O' . $lastRow)->getAlignment()->setWrapText(true);
 
         // Thêm dòng "10. Kết quả xếp loại chất lượng tháng" và "Cán bộ lập phiếu"
         $sheet->setCellValue('A' . ($lastRow + 2), '10. Kết quả xếp loại chất lượng tháng:');

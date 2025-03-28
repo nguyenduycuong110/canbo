@@ -356,8 +356,6 @@
         }
         let html = ``;
     
-        console.log(resOriginal);
-    
         res.forEach((item, index) => {
             // Lãnh đạo phê duyệt (cấp cao nhất)
             let leadershipApprovalName = (item.leadershipApproval && Object.keys(item.leadershipApproval).length > 0) 
@@ -366,7 +364,11 @@
             let leadershipApprovalStatus = (item.leadershipApproval && Object.keys(item.leadershipApproval).length > 0) 
                 ? item.leadershipApproval.infoStatus.name 
                 : '';
-    
+
+            let leadershipApprovalPoint = (item.leadershipApproval && Object.keys(item.leadershipApproval).length > 0) 
+            ? item.leadershipApproval.point
+            : '';
+
             // Đánh giá của Đội phó (mới nhất)
             let deputyAssessmentName = (item.deputyAssessment && Object.keys(item.deputyAssessment).length > 0) 
                 ? item.deputyAssessment.infoUser.name 
@@ -374,7 +376,11 @@
             let deputyAssessmentStatus = (item.deputyAssessment && Object.keys(item.deputyAssessment).length > 0) 
                 ? item.deputyAssessment.infoStatus.name 
                 : '';
-    
+
+            let deputyAssessmentPoint = (item.deputyAssessment && Object.keys(item.deputyAssessment).length > 0) 
+            ? item.deputyAssessment.point
+            : '';
+
             // Tự đánh giá của công chức
             let selfAssessmentName = item.selfAssessment?.infoUser?.name || '';
             let selfAssessmentStatus = item.selfAssessment?.infoStatus?.name || '';
@@ -404,12 +410,12 @@
                         <td>
                             ${deputyAssessmentStatus || 'Chưa đánh giá'}
                             <br>
-                            <span class="text-success">Họ Tên: ${deputyAssessmentName}</span>
+                            <span class="text-success">Họ Tên: ${deputyAssessmentName}<span class="text-danger">(${deputyAssessmentPoint}đ)</span></span>
                         </td>
                         <td>
                             ${leadershipApprovalStatus || 'Chưa phê duyệt'}
                             <br>
-                            <span class="text-success">Họ Tên: ${leadershipApprovalName}</span>
+                            <span class="text-success">Họ Tên: ${leadershipApprovalName}<span class="text-danger">(${leadershipApprovalPoint}đ)</span></span>
                         </td>
                     </tr>
                 `;
@@ -431,12 +437,12 @@
                         <td>
                             ${deputyAssessmentStatus || 'Chưa đánh giá'}
                             <br>
-                            <span class="text-success">Họ Tên: ${deputyAssessmentName}</span>
+                            <span class="text-success">Họ Tên: ${deputyAssessmentName}<span class="text-danger">(${deputyAssessmentPoint}đ)</span></span>
                         </td>
                         <td>
                             ${leadershipApprovalStatus || 'Chưa phê duyệt'}
                             <br>
-                            <span class="text-success">Họ Tên: ${leadershipApprovalName}</span>
+                            <span class="text-success">Họ Tên: ${leadershipApprovalName}<span class="text-danger">(${leadershipApprovalPoint}đ)</span></span>
                         </td>
                     </tr>;
                 `
@@ -519,7 +525,6 @@
     HT.setupDataForExport = (type, option) => {
         const loadingOverlay = $('<div class="loading-overlay">Đang tải file...</div>');
         $('body').append(loadingOverlay);
-
         const working_days_in_month = $('input[name="working_days_in_month"]').val();
         const leave_days_with_permission = $('input[name="leave_days_with_permission"]').val();
         const leave_days_without_permission = $('input[name="leave_days_without_permission"]').val();
@@ -622,9 +627,149 @@
         })
     }
 
+    HT.setPointForEvaluation = () => {
+        $(document).on('change','input[name="point"]', function(){
+            let _this = $(this)
+            let point = _this.val()
+            if(point == 0){
+                return;
+            }
+            let option = {
+                currentUserId : _this.data('id'),
+                evaluationId : _this.data('evaluation'),
+                selfEvaluationId  : _this.data('user-seft-evaluation'),
+                point : point,
+                _token: $('meta[name="csrf-token"]').attr('content')
+            }
+            $.ajax({
+                url: 'ajax/evaluation/setPoint', 
+                type: 'POST', 
+                data: option,
+                dataType: 'json', 
+                success: function(res) {
+                    if(res.response == 2){
+                       toastr.success('Cập nhật điểm thành công !');
+                    }else{
+                        toastr.error('Bạn phải chọn đánh giá trước khi nhập điểm !');
+                        window.location.reload()
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    
+                }
+            });
+        })
+    }
+
+    HT.getListVice = () => {
+        $(document).on('change', 'select[name="captain_id"]', function(){
+            let _this = $(this)
+            let captain_id = _this.val()
+            if(captain_id == 0){
+                return;
+            }
+            $.ajax({
+                url: 'ajax/evaluation/getVice', 
+                type: 'GET', 
+                data: {
+                    captain_id : captain_id
+                },
+                dataType: 'json', 
+                success: function(res) {
+                    if(res.response){
+                        HT.appendSelectBoxVice(res.response)
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    
+                }
+            });
+        });
+    }
+
+    HT.getListOfficer = () => {
+        $(document).on('change', 'select[name="vice_id"]', function(){
+            let _this = $(this)
+            let vice_id = _this.val()
+            if(vice_id == 0){
+                return;
+            }
+            $.ajax({
+                url: 'ajax/evaluation/getOfficer', 
+                type: 'GET', 
+                data: {
+                    vice_id : vice_id
+                },
+                dataType: 'json', 
+                success: function(res) {
+                    if(res.response){
+                        HT.appendSelectBoxOfficer(res.response)
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    
+                }
+            });
+        });
+    }
+
+    HT.appendSelectBoxVice = (res) => {
+        let viceSelect = $('select[name="vice_id"]');
+        viceSelect.empty();
+        viceSelect.append('<option value="0">Chọn đội phó</option>');
+        if(res.vicers && res.vicers.length > 0) {
+            $.each(res.vicers, function(index, vice) {
+                viceSelect.append(
+                    $('<option></option>')
+                    .val(vice.id)
+                    .text(vice.name)
+                );
+            });
+        }
+        
+        let userSelect = $('select[name="user_id"]');
+        userSelect.empty();
+        userSelect.append('<option value="0">Chọn công chức</option>');
+
+        
+        if(res.users && res.users.length > 0) {
+            $.each(res.users, function(index, user) {
+                userSelect.append(
+                    $('<option></option>')
+                    .val(user.id)
+                    .text(user.name)
+                );
+            });
+        }
+        
+        $('.setupSelect2').select2();
+    };
+
+    HT.appendSelectBoxOfficer = (res) => {
+        let userSelect = $('select[name="user_id"]');
+        userSelect.empty();
+        userSelect.append('<option value="0">Chọn công chức</option>');
+
+        if(res.users && res.users.length > 0) {
+            $.each(res.users, function(index, user) {
+                userSelect.append(
+                    $('<option></option>')
+                    .val(user.id)
+                    .text(user.name)
+                );
+            });
+        }
+        
+        $('.setupSelect2').select2();
+    };
+
+
 	$(document).ready(function(){
        
         // HT.triggerDate()
+        HT.getListOfficer()
+        HT.getListVice()
+        HT.setPointForEvaluation()
         HT.changeStatusEvaluate()
         HT.switchery()
         HT.select2()

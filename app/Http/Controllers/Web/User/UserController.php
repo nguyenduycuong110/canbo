@@ -56,8 +56,6 @@ class UserController extends BaseController{
     public function index(Request $request): View | RedirectResponse{
         try {
 
-
-
             $request = $this->userNode($request);
             $records = $this->service->paginate($request);
             $config = $this->config();

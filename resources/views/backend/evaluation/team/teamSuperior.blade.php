@@ -88,7 +88,6 @@
                             <th>Số công việc / nhiệm vụ hoàn thành <br> đúng hạn , đảm bảo chất lượng</th>
                             <th>Số công việc / nhiệm vụ không hoàn thành <br> đúng hạn hoặc không đảm bảo yêu cầu</th>
                             <th>Cá nhân tự đánh giá</th>
-                            
                             @foreach($allPositionsData as $posKey => $posData)
                                 <th>
                                     Đánh giá của 
@@ -99,6 +98,7 @@
                                     @endif
                                 </th>
                             @endforeach
+                            <th>Điểm</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -252,6 +252,19 @@
                                             @endif
                                         </td>
                                     @endforeach
+                                    <td>
+                                        <input 
+                                            type="number" 
+                                            class="form-control text-left" 
+                                            name="point"
+                                            value="{{ $record->pointForCurrentUser ?? 0  }}"
+                                            min="1"
+                                            data-id="{{ $auth->id }}"
+                                            data-user-seft-evaluation="{{ $record->user_id }}"
+                                            data-evaluation="{{ $record->id }}"
+                                            max="100"
+                                        >
+                                    </td>
                                 </tr>
                                 @endforeach
                             @else

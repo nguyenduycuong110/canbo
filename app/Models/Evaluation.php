@@ -43,7 +43,8 @@ class Evaluation extends Model
         return $this->belongsToMany(Status::class, 'evaluation_status', 'evaluation_id', 'status_id')
             ->withPivot([
                 'user_id',
-                'lock'
+                'lock',
+                'point',
             ])->withTimestamps();
     }
 

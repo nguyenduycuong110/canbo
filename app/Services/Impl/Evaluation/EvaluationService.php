@@ -10,6 +10,7 @@ use App\Repositories\User\UserRepository;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Models\Evaluation;
 
 class EvaluationService extends BaseService implements EvaluationServiceInterface{
 
@@ -277,6 +278,7 @@ class EvaluationService extends BaseService implements EvaluationServiceInterfac
                         $deputyAssessment = [
                             'infoUser' => $this->userRepository->findById($directLeaderUserId),
                             'infoStatus' => $this->statusRepository->findById($latestDirectLeaderStatus->pivot->status_id),
+                            'point' => $latestDirectLeaderStatus->pivot->point
                         ];
                     } else {
                         Log::warning('No direct leader found for evaluation_id: ' . $evaluation->id . ' with level: ' . ($selfLevel - 1));
@@ -330,9 +332,11 @@ class EvaluationService extends BaseService implements EvaluationServiceInterfac
                         }
 
                         $leaderUserId = $highestLeaderStatus->pivot->user_id;
+
                         $leadershipApproval = [
                             'infoUser' => $this->userRepository->findById($leaderUserId),
                             'infoStatus' => $this->statusRepository->findById($highestLeaderStatus->pivot->status_id),
+                            'point' => $highestLeaderStatus->pivot->point
                         ];
 
                         // Log lãnh đạo được chọn
@@ -370,5 +374,20 @@ class EvaluationService extends BaseService implements EvaluationServiceInterfac
         return $this->repository->getEvaluationsByUserIdsAndMonth($usersId, $month);
     }
     
+    public function setPoint($request){
+        try {
+            $evaluationUserId = $request->currentUserId;
+            $evaluationId = $request->evaluationId;
+            $selfEvaluationId = $request->selfEvaluationId;
+            $point = $request->point;
+            if(!$evaluation = Evaluation::where('id', $evaluationId)->where('user_id', $selfEvaluationId)->first()){
+                throw new ModelNotFoundException(Lang::get('message.not_found'));
+            }
+            return $evaluation->statuses()->where('user_id', $evaluationUserId)->update(['evaluation_status.point' => $point]);
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+        
+    }
 
 }

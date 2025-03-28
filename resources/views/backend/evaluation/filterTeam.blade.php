@@ -9,6 +9,8 @@
                 @php
                     $perpage = request('perpage') ?: old('perpage');
                     $user_id = request('user_id') ?: old('user_id');
+                    $captain_id = request('captain_id') ?: old('captain_id');
+                    $vice_id = request('vice_id') ?: old('vice_id');
                     $oldValueDay = request()->old('created_at.eq') ?? request('created_at')['eq'] ?? null;
                     $selectedDay = $oldValueDay ? (int)substr($oldValueDay, 0, 2) : null;
                     $oldValueMonth = request()->old('created_at.between') ?? request('created_at')['between'] ?? null;
@@ -29,8 +31,30 @@
                 <div class="uk-flex uk-flex-middle">
                     <div class="uk-search uk-flex uk-flex-middle mr10">
                         <input type="text" value="{{ request('start_date.eq') ?: old('start_date.eq') }}"  placeholder="Chọn ngày giao việc" name="start_date[eq]" class="datepicker mr10 form-control">
+                        <select name="captain_id" class="form-control setupSelect2 ">
+                            <option value="0">Chọn đội trưởng</option>
+                            @foreach($config['captainsOnBranch'] as $record)
+                                <option 
+                                    {{ ($captain_id == $record->id)  ? 'selected' : '' }}
+                                    value="{{ $record->id }}"
+                                >
+                                    {{ $record->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <select name="vice_id" class="form-control setupSelect2 ">
+                            <option value="0">Chọn đội phó</option>
+                            @foreach($config['viceCaptainsOnBranch'] as $record)
+                                <option 
+                                    {{ ($vice_id == $record->id)  ? 'selected' : '' }}
+                                    value="{{ $record->id }}"
+                                >
+                                    {{ $record->name }}
+                                </option>
+                            @endforeach
+                        </select>
                         <select name="user_id" class="form-control setupSelect2 ">
-                            <option value="0">Chọn {{ isset($config['userCatalogue']) ? $config['userCatalogue']->name : '' }}</option>
+                            <option value="0">Chọn công chức</option>
                             @foreach($config['usersOnBranch'] as $record)
                                 <option 
                                     {{ ($user_id == $record->id)  ? 'selected' : '' }}

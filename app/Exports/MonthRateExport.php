@@ -7,6 +7,8 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Font;
 use Illuminate\Support\Facades\Log;
+use App\Models\Evaluation;
+use App\Models\User;
 
 class MonthRateExport
 {
@@ -59,16 +61,18 @@ class MonthRateExport
             'Số lần vi phạm quy chế, quy định',
             'Hình thức kỷ luật',
             'Tự xếp loại',
+            'Điểm của lãnh đạo đánh giá',
+            'Điểm của lãnh đạo phê duyệt',
             '% mức độ hoàn thành nhiệm vụ',
             'Mức xếp loại của Lãnh đạo',
             'Tổng Nhiệm Vụ',
         ];
 
         $sheet->fromArray($headings, null, 'A4');
-        $sheet->getStyle('A4:L4')->getFont()->setBold(true);
-        $sheet->getStyle('A4:L4')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('A4:L4')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
-        $sheet->getStyle('A4:L4')->getAlignment()->setWrapText(true);
+        $sheet->getStyle('A4:N4')->getFont()->setBold(true);
+        $sheet->getStyle('A4:N4')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A4:N4')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+        $sheet->getStyle('A4:N4')->getAlignment()->setWrapText(true);
 
         // Tạo hàm lấy team an toàn
         $getTeamName = function ($user) {
@@ -103,6 +107,9 @@ class MonthRateExport
         $previousTeam = null;
 
         foreach ($evaluationsArray as $key => $evaluation) {
+            $user = $evaluation['user'];
+            $leaderPoint = ($user->parent_id != 0) ? $this->calculateLeaderPoint($user, $this->month) : 0;
+            $approverPoint = ($user->parent_id != 0) ? $this->calculateApproverPoint($user, $this->month) : 0;
             // Lấy team từ quan hệ teams của user
             $team = $getTeamName($evaluation['user']);
             
@@ -131,6 +138,8 @@ class MonthRateExport
                 $evaluation['violation_count'] ?? 0,
                 $evaluation['disciplinary_action'] ?? '',
                 $evaluation['self_rating'] ?? '',
+                $leaderPoint, // điểm tbc của lãnh đạo đánh giá
+                $approverPoint, // điểm tbc của lãnh đạo phê duyệt
                 $evaluation['completion_percentage'] ?? 0,
                 $evaluation['final_rating'] ?? '',
                 $evaluation['totalTask'] ?? 0,
@@ -172,7 +181,7 @@ class MonthRateExport
                 ],
             ],
         ];
-        $sheet->getStyle('A4:L' . $lastRow)->applyFromArray($styleArray);
+        $sheet->getStyle('A4:N' . $lastRow)->applyFromArray($styleArray);
 
         // Điều chỉnh độ rộng cột
         $sheet->getColumnDimension('A')->setWidth(5);  // STT
@@ -187,11 +196,13 @@ class MonthRateExport
         $sheet->getColumnDimension('J')->setWidth(20); // % mức độ hoàn thành
         $sheet->getColumnDimension('K')->setWidth(15); // Mức xếp loại
         $sheet->getColumnDimension('L')->setWidth(15); // Tổng Nhiệm Vụ
+        $sheet->getColumnDimension('M')->setWidth(15); // Tổng Nhiệm Vụ
+        $sheet->getColumnDimension('N')->setWidth(15); // Tổng Nhiệm Vụ
 
         // Căn giữa các cột trong bảng
-        $sheet->getStyle('A4:L' . $lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('A4:L' . $lastRow)->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
-        $sheet->getStyle('A4:L' . $lastRow)->getAlignment()->setWrapText(true);
+        $sheet->getStyle('A4:N' . $lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A4:N' . $lastRow)->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+        $sheet->getStyle('A4:N' . $lastRow)->getAlignment()->setWrapText(true);
 
         // Tạo thư mục tạm trong public nếu chưa tồn tại
         $tempDir = public_path('temp');
@@ -209,5 +220,67 @@ class MonthRateExport
         $writer->save($temp_file);
 
         return $temp_file;
+    }
+
+    private function calculateLeaderPoint($user, $month) {
+        list($monthNumber, $year) = explode('/', $month);
+        $totalPoint = 0;
+        $count = 0;
+        
+        $evaluations = Evaluation::where('user_id', $user->id)
+            ->whereMonth('created_at', $monthNumber)
+            ->whereYear('created_at', $year)
+            ->get()->toArray();
+        
+        if (empty($evaluations)) {
+            return 0;
+        }
+        
+        foreach ($evaluations as $evaluation) {
+            foreach ($evaluation['statuses'] as $status) {
+                $userEvaluation = $status['pivot']['user_id'];
+                $infoUser = User::where('id', $userEvaluation)->first();
+                
+                if ($userEvaluation == $user->id || $infoUser->parent_id == 0) {
+                    continue;
+                }
+                
+                $pointValue = $status['pivot']['point'];
+                $totalPoint += $pointValue;
+                
+                if ($pointValue != 0) {
+                    $count++;
+                }
+            }
+        }
+        
+        return ($count > 0) ? ($totalPoint / $count) : 0;
+    }
+
+    private function calculateApproverPoint($user, $month){
+        list($monthNumber, $year) = explode('/', $month);
+        $average = 0;
+        $totalPoint = 0;
+        $count = 0;
+        $evaluations = Evaluation::where('user_id', $user->id)
+            ->whereMonth('created_at', $monthNumber) 
+            ->whereYear('created_at', $year) 
+            ->get()->toArray();
+        if(!$evaluations){
+            return $average;
+        }
+        foreach ($evaluations as $evaluation) {
+            foreach ($evaluation['statuses'] as $status) {
+                $userEvaluation = $status['pivot']['user_id'];
+                if ($userEvaluation == $user->id) {
+                    continue;
+                }
+                if ($status['pivot']['point'] > 0) {
+                    $totalPoint += $status['pivot']['point'];
+                    $count++;
+                }
+            }
+        }
+        return ($count > 0) ? ($totalPoint / $count) : 0;
     }
 }
