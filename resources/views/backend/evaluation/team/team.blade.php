@@ -11,13 +11,14 @@
                 <h5>Quản lý đánh giá</h5>
             </div>
             <div class="ibox-content">
-                @include('backend.evaluation.filterTeam')
+                @include('backend.evaluation.component.filterCongChuc')
                 
                 <div class="table-responsive">
                     <table class="table table-striped table-bordered">
                         <thead>
                             <tr>
                                 <th class="text-center col-stt">STT</th>
+                                <th>Ngày giao</th>
                                 <th>Ngày xong</th>
                                 <th>Thời gian</th>
                                 <th>SP đầu ra</th>
@@ -35,6 +36,9 @@
                                     <tr>
                                         <td class="text-center col-stt">
                                             {{ $record->id }}
+                                        </td>
+                                        <td class="col-time">
+                                            {{ $record->start_date }}
                                         </td>
                                         <td class="col-time">
                                             {{ $record->due_date }}

@@ -33,4 +33,10 @@ class UserRepository extends  BaseRepository{
         return $this->model->whereIn($field, $in)->get();
     }
 
+    public function getUserByLevel($level){
+        return $this->model->whereHas('user_catalogues', function($subQuery) use($level){
+            $subQuery->where('level', $level);
+        })->get();
+    }
+
 }

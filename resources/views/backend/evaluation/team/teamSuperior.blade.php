@@ -9,7 +9,7 @@
                 <h5>Quản lý đánh giá</h5>
             </div>
             <div class="ibox-content">
-                @include('backend.evaluation.filterTeam')
+                @include('backend.evaluation.component.filterTeam')
                 @php
                     // Khởi tạo mảng chứa tất cả các vị trí và thông tin
                     $allPositionsData = [];

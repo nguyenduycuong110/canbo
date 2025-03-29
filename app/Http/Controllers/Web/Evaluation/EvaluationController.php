@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request as CustomRequest;
 use App\Models\User;
+use App\Services\Interfaces\Team\TeamServiceInterface as TeamService;
 
 class EvaluationController extends BaseController{
 
@@ -28,6 +29,7 @@ class EvaluationController extends BaseController{
     protected $statusService;
     protected $userService;
     protected $userCatalogueService;
+    protected $teamService;
 
     private const CANBO_LEVEL = 5;
     private const DOIPHO_LEVEL = 4;
@@ -39,6 +41,7 @@ class EvaluationController extends BaseController{
         StatusService $statusService,
         UserService $userService,
         UserCatalogueService $userCatalogueService,
+        TeamService $teamService,
     )
     {
         $this->service = $service;
@@ -46,6 +49,7 @@ class EvaluationController extends BaseController{
         $this->statusService = $statusService;
         $this->userService = $userService;
         $this->userCatalogueService = $userCatalogueService;
+        $this->teamService = $teamService;
         parent::__construct($service);
     }
 
@@ -133,6 +137,7 @@ class EvaluationController extends BaseController{
         return [
             'tasks' =>  $this->taskService->checkTask(),
             'statuses' => $this->statusService->all(),
+            'teams' => $this->teamService->teamPublish(),
         ];
     }
 
@@ -279,10 +284,10 @@ class EvaluationController extends BaseController{
                 'isCreate' => false,
                 'filter' => false,
                 'usersOnBranch' => $this->getCongChucInsideNode($request, $level),
-                'captainsOnBranch' => [],
-                'viceCaptainsOnBranch' => [],
                 'level' => $level
             ];
+
+            $userByLevel = $this->userService->getUserByLevel($level);
 
             $data = $this->getData();
             extract($data);
@@ -294,6 +299,7 @@ class EvaluationController extends BaseController{
                 'allPositionsData',
                 'isDeputyTeamLeader',
                 'statuses',
+                'userByLevel',
                 ...array_keys($data),
             ));
         } catch (\Throwable $th) {
@@ -307,21 +313,7 @@ class EvaluationController extends BaseController{
         $auth = Auth::user();
         $auth->load(['subordinates']);
         $subordinateIds = [];
-        if($request->user_id != 0){
-            $subordinateIds = [$request->user_id];
-            $evaluationRequest = new CustomRequest();
-            $evaluationRequest->merge([
-                'relationFilter' => [
-                    'users' => [
-                        'user_id' => [
-                            'in' => 'user_id|' . implode(',', $subordinateIds)
-                        ]
-                    ]
-                ]
-            ]);
-            $evaluations = $this->service->paginate($evaluationRequest);
-            return $evaluations;
-        }
+       
         if($auth->user_catalogues->level < 4){
             $request->merge([
                 'lft' => ['gt' => $auth->lft],
@@ -342,17 +334,42 @@ class EvaluationController extends BaseController{
                 $subordinateIds = $auth->subordinates()->get()->pluck('id')->toArray();
             }
         }
+
+        $userId = [];
+        if($request->user_id){
+            $userId = [$request->user_id];
+        }else{
+            $userId = $subordinateIds;
+        }
+
         $evaluationRequest = new CustomRequest();
-        $evaluationRequest->merge([
-            'relationFilter' => [
-                'users' => [
-                    'user_id' => [
-                        'in' => 'user_id|' . implode(',', $subordinateIds)
-                    ]
+
+        $relationFilter = [
+            'users' => [
+                'user_id' => [
+                    'in' => 'user_id|' . implode(',', $userId)
                 ]
             ]
+        ];
+
+        // Thêm điều kiện team_id nếu có
+        if ($request->has('team_id') && $request->team_id != 0) {
+            $relationFilter['users.teams'] = [
+                'id' => [
+                    'in' => 'id|' . $request->team_id
+                ]
+            ];
+        }
+
+        if($request->has('start_date') && $request->start_date != ''){
+            $evaluationRequest->merge([
+                'start_date' => $request->start_date
+            ]);
+        }
+
+        $evaluationRequest->merge([
+            'relationFilter' => $relationFilter
         ]);
-        
 
         $evaluations = $this->service->paginate($evaluationRequest);
         return $evaluations;
@@ -374,7 +391,6 @@ class EvaluationController extends BaseController{
     
         $users = $this->userService->paginate($request);
 
-
         if (!is_null($users) && count($users)) {
             $userIds = $users->pluck('id')->toArray();
         }
@@ -383,17 +399,42 @@ class EvaluationController extends BaseController{
         if (empty($userIds)) {
             return null;
         }
-    
+
+        $userId = [];
+        if($request->user_id){
+            $userId = [$request->user_id];
+        }else{
+            $userId = $userIds;
+        }
+
+
         // Lấy danh sách đánh giá của các user này
         $evaluationRequest = new CustomRequest();
-        $evaluationRequest->merge([
-            'relationFilter' => [
-                'users' => [
-                    'user_id' => [
-                        'in' => 'user_id|' . implode(',', $userIds)
-                    ]
+        $relationFilter = [
+            'users' => [
+                'user_id' => [
+                    'in' => 'user_id|' . implode(',', $userId)
                 ]
             ]
+        ];
+
+        // Thêm điều kiện team_id nếu có
+        if ($request->has('team_id') && $request->team_id != 0) {
+            $relationFilter['users.teams'] = [
+                'id' => [
+                    'in' => 'id|' . $request->team_id
+                ]
+            ];
+        }
+
+        if($request->has('start_date') && $request->start_date != ''){
+            $evaluationRequest->merge([
+                'start_date' => $request->start_date
+            ]);
+        }
+
+        $evaluationRequest->merge([
+            'relationFilter' => $relationFilter
         ]);
     
         $evaluations = $this->service->paginate($evaluationRequest);
@@ -428,6 +469,7 @@ class EvaluationController extends BaseController{
         $users = User::whereIn('id', $subordinateIds)->get();
         return $users;
     }
+    
 
     // public function getDoiTruongInsideNode($request){
     //     /** @var \App\Models\User $auth */

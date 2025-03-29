@@ -160,48 +160,124 @@ trait HasQuery {
         return $query;
     }
 
-    public function scopeRelationFilter($query, array $relationFilter = []){
-        if(count($relationFilter)){
-            foreach($relationFilter as $key => $val){
-                $query->whereHas($key, function($subQuery) use ($val){
-                    foreach($val as $field => $condition){
-                        foreach($condition as $operator => $valFilter){
-                            switch ($operator) {
-                                case 'gt':
-                                    $subQuery->where($field, '>', $valFilter);
-                                    break;
-                                case 'gte':
-                                    $subQuery->where($field, '>=', $valFilter);
-                                    break;
-                                case 'lt':
-                                    $subQuery->where($field, '<', $valFilter);
-                                    break;
-                                case 'lte':
-                                    $subQuery->where($field, '<=', $valFilter);
-                                    break;
-                                case 'eq':
-                                    $subQuery->where($field, '=', $valFilter);
-                                    break;
-                                case 'between':
-                                    [$min, $max] = explode(',', $valFilter); 
-                                    $subQuery->whereBetween($field, [ $min, $max]);
-                                    break;
-                                case 'in': 
-                                    [$field, $in] = explode('|', $valFilter);
-                                    $whereIn = explode(',', $in);
-                                    if(count($whereIn)){
-                                        $subQuery->whereIn($field, $whereIn);                                                    
-                                    }
-                                default:
-                                    # code...
-                                    break;
-                            }
-                        }
-                    }
-                });
+    // public function scopeRelationFilter($query, array $relationFilter = []){
+    //     if(count($relationFilter)){
+    //         foreach($relationFilter as $key => $val){
+    //             $query->whereHas($key, function($subQuery) use ($val){
+    //                 foreach($val as $field => $condition){
+    //                     foreach($condition as $operator => $valFilter){
+    //                         switch ($operator) {
+    //                             case 'gt':
+    //                                 $subQuery->where($field, '>', $valFilter);
+    //                                 break;
+    //                             case 'gte':
+    //                                 $subQuery->where($field, '>=', $valFilter);
+    //                                 break;
+    //                             case 'lt':
+    //                                 $subQuery->where($field, '<', $valFilter);
+    //                                 break;
+    //                             case 'lte':
+    //                                 $subQuery->where($field, '<=', $valFilter);
+    //                                 break;
+    //                             case 'eq':
+    //                                 $subQuery->where($field, '=', $valFilter);
+    //                                 break;
+    //                             case 'between':
+    //                                 [$min, $max] = explode(',', $valFilter); 
+    //                                 $subQuery->whereBetween($field, [ $min, $max]);
+    //                                 break;
+    //                             case 'in': 
+    //                                 [$field, $in] = explode('|', $valFilter);
+    //                                 $whereIn = explode(',', $in);
+    //                                 if(count($whereIn)){
+    //                                     $subQuery->whereIn($field, $whereIn);                                                    
+    //                                 }
+    //                             default:
+    //                                 # code...
+    //                                 break;
+    //                         }
+    //                     }
+    //                 }
+    //             });
+    //         }
+    //     }
+    //     return $query;
+    // }
+
+    public function scopeRelationFilter($query, array $relationFilter = []) {
+        if (count($relationFilter)) {
+            foreach ($relationFilter as $key => $val) {
+                // Kiểm tra xem quan hệ có lồng nhau không (chứa dấu chấm)
+                if (strpos($key, '.') !== false) {
+                    // Xử lý quan hệ lồng nhau
+                    $relations = explode('.', $key);
+                    $this->handleNestedRelation($query, $relations, $val);
+                } else {
+                    // Xử lý quan hệ đơn như code gốc
+                    $query->whereHas($key, function ($subQuery) use ($val) {
+                        $this->applyConditions($subQuery, $val);
+                    });
+                }
             }
         }
         return $query;
+    }
+    
+    // Hàm hỗ trợ để xử lý quan hệ lồng nhau
+    private function handleNestedRelation($query, array $relations, $conditions, $index = 0) {
+        if ($index >= count($relations)) {
+            return;
+        }
+    
+        $relation = $relations[$index];
+        $query->whereHas($relation, function ($subQuery) use ($relations, $conditions, $index) {
+            if ($index === count($relations) - 1) {
+                // Đây là quan hệ cuối cùng, áp dụng điều kiện
+                $this->applyConditions($subQuery, $conditions);
+            } else {
+                // Đệ quy cho quan hệ lồng nhau tiếp theo
+                $this->handleNestedRelation($subQuery, $relations, $conditions, $index + 1);
+            }
+        });
+    }
+    
+    // Hàm áp dụng các điều kiện
+    private function applyConditions($query, array $conditions) {
+        foreach ($conditions as $field => $condition) {
+            foreach ($condition as $operator => $valFilter) {
+                switch ($operator) {
+                    case 'gt':
+                        $query->where($field, '>', $valFilter);
+                        break;
+                    case 'gte':
+                        $query->where($field, '>=', $valFilter);
+                        break;
+                    case 'lt':
+                        $query->where($field, '<', $valFilter);
+                        break;
+                    case 'lte':
+                        $query->where($field, '<=', $valFilter);
+                        break;
+                    case 'eq':
+                        $query->where($field, '=', $valFilter);
+                        break;
+                    case 'between':
+                        [$min, $max] = explode(',', $valFilter);
+                        $query->whereBetween($field, [$min, $max]);
+                        break;
+                    case 'in':
+                        [$field, $in] = explode('|', $valFilter);
+                        $whereIn = explode(',', $in);
+                        if (count($whereIn)) {
+                            $query->whereIn($field, $whereIn);
+                        }
+                        break;
+                    default:
+                        # code...
+                        break;
+                }
+            }
+        }
     }
 
 }
