@@ -31,28 +31,6 @@
                 <div class="uk-flex uk-flex-middle">
                     <div class="uk-search uk-flex uk-flex-middle mr10">
                         <input type="text" value="{{ request('start_date.eq') ?: old('start_date.eq') }}"  placeholder="Chọn ngày giao việc" name="start_date[eq]" class="datepicker mr10 form-control">
-                        <select name="captain_id" class="form-control setupSelect2 ">
-                            <option value="0">Chọn đội trưởng</option>
-                            @foreach($config['captainsOnBranch'] as $record)
-                                <option 
-                                    {{ ($captain_id == $record->id)  ? 'selected' : '' }}
-                                    value="{{ $record->id }}"
-                                >
-                                    {{ $record->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                        <select name="vice_id" class="form-control setupSelect2 ">
-                            <option value="0">Chọn đội phó</option>
-                            @foreach($config['viceCaptainsOnBranch'] as $record)
-                                <option 
-                                    {{ ($vice_id == $record->id)  ? 'selected' : '' }}
-                                    value="{{ $record->id }}"
-                                >
-                                    {{ $record->name }}
-                                </option>
-                            @endforeach
-                        </select>
                         <select name="user_id" class="form-control setupSelect2 ">
                             <option value="0">Chọn công chức</option>
                             @foreach($config['usersOnBranch'] as $record)

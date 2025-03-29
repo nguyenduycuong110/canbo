@@ -28,7 +28,7 @@
                 <div class="ibox">
                     <div class="ibox-content">
                         <div class="row mb15">
-                            <div class="col-lg-6">
+                            <div class="col-lg-4">
                                 <div class="form-row">
                                     <label for="" class="control-label text-left">Nội dung công việc<span class="text-danger">(*)</span></label>
                                     <select name="task_id" class="form-control setupSelect2 ">
@@ -43,7 +43,20 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="col-lg-6">
+                            <div class="col-lg-4">
+                                <div class="form-row">
+                                    <label for="" class="control-label text-left">Ngày giao việc</label>
+                                    <input 
+                                        type="date"
+                                        name="start_date"
+                                        value="{{ old('start_date', (isset($model->start_date)) ? date('Y-m-d', strtotime($model->start_date)) : '') }}"
+                                        class="form-control"
+                                        placeholder=""
+                                        autocomplete="off"
+                                    >
+                                </div>
+                            </div>
+                            <div class="col-lg-4">
                                 <div class="form-row">
                                     <label for="" class="control-label text-left">Tổng công việc / nhiệm vụ được giao<span class="text-danger">(*)</span></label>
                                     <input 

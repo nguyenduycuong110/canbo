@@ -39,7 +39,7 @@
                                     {{ $record->description }}
                                 </td>
                                 <td>
-                                    {{ $record->users->name }}
+                                    {{ $record->users?->name }}
                                 </td>
                                 <td class="text-center js-switch-{{ $record->id }}"> 
                                     <input type="checkbox" value="{{ $record->publish }}" class="js-switch status " data-field="publish" {{ ($record->publish == 2) ? 'checked' : '' }} data-model="{{ $config['model'] }}" data-modelId="{{ $record->id }}" />

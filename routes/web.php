@@ -86,6 +86,7 @@ Route::middleware(['auth'])->group(function(){
     Route::get('ajax/evaluation/getDepartment', [AjaxEvaluationController::class, 'getDepartment'])->name('ajax.evaluation.getDepartment');
     Route::get('ajax/evaluation/getDepartmentDay', [AjaxEvaluationController::class, 'getDepartmentEvaluationHistory']);
     Route::post('ajax/evaluation/setPoint', [AjaxEvaluationController::class, 'setPoint'])->name('ajax.evaluation.setPoint');
-    Route::get('ajax/evaluation/getVice', [AjaxEvaluationController::class, 'getVice'])->name('ajax.evaluation.getVice');
-    Route::get('ajax/evaluation/getOfficer', [AjaxEvaluationController::class, 'getOfficer'])->name('ajax.evaluation.getOfficer');
+    Route::get('ajax/evaluation/filterOfficerTeam', [AjaxEvaluationController::class, 'filterOfficerTeam'])->name('ajax.evaluation.filterOfficerTeam');
+    // Route::get('ajax/evaluation/getVice', [AjaxEvaluationController::class, 'getVice'])->name('ajax.evaluation.getVice');
+    // Route::get('ajax/evaluation/getOfficer', [AjaxEvaluationController::class, 'getOfficer'])->name('ajax.evaluation.getOfficer');
 });

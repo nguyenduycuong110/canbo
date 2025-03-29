@@ -279,8 +279,8 @@ class EvaluationController extends BaseController{
                 'isCreate' => false,
                 'filter' => false,
                 'usersOnBranch' => $this->getCongChucInsideNode($request, $level),
-                'captainsOnBranch' => $this->getDoiTruongInsideNode($request),
-                'viceCaptainsOnBranch' => $this->getDoiPhoInsideNode($request),
+                'captainsOnBranch' => [],
+                'viceCaptainsOnBranch' => [],
                 'level' => $level
             ];
 
@@ -429,46 +429,45 @@ class EvaluationController extends BaseController{
         return $users;
     }
 
-    public function getDoiTruongInsideNode($request){
-        /** @var \App\Models\User $auth */
-        $auth = Auth::user();
-        $auth->load(['subordinates']);
-        $subordinateIds = [];
-        if($auth->user_catalogues->level < 3){
-            $request->merge([
-                'lft' => ['gt' => $auth->lft],
-                'rgt' => ['lt' => $auth->rgt],
-                'level' => 3, 
-                'type' => 'all'
-            ]);
-            $users = $this->userService->paginate($request);
-            if(!is_null($users)){
-                foreach($users as $key => $user){ 
-                    if($user->user_catalogues->name == "Đội trưởng"){
-                        $subordinateIds[] = $user->id;
-                    }
-                }
-            }
-        }
-        $users = User::whereIn('id', $subordinateIds)->get();
-        return $users;
-    }
+    // public function getDoiTruongInsideNode($request){
+    //     /** @var \App\Models\User $auth */
+    //     $auth = Auth::user();
+    //     $auth->load(['subordinates']);
+    //     $subordinateIds = [];
+    //     if($auth->user_catalogues->level < 3){
+    //         $request->merge([
+    //             'lft' => ['gt' => $auth->lft],
+    //             'rgt' => ['lt' => $auth->rgt],
+    //             'level' => 3, 
+    //             'type' => 'all'
+    //         ]);
+    //         $users = $this->userService->paginate($request);
+    //         if(!is_null($users)){
+    //             foreach($users as $key => $user){ 
+    //                 if($user->user_catalogues->name == "Đội trưởng"){
+    //                     $subordinateIds[] = $user->id;
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     $users = User::whereIn('id', $subordinateIds)->get();
+    //     return $users;
+    // }
 
-    public function getDoiPhoInsideNode($request){
-        /** @var \App\Models\User $auth */
-        $auth = Auth::user();
-        $auth->load(['subordinates']);
-        $subordinateIds = [];
-        if($auth->user_catalogues->level < 3){
-            $request->merge([
-                'lft' => ['gt' => $auth->lft],
-                'rgt' => ['lt' => $auth->rgt],
-                'level' => 4, 
-                'type' => 'all'
-            ]);
-            $users = $this->userService->paginate($request);
-        }
-        return $users;
-    }
+    // public function getDoiPhoInsideNode($request){
+    //     /** @var \App\Models\User $auth */
+    //     $auth = Auth::user();
+    //     $auth->load(['subordinates']);
+    //     if($auth->user_catalogues->level < 3){
+    //         $request->merge([
+    //             'lft' => ['gt' => $auth->lft],
+    //             'rgt' => ['lt' => $auth->rgt],
+    //             'level' => 4, 
+    //             'type' => 'all'
+    //         ]);
+    //         $users = $this->userService->paginate($request);
+    //     }
+    //     return $users;
+    // }
 
 }   

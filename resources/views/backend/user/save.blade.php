@@ -203,7 +203,6 @@
                                     </select>
                                 </div>
                             </div>
-                            
                             <div class="col-lg-6 mb15">
                                 <div class="form-row">
                                     <label for="" class="control-label text-left">Đội <span class="text-danger">(*)</span></label>
@@ -228,7 +227,7 @@
                                     <select {{ (isset($model) && $model->user_catalogues->level == 5 ) ? '' : 'disabled' }} multiple name="managers[]" class="form-control setupSelect2 manager-select">
                                         @if(isset($dropdown))
                                             @foreach($dropdown as $key => $val)
-                                            @if($val->user_catalogues->level !== 4) @continue @endif
+                                                @if($val->user_catalogues->level !== 4 || isset($model) &&  $val->lft > $model->lft || isset($model) &&  $val->rgt < $model->rgt ) @continue @endif
                                                 <option
                                                 @if(isset($model->managers))
                                                     {{ in_array($val->id, $model->managers->pluck('id')->toArray()) ? 'selected' : '' }}

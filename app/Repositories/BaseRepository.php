@@ -5,8 +5,9 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class BaseRepository {
-    protected $model;
 
+    protected $model;
+    
     public function __construct(
         Model $model
     ){

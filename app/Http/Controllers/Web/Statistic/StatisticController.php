@@ -62,12 +62,11 @@ class StatisticController extends BaseController{
             $auth = Auth::user();
             $isLeader = ($auth->rgt - $auth->lft > 1);
             $template =  "backend.{$this->namespace}.department.day";
-            // $users = $this->getUser($request, $auth, $level);
-
             $users = $this->getUserInsideNode($request, $level);
- 
+            $teams = $this->getTeamInsideNode($users);
             return view($template , compact(
                 'users',
+                'teams',
                 'auth',
                 'level'
             ));
@@ -87,10 +86,10 @@ class StatisticController extends BaseController{
                 "backend.{$this->namespace}.department.officer";
 
             $users = $this->getUserInsideNode($request, $level);
-
-
+            $teams = $this->getTeamInsideNode($users);
             return view($template , compact(
                 'users',
+                'teams',
                 'auth'
             ));
         } catch (\Throwable $th) {
@@ -148,6 +147,25 @@ class StatisticController extends BaseController{
         ]);
         return $this->userService->paginate($request);
     }
-
+    
+    private function getTeamInsideNode($users){
+        $teams = [];
+        $teamIds = [];
+        if(!$users){ 
+            return $teams;
+        }
+        foreach($users as $k => $user){
+            $teamId = $user->teams->id;
+            if(!in_array($teamId, $teamIds)){
+                $teams[] = [
+                    'id' => $user->teams->id,
+                    'name' => $user->teams->name
+                ];
+                $teamIds[] = $teamId;
+            }
+            
+        }
+        return $teams;
+    }
 
 }

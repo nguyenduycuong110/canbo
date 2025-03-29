@@ -628,7 +628,7 @@
     }
 
     HT.setPointForEvaluation = () => {
-        $(document).on('change','input[name="point"]', function(){
+        $(document).on('change','.setPoint', function(){
             let _this = $(this)
             let point = _this.val()
             if(point == 0){
@@ -647,12 +647,17 @@
                 data: option,
                 dataType: 'json', 
                 success: function(res) {
-                    if(res.response == 2){
-                       toastr.success('Cập nhật điểm thành công !');
-                    }else{
-                        toastr.error('Bạn phải chọn đánh giá trước khi nhập điểm !');
-                        window.location.reload()
+                    if(res.response.code == 404){
+                        toastr.error('Vui lòng chọn đánh giá của bạn trước khi nhập điểm !');
+                        return;
                     }
+                    if(res.response.status == false){
+                        let min = res.response.min
+                        let max = res.response.max
+                        toastr.error('Cập nhật điểm không thành công . Khoảng điểm phù hợp với đánh giá của bạn nằm trong khoảng từ '+min+' đến '+max+' !');
+                        return;
+                    }
+                    toastr.success('Cập nhật điểm thành công !');
                 },
                 error: function(jqXHR, textStatus, errorThrown) {
                     
@@ -661,77 +666,36 @@
         })
     }
 
-    HT.getListVice = () => {
-        $(document).on('change', 'select[name="captain_id"]', function(){
+    HT.filterOfficerTeam = () => {
+        $(document).on('change', '.team_id', function(){
             let _this = $(this)
-            let captain_id = _this.val()
-            if(captain_id == 0){
+            let team_id = _this.val()
+            if(team_id == 0){
                 return;
             }
+            let option = {
+                team_id : team_id,
+            }
             $.ajax({
-                url: 'ajax/evaluation/getVice', 
+                url: 'ajax/evaluation/filterOfficerTeam', 
                 type: 'GET', 
-                data: {
-                    captain_id : captain_id
-                },
+                data: option,
                 dataType: 'json', 
                 success: function(res) {
-                    if(res.response){
-                        HT.appendSelectBoxVice(res.response)
-                    }
+                    HT.appendSelectBoxUserStatitics(res.response)
                 },
                 error: function(jqXHR, textStatus, errorThrown) {
                     
                 }
             });
-        });
+        })
     }
 
-    HT.getListOfficer = () => {
-        $(document).on('change', 'select[name="vice_id"]', function(){
-            let _this = $(this)
-            let vice_id = _this.val()
-            if(vice_id == 0){
-                return;
-            }
-            $.ajax({
-                url: 'ajax/evaluation/getOfficer', 
-                type: 'GET', 
-                data: {
-                    vice_id : vice_id
-                },
-                dataType: 'json', 
-                success: function(res) {
-                    if(res.response){
-                        HT.appendSelectBoxOfficer(res.response)
-                    }
-                },
-                error: function(jqXHR, textStatus, errorThrown) {
-                    
-                }
-            });
-        });
-    }
-
-    HT.appendSelectBoxVice = (res) => {
-        let viceSelect = $('select[name="vice_id"]');
-        viceSelect.empty();
-        viceSelect.append('<option value="0">Chọn đội phó</option>');
-        if(res.vicers && res.vicers.length > 0) {
-            $.each(res.vicers, function(index, vice) {
-                viceSelect.append(
-                    $('<option></option>')
-                    .val(vice.id)
-                    .text(vice.name)
-                );
-            });
-        }
-        
+    HT.appendSelectBoxUserStatitics = (res) => {
+        console.log(res.users)
         let userSelect = $('select[name="user_id"]');
         userSelect.empty();
-        userSelect.append('<option value="0">Chọn công chức</option>');
-
-        
+        userSelect.append('<option value="0">Chọn cán bộ</option>');
         if(res.users && res.users.length > 0) {
             $.each(res.users, function(index, user) {
                 userSelect.append(
@@ -741,34 +705,147 @@
                 );
             });
         }
-        
         $('.setupSelect2').select2();
-    };
+    }
 
-    HT.appendSelectBoxOfficer = (res) => {
-        let userSelect = $('select[name="user_id"]');
-        userSelect.empty();
-        userSelect.append('<option value="0">Chọn công chức</option>');
-
-        if(res.users && res.users.length > 0) {
-            $.each(res.users, function(index, user) {
-                userSelect.append(
-                    $('<option></option>')
-                    .val(user.id)
-                    .text(user.name)
-                );
-            });
-        }
+    // HT.appendSelectBoxVice = (res) => {
+    //     let viceSelect = $('select[name="vice_id"]');
+    //     viceSelect.empty();
+    //     viceSelect.append('<option value="0">Chọn đội phó</option>');
+    //     if(res.vicers && res.vicers.length > 0) {
+    //         $.each(res.vicers, function(index, vice) {
+    //             viceSelect.append(
+    //                 $('<option></option>')
+    //                 .val(vice.id)
+    //                 .text(vice.name)
+    //             );
+    //         });
+    //     }
         
-        $('.setupSelect2').select2();
-    };
+    //     let userSelect = $('select[name="user_id"]');
+    //     userSelect.empty();
+    //     userSelect.append('<option value="0">Chọn công chức</option>');
+
+        
+    //     if(res.users && res.users.length > 0) {
+    //         $.each(res.users, function(index, user) {
+    //             userSelect.append(
+    //                 $('<option></option>')
+    //                 .val(user.id)
+    //                 .text(user.name)
+    //             );
+    //         });
+    //     }
+        
+    //     $('.setupSelect2').select2();
+    // };
+
+    // HT.getListVice = () => {
+    //     $(document).on('change', 'select[name="captain_id"]', function(){
+    //         let _this = $(this)
+    //         let captain_id = _this.val()
+    //         if(captain_id == 0){
+    //             return;
+    //         }
+    //         $.ajax({
+    //             url: 'ajax/evaluation/getVice', 
+    //             type: 'GET', 
+    //             data: {
+    //                 captain_id : captain_id
+    //             },
+    //             dataType: 'json', 
+    //             success: function(res) {
+    //                 if(res.response){
+    //                     HT.appendSelectBoxVice(res.response)
+    //                 }
+    //             },
+    //             error: function(jqXHR, textStatus, errorThrown) {
+                    
+    //             }
+    //         });
+    //     });
+    // }
+
+    // HT.getListOfficer = () => {
+    //     $(document).on('change', 'select[name="vice_id"]', function(){
+    //         let _this = $(this)
+    //         let vice_id = _this.val()
+    //         if(vice_id == 0){
+    //             return;
+    //         }
+    //         $.ajax({
+    //             url: 'ajax/evaluation/getOfficer', 
+    //             type: 'GET', 
+    //             data: {
+    //                 vice_id : vice_id
+    //             },
+    //             dataType: 'json', 
+    //             success: function(res) {
+    //                 if(res.response){
+    //                     HT.appendSelectBoxOfficer(res.response)
+    //                 }
+    //             },
+    //             error: function(jqXHR, textStatus, errorThrown) {
+                    
+    //             }
+    //         });
+    //     });
+    // }
+
+    // HT.appendSelectBoxVice = (res) => {
+    //     let viceSelect = $('select[name="vice_id"]');
+    //     viceSelect.empty();
+    //     viceSelect.append('<option value="0">Chọn đội phó</option>');
+    //     if(res.vicers && res.vicers.length > 0) {
+    //         $.each(res.vicers, function(index, vice) {
+    //             viceSelect.append(
+    //                 $('<option></option>')
+    //                 .val(vice.id)
+    //                 .text(vice.name)
+    //             );
+    //         });
+    //     }
+        
+    //     let userSelect = $('select[name="user_id"]');
+    //     userSelect.empty();
+    //     userSelect.append('<option value="0">Chọn công chức</option>');
+
+        
+    //     if(res.users && res.users.length > 0) {
+    //         $.each(res.users, function(index, user) {
+    //             userSelect.append(
+    //                 $('<option></option>')
+    //                 .val(user.id)
+    //                 .text(user.name)
+    //             );
+    //         });
+    //     }
+        
+    //     $('.setupSelect2').select2();
+    // };
+
+    // HT.appendSelectBoxOfficer = (res) => {
+    //     let userSelect = $('select[name="user_id"]');
+    //     userSelect.empty();
+    //     userSelect.append('<option value="0">Chọn công chức</option>');
+
+    //     if(res.users && res.users.length > 0) {
+    //         $.each(res.users, function(index, user) {
+    //             userSelect.append(
+    //                 $('<option></option>')
+    //                 .val(user.id)
+    //                 .text(user.name)
+    //             );
+    //         });
+    //     }
+        
+    //     $('.setupSelect2').select2();
+    // };
 
 
 	$(document).ready(function(){
        
-        // HT.triggerDate()
-        HT.getListOfficer()
-        HT.getListVice()
+        HT.filterOfficerTeam()
         HT.setPointForEvaluation()
         HT.changeStatusEvaluate()
         HT.switchery()

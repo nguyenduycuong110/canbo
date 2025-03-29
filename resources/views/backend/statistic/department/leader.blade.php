@@ -25,6 +25,12 @@
                                     style="height:32px;"
                                 />
                                 <input type="hidden" value="month" class="date-type">
+                                <select name="team_id" class="setupSelect2 team_id">
+                                    <option value="">[Chọn đội]</option>
+                                    @foreach($teams as $team)
+                                        <option value="{{ $team['id'] }}">{{ $team['name'] }}</option>
+                                    @endforeach
+                                </select>
                                 <select name="user_id" class="setupSelect2 user_id">
                                     <option value="">[Chọn cán bộ]</option>
                                     @foreach($users as $user)

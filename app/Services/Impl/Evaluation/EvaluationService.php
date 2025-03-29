@@ -196,7 +196,7 @@ class EvaluationService extends BaseService implements EvaluationServiceInterfac
 
                 $request->merge([
                     'user_id' => $user_id,
-                    'created_at' => [
+                    'start_date' => [
                         'gte' => $startOfMonth,
                         'lte' => $endOfMonth
                     ],
@@ -206,10 +206,9 @@ class EvaluationService extends BaseService implements EvaluationServiceInterfac
                 $inputDate = \Carbon\Carbon::createFromFormat('d/m/Y', $date);
                 $startOfDate = $inputDate->copy()->startOfDay()->toDateTimeString();
                 $endOfDate = $inputDate->copy()->endOfDay()->toDateTimeString();
-
                 $request->merge([
                     'user_id' => $user_id,
-                    'created_at' => [
+                    'start_date' => [
                         'gte' => $startOfDate,
                         'lte' => $endOfDate
                     ],
@@ -382,6 +381,23 @@ class EvaluationService extends BaseService implements EvaluationServiceInterfac
             $point = $request->point;
             if(!$evaluation = Evaluation::where('id', $evaluationId)->where('user_id', $selfEvaluationId)->first()){
                 throw new ModelNotFoundException(Lang::get('message.not_found'));
+            }
+            $statusEvaluation = $evaluation->statuses()->where('user_id', $evaluationUserId)->first();
+            if(is_null($statusEvaluation)){
+                return [
+                    'code' => 404
+                ];
+            }
+            $range = $statusEvaluation->point;
+            list($min, $max) = explode('-', $range);
+            $min = (int) $min;
+            $max = (int) $max;
+            if($point < $min || $point > $max){
+                return [
+                    'status' => false,
+                    'min' => $min,
+                    'max' => $max 
+                ];
             }
             return $evaluation->statuses()->where('user_id', $evaluationUserId)->update(['evaluation_status.point' => $point]);
         } catch (\Throwable $th) {

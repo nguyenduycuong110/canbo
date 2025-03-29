@@ -27,16 +27,22 @@
                                 <input type="hidden" value="day" class="date-type">
 
                                 @if($auth->user_catalogues->level < 5)
-                                <select name="user_id" class="setupSelect2 user_day_id">
-                                    <option value="">[Chọn cán bộ]</option>
-                                    @foreach($users as $user)
-                                        @if($user->user_catalogue_id == config('apps.general.officer'))
-                                            <option value="{{ $user->id }}">{{ $user->name }} - {{ $user->account }}</option>
-                                        @endif
-                                    @endforeach
-                                </select>
+                                    <select name="team_id" class="setupSelect2 team_id">
+                                        <option value="">[Chọn đội]</option>
+                                        @foreach($teams as $team)
+                                            <option value="{{ $team['id'] }}">{{ $team['name'] }}</option>
+                                        @endforeach
+                                    </select>
+                                    <select name="user_id" class="setupSelect2 user_day_id">
+                                        <option value="">[Chọn cán bộ]</option>
+                                        @foreach($users as $user)
+                                            @if($user->user_catalogue_id == config('apps.general.officer'))
+                                                <option value="{{ $user->id }}">{{ $user->name }} - {{ $user->account }}</option>
+                                            @endif
+                                        @endforeach
+                                    </select>
                                 @else
-                                <input type="text" class="hidden user_day_id" value="{{ $auth->id }}">
+                                    <input type="text" class="hidden user_day_id" value="{{ $auth->id }}">
                                 @endif
                             </div>
                             <div class="action">

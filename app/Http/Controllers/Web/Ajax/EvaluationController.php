@@ -406,36 +406,27 @@ class EvaluationController extends BaseController
         }
     }
    
-    public function getVice(Request $request){
-        $captainId = $request->captain_id;
-        $auth = $this->userRepository->findById($captainId);
-        $vicers = User::where('lft', '>=' , $auth->lft)
-                ->where('rgt', '<=' , $auth->rgt)
-                ->where('level', '=', 4)
-                ->get();
+    public function filterOfficerTeam(Request $request){
+        $auth = Auth::user();
         $users = [];
+        $userIds = [];
+        $vicers = User::where('lft', '>=' , $auth->lft)
+            ->where('rgt', '<=' , $auth->rgt)
+            ->where('level', '=', 4)
+            ->get();
+        $teamId = $request?->team_id;
         if($vicers){
             foreach($vicers as $k => $vicer){
                 if(empty($vicer->subordinates)){
                     continue;
                 }
                 foreach($vicer->subordinates as $item){
+                    if($item->teams->id != $teamId || in_array($item->id , $userIds)){
+                        continue;
+                    }
+                    $userIds[] = $item->id;
                     $users[] = $item;
                 }
-            }
-        }
-        $response['vicers'] = $vicers;
-        $response['users'] = $users;
-        return response()->json(['response' => $response]); 
-    }
-
-    public function getOfficer(Request $request){
-        $viceId = $request->vice_id;
-        $users = [];
-        $auth = $this->userRepository->findById($viceId);
-        if($auth){
-            foreach($auth->subordinates as $item){
-                $users[] = $item;
             }
         }
         $response['users'] = $users;

@@ -117,7 +117,7 @@
                                         <td>
                                             <input 
                                                 type="number" 
-                                                class="form-control text-left" 
+                                                class="form-control text-left setPoint" 
                                                 name="point"
                                                 value="{{ $record->pointForCurrentUser ?? 0  }}"
                                                 min="1"
