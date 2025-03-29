@@ -16,6 +16,8 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request as CustomRequest;
+use App\Models\User;
+use App\Services\Interfaces\Team\TeamServiceInterface as TeamService;
 
 class EvaluationController extends BaseController{
 
@@ -27,6 +29,7 @@ class EvaluationController extends BaseController{
     protected $statusService;
     protected $userService;
     protected $userCatalogueService;
+    protected $teamService;
 
     private const CANBO_LEVEL = 5;
     private const DOIPHO_LEVEL = 4;
@@ -38,6 +41,7 @@ class EvaluationController extends BaseController{
         StatusService $statusService,
         UserService $userService,
         UserCatalogueService $userCatalogueService,
+        TeamService $teamService,
     )
     {
         $this->service = $service;
@@ -45,6 +49,7 @@ class EvaluationController extends BaseController{
         $this->statusService = $statusService;
         $this->userService = $userService;
         $this->userCatalogueService = $userCatalogueService;
+        $this->teamService = $teamService;
         parent::__construct($service);
     }
 
@@ -132,6 +137,7 @@ class EvaluationController extends BaseController{
         return [
             'tasks' =>  $this->taskService->checkTask(),
             'statuses' => $this->statusService->all(),
+            'teams' => $this->teamService->teamPublish(),
         ];
     }
 
@@ -143,7 +149,7 @@ class EvaluationController extends BaseController{
             $currentUserPosition = $currentUserCatalogue->name;
             $currentUserLevel = $currentUserCatalogue->level;
             $isDeputyTeamLeader = $currentUserLevel == 4;
-
+            
             $records = match ($level) {
                 5 => $this->getCongChucInsideNodeEvaluation($request, $level),
                 default => $this->getInsideNodeEvaluation($request, $level),
@@ -156,6 +162,7 @@ class EvaluationController extends BaseController{
                 $records->load(['tasks', 'statuses', 'users.user_catalogues']);
 
                 foreach ($records as $record) {
+                    $record->pointForCurrentUser = $record->statuses()->where('user_id', $auth->id)->first()?->pivot->point;
                     $record->selfEvaluation = $record->statuses()->where('user_id', $record->user_id)->first()?->pivot->status_id;
                     $currentUserEvaluation = $record->statuses()
                         ->where('user_id', $auth->id)
@@ -221,7 +228,8 @@ class EvaluationController extends BaseController{
 
                                     $positionEvaluations[$positionName] = [
                                         'status_id' => $evaluation->pivot->status_id,
-                                        'user_name' => $user->name
+                                        'user_name' => $user->name,
+                                        'point' => $evaluation->pivot->point,
                                     ];
                                 }
                             }
@@ -275,19 +283,23 @@ class EvaluationController extends BaseController{
                 'route' => $this->route,
                 'isCreate' => false,
                 'filter' => false,
-                'usersOnBranch' => [],
+                'usersOnBranch' => $this->getCongChucInsideNode($request, $level),
                 'level' => $level
             ];
+
+            $userByLevel = $this->userService->getUserByLevel($level);
 
             $data = $this->getData();
             extract($data);
             $template = ($level != self::CANBO_LEVEL) ? "backend.{$this->namespace}.team.teamSuperior" : "backend.{$this->namespace}.team.team";
             return view($template, compact(
                 'records',
+                'auth',
                 'config',
                 'allPositionsData',
                 'isDeputyTeamLeader',
                 'statuses',
+                'userByLevel',
                 ...array_keys($data),
             ));
         } catch (\Throwable $th) {
@@ -300,8 +312,8 @@ class EvaluationController extends BaseController{
         /** @var \App\Models\User $auth */
         $auth = Auth::user();
         $auth->load(['subordinates']);
-
         $subordinateIds = [];
+       
         if($auth->user_catalogues->level < 4){
             $request->merge([
                 'lft' => ['gt' => $auth->lft],
@@ -323,18 +335,41 @@ class EvaluationController extends BaseController{
             }
         }
 
+        $userId = [];
+        if($request->user_id){
+            $userId = [$request->user_id];
+        }else{
+            $userId = $subordinateIds;
+        }
 
         $evaluationRequest = new CustomRequest();
-        $evaluationRequest->merge([
-            'relationFilter' => [
-                'users' => [
-                    'user_id' => [
-                        'in' => 'user_id|' . implode(',', $subordinateIds)
-                    ]
+
+        $relationFilter = [
+            'users' => [
+                'user_id' => [
+                    'in' => 'user_id|' . implode(',', $userId)
                 ]
             ]
+        ];
+
+        // Thêm điều kiện team_id nếu có
+        if ($request->has('team_id') && $request->team_id != 0) {
+            $relationFilter['users.teams'] = [
+                'id' => [
+                    'in' => 'id|' . $request->team_id
+                ]
+            ];
+        }
+
+        if($request->has('start_date') && $request->start_date != ''){
+            $evaluationRequest->merge([
+                'start_date' => $request->start_date
+            ]);
+        }
+
+        $evaluationRequest->merge([
+            'relationFilter' => $relationFilter
         ]);
-        
 
         $evaluations = $this->service->paginate($evaluationRequest);
         return $evaluations;
@@ -356,7 +391,6 @@ class EvaluationController extends BaseController{
     
         $users = $this->userService->paginate($request);
 
-
         if (!is_null($users) && count($users)) {
             $userIds = $users->pluck('id')->toArray();
         }
@@ -365,22 +399,117 @@ class EvaluationController extends BaseController{
         if (empty($userIds)) {
             return null;
         }
-    
+
+        $userId = [];
+        if($request->user_id){
+            $userId = [$request->user_id];
+        }else{
+            $userId = $userIds;
+        }
+
+
         // Lấy danh sách đánh giá của các user này
         $evaluationRequest = new CustomRequest();
-        $evaluationRequest->merge([
-            'relationFilter' => [
-                'users' => [
-                    'user_id' => [
-                        'in' => 'user_id|' . implode(',', $userIds)
-                    ]
+        $relationFilter = [
+            'users' => [
+                'user_id' => [
+                    'in' => 'user_id|' . implode(',', $userId)
                 ]
             ]
+        ];
+
+        // Thêm điều kiện team_id nếu có
+        if ($request->has('team_id') && $request->team_id != 0) {
+            $relationFilter['users.teams'] = [
+                'id' => [
+                    'in' => 'id|' . $request->team_id
+                ]
+            ];
+        }
+
+        if($request->has('start_date') && $request->start_date != ''){
+            $evaluationRequest->merge([
+                'start_date' => $request->start_date
+            ]);
+        }
+
+        $evaluationRequest->merge([
+            'relationFilter' => $relationFilter
         ]);
     
         $evaluations = $this->service->paginate($evaluationRequest);
         return $evaluations;
     }
    
+    public function getCongChucInsideNode($request , $level){
+        /** @var \App\Models\User $auth */
+        $auth = Auth::user();
+        $auth->load(['subordinates']);
+        $subordinateIds = [];
+        if($auth->user_catalogues->level < 4){
+            $request->merge([
+                'lft' => ['gt' => $auth->lft],
+                'rgt' => ['lt' => $auth->rgt],
+                'level' => $level - 1,  // 4 --> là level của đội phó
+                'type' => 'all'
+            ]);
+            $users = $this->userService->paginate($request);
+            if(!is_null($users) && count($users)){
+                foreach($users as $key => $deputy){ 
+                    $subordinates = $deputy->subordinates()->get()->pluck('id')->toArray();
+                    $subordinateIds = array_merge($subordinateIds, $subordinates);
+                }
+            }
+            $subordinateIds = array_unique($subordinateIds);
+        }else{
+            if($auth->user_catalogues->level == 4){
+                $subordinateIds = $auth->subordinates()->get()->pluck('id')->toArray();
+            }
+        }
+        $users = User::whereIn('id', $subordinateIds)->get();
+        return $users;
+    }
+    
+
+    // public function getDoiTruongInsideNode($request){
+    //     /** @var \App\Models\User $auth */
+    //     $auth = Auth::user();
+    //     $auth->load(['subordinates']);
+    //     $subordinateIds = [];
+    //     if($auth->user_catalogues->level < 3){
+    //         $request->merge([
+    //             'lft' => ['gt' => $auth->lft],
+    //             'rgt' => ['lt' => $auth->rgt],
+    //             'level' => 3, 
+    //             'type' => 'all'
+    //         ]);
+    //         $users = $this->userService->paginate($request);
+    //         if(!is_null($users)){
+    //             foreach($users as $key => $user){ 
+    //                 if($user->user_catalogues->name == "Đội trưởng"){
+    //                     $subordinateIds[] = $user->id;
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     $users = User::whereIn('id', $subordinateIds)->get();
+    //     return $users;
+    // }
+
+    // public function getDoiPhoInsideNode($request){
+    //     /** @var \App\Models\User $auth */
+    //     $auth = Auth::user();
+    //     $auth->load(['subordinates']);
+    //     if($auth->user_catalogues->level < 3){
+    //         $request->merge([
+    //             'lft' => ['gt' => $auth->lft],
+    //             'rgt' => ['lt' => $auth->rgt],
+    //             'level' => 4, 
+    //             'type' => 'all'
+    //         ]);
+    //         $users = $this->userService->paginate($request);
+    //     }
+    //     return $users;
+    // }
 
 }   

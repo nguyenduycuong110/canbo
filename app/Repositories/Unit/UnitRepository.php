@@ -15,6 +15,8 @@ class UnitRepository extends  BaseRepository{
         parent::__construct($model);
     }
 
-    
+    public function unitPublish(){
+        return $this->model->where('publish', 2)->get();
+    }
 
 }

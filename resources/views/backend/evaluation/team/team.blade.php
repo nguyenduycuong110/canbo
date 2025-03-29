@@ -11,13 +11,14 @@
                 <h5>Quản lý đánh giá</h5>
             </div>
             <div class="ibox-content">
-                @include('backend.evaluation.filterTeam')
+                @include('backend.evaluation.component.filterCongChuc')
                 
                 <div class="table-responsive">
                     <table class="table table-striped table-bordered">
                         <thead>
                             <tr>
                                 <th class="text-center col-stt">STT</th>
+                                <th>Ngày giao</th>
                                 <th>Ngày xong</th>
                                 <th>Thời gian</th>
                                 <th>SP đầu ra</th>
@@ -26,6 +27,7 @@
                                 @foreach($allPositionsData as $posKey => $posData)
                                     <th>Đánh giá của {{ $posData['name'] }}</th>
                                 @endforeach
+                                <th>Điểm</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -34,6 +36,9 @@
                                     <tr>
                                         <td class="text-center col-stt">
                                             {{ $record->id }}
+                                        </td>
+                                        <td class="col-time">
+                                            {{ $record->start_date }}
                                         </td>
                                         <td class="col-time">
                                             {{ $record->due_date }}
@@ -100,7 +105,9 @@
                                                     @if(isset($record->positionEvaluations[$posData['name']]))
                                                         {{ $statuses->where('id', $record->positionEvaluations[$posData['name']]['status_id'])->first()->name ?? 'N/A' }}
                                                         <br>
-                                                        <small class="text-success">Họ Tên: {{ $record->positionEvaluations[$posData['name']]['user_name'] }}</small>
+                                                        <small class="text-success">
+                                                            Họ Tên: {{ $record->positionEvaluations[$posData['name']]['user_name'] }} <span class="text-danger">({{ $record->positionEvaluations[$posData['name']]['point'] }}đ)</span>
+                                                        </small>
                                                     @else
                                                         <span class="text-muted">Chưa đánh giá</span>
                                                     @endif
@@ -111,6 +118,19 @@
                                                 @endif
                                             </td>
                                         @endforeach
+                                        <td>
+                                            <input 
+                                                type="number" 
+                                                class="form-control text-left setPoint" 
+                                                name="point"
+                                                value="{{ $record->pointForCurrentUser ?? 0  }}"
+                                                min="1"
+                                                data-id="{{ $auth->id }}"
+                                                data-user-seft-evaluation="{{ $record->user_id }}"
+                                                data-evaluation="{{ $record->id }}"
+                                                max="100"
+                                            >
+                                        </td>
                                     </tr>
                                 @endforeach
                             @else

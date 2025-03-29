@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\DB;
 use App\Exports\MonthRateExport;
 use App\Repositories\User\UserRepository;
 use Illuminate\Support\Facades\Log;
+use App\Models\Evaluation;
+use App\Models\User;
 
 class EvaluationController extends BaseController
 {
@@ -84,7 +86,6 @@ class EvaluationController extends BaseController
             $user = $this->userService->findById($request->user_id);
             $userLevel = $user->user_catalogues->level;
         
-
             if($request->dateType === 'day'){
                 $evaluationList = $this->evaluationService->getDepartment($request, 'day');
                 $formData['month'] = Carbon::createFromFormat('d/m/Y', $request->date)->startOfDay();
@@ -93,7 +94,6 @@ class EvaluationController extends BaseController
                 $formData['month'] = Carbon::createFromFormat('m/Y', $request->date)->startOfMonth();
                 $this->statisticService->createOrUpdate($formData);
             }
-            
             
             //Khoi tao lich su export data de phuc vu cho luc in thong ke chi tiet
             
@@ -397,6 +397,40 @@ class EvaluationController extends BaseController
         return $this->userService->paginate($request);
     }
 
+    public function setPoint(Request $request){
+        try {
+            $response = $this->evaluationService->setPoint($request);
+            return response()->json(['response' => $response]); 
+        }  catch(\Throwable $th) {
+            return $this->handleWebLogException($th);
+        }
+    }
    
+    public function filterOfficerTeam(Request $request){
+        $auth = Auth::user();
+        $users = [];
+        $userIds = [];
+        $vicers = User::where('lft', '>=' , $auth->lft)
+            ->where('rgt', '<=' , $auth->rgt)
+            ->where('level', '=', 4)
+            ->get();
+        $teamId = $request?->team_id;
+        if($vicers){
+            foreach($vicers as $k => $vicer){
+                if(empty($vicer->subordinates)){
+                    continue;
+                }
+                foreach($vicer->subordinates as $item){
+                    if($item->teams->id != $teamId || in_array($item->id , $userIds)){
+                        continue;
+                    }
+                    $userIds[] = $item->id;
+                    $users[] = $item;
+                }
+            }
+        }
+        $response['users'] = $users;
+        return response()->json(['response' => $response]); 
+    }
 
 }

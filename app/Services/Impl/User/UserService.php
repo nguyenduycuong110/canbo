@@ -84,4 +84,8 @@ class UserService extends BaseService implements UserServiceInterface{
 
     }
 
+    public function getUserByLevel($level){
+        return $this->repository->getUserByLevel($level);
+    }
+
 }

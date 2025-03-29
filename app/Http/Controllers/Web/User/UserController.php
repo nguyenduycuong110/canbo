@@ -30,6 +30,8 @@ class UserController extends BaseController{
     protected $teamService;
     protected $unitService;
 
+    private const ACTIVE_STATUS = 2;
+
     public function __construct(
         UserService $service,
         UserCatalogueService $userCatalogueService,
@@ -55,7 +57,6 @@ class UserController extends BaseController{
 
     public function index(Request $request): View | RedirectResponse{
         try {
-
             $request = $this->userNode($request);
             $records = $this->service->paginate($request);
             $config = $this->config();
@@ -89,12 +90,11 @@ class UserController extends BaseController{
                 'level' => [ 'lte' => 4 ]
             ]
         ]);
-
         return [
             'user_catalogues' => isset($this->userCatalogueService) ? $this->userCatalogueService?->all() : null,
             'provinces' => isset($this->provinceService) ?  $this->provinceService->all() : null,
             'teams' => isset($this->teamService) ? $this->teamService->teamPublish() : null,
-            'units' => isset($this->unitService) ? $this->unitService->all() : null,
+            'units' => isset($this->unitService) ? $this->unitService->unitPublish() : null,
             'dropdown'  => $this->service->paginate($fakeRequest),
         ];
     }

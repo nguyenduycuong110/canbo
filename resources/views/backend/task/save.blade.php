@@ -54,6 +54,7 @@
                                     >
                                 </div>
                             </div>
+                            <input type="hidden" name="user_id" value="{{ $auth->id }}">
                         </div>
                     </div>
                 </div>

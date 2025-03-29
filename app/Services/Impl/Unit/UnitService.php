@@ -29,5 +29,8 @@ class UnitService extends BaseService implements UnitServiceInterface{
         return $this;
     }
    
+    public function unitPublish(){
+        return $this->repository->unitPublish();
+    }
 
 }

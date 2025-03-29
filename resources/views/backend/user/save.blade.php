@@ -67,7 +67,7 @@
                         <div class="row mb15">
                             <div class="col-lg-4">
                                 <div class="form-row">
-                                    <label for="" class="control-label text-left">Số CCCD <span class="text-danger">(*)</span></label>
+                                    <label for="" class="control-label text-left">Số hiệu CBCC <span class="text-danger">(*)</span></label>
                                     <input 
                                         type="text"
                                         name="cid"
@@ -173,17 +173,36 @@
                                     <label for="" class="control-label text-left">Người quản lý<span class="text-danger">(*)</span></label>
                                     <select name="parent_id" class="form-control setupSelect2" id="">
                                         @if(isset($dropdown))
+                                            @php
+                                                function getChildren($id, $dropdown) {
+                                                    $children = [];
+                                                    foreach ($dropdown as $val) {
+                                                        if ($val->parent_id == $id) {
+                                                            $children[] = $val->id;
+                                                            $children = array_merge($children, getChildren($val->id, $dropdown));
+                                                        }
+                                                    }
+                                                    return $children;
+                                                }
+                                                $selectedId = old('parent_id', isset($model->parent_id) ? $model->parent_id : '');
+                                                $disabledOptions = getChildren($selectedId, $dropdown);
+                                            @endphp
                                             @foreach($dropdown as $key => $val)
+                                                @php
+                                                    $isSelected = $val->id == $selectedId;
+                                                    $isDisabled = in_array($val->id, $disabledOptions);
+                                                @endphp
                                                 <option 
-                                                    {{ $val->id == old('parent_id', (isset($model->parent_id)) ? $model->parent_id : '') ? 'selected' : '' }}
-                                                    value="{{ $val->id }}">{{ str_repeat('|----', (($val->level > 0)?($val->level - 1):0)).$val->name }}
+                                                    {{ $isSelected ? 'selected' : '' }}
+                                                    {{ $isDisabled ? 'disabled' : '' }}
+                                                    value="{{ $val->id }}">
+                                                    {{ str_repeat('|----', (($val->level > 0) ? ($val->level - 1) : 0)) . $val->name }}
                                                 </option>
                                             @endforeach
                                         @endif
                                     </select>
                                 </div>
                             </div>
-                            
                             <div class="col-lg-6 mb15">
                                 <div class="form-row">
                                     <label for="" class="control-label text-left">Đội <span class="text-danger">(*)</span></label>
@@ -208,7 +227,7 @@
                                     <select {{ (isset($model) && $model->user_catalogues->level == 5 ) ? '' : 'disabled' }} multiple name="managers[]" class="form-control setupSelect2 manager-select">
                                         @if(isset($dropdown))
                                             @foreach($dropdown as $key => $val)
-                                            @if($val->user_catalogues->level !== 4) @continue @endif
+                                                @if($val->user_catalogues->level !== 4 || isset($model) &&  $val->lft > $model->lft || isset($model) &&  $val->rgt < $model->rgt ) @continue @endif
                                                 <option
                                                 @if(isset($model->managers))
                                                     {{ (in_array($val->id, $model->managers->pluck('id')->toArray()) && $val->id != $model->parent_id) ? 'selected' : '' }}

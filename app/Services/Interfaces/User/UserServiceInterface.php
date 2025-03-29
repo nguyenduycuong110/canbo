@@ -6,5 +6,6 @@ interface UserServiceInterface extends BaseServiceInterface {
     public function getUsersOnBranch($user, $userCatalogueId);
     public function findByIds($ids);
     public function getUserInNode($currentUser);
+    public function getUserByLevel($level);
 
 }
