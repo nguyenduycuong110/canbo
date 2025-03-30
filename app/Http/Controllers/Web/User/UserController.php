@@ -85,7 +85,10 @@ class UserController extends BaseController{
         $fakeRequest =  new \Illuminate\Http\Request();
         $fakeRequest = $this->userNode($fakeRequest);
         $fakeRequest->merge([
-            'type' => 'all'
+            'type' => 'all',
+            'user_catalogues' => [
+                'level' => [ 'lte' => 4 ]
+            ]
         ]);
         return [
             'user_catalogues' => isset($this->userCatalogueService) ? $this->userCatalogueService?->all() : null,
