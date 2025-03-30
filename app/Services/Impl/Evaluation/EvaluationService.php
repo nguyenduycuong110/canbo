@@ -47,6 +47,13 @@ class EvaluationService extends BaseService implements EvaluationServiceInterfac
         $fillable = $this->repository->getFillable();
         $this->modelData = $request->only($fillable);
         $this->modelData['user_id'] = Auth::id();
+        if($request->hasFile('file')){
+            $file = $request->file('file');
+            $fileName = time() . '_' . $file->getClientOriginalName();
+            $destinationPath = public_path('/userfiles/file');
+            $file->move($destinationPath, $fileName);
+            $this->modelData['file'] = '/userfiles/file/' . $fileName;
+        }
         return $this;
     }
 
@@ -85,104 +92,6 @@ class EvaluationService extends BaseService implements EvaluationServiceInterfac
            return false;
         }
     }
-
-    // public function getDepartment($request, $dateType = 'month'){
-    //     try {
-    //         $user_id = $request->user_id;
-    //         $date = $request->date;
-
-    //         if($dateType === 'month'){
-    //             $inputDate = \Carbon\Carbon::createFromFormat('m/Y', $date);
-
-    //             $startOfMonth = $inputDate->copy()->startOfMonth()->toDateTimeString();
-    //             $endOfMonth = $inputDate->copy()->endOfMonth()->toDateTimeString();
-    
-    //             $request->merge([
-    //                 'user_id' => $user_id,
-    //                 'created_at' => [
-    //                     'gte' => $startOfMonth,
-    //                     'lte' => $endOfMonth 
-    //                 ],
-    //                 'type' => 'all'
-    //             ]);
-    //         }else if($dateType === 'day'){
-
-    //             $inputDate = \Carbon\Carbon::createFromFormat('d/m/Y', $date);
-
-    //             $startOfDate = $inputDate->copy()->startOfDay()->toDateTimeString();
-    //             $endOfDate = $inputDate->copy()->endOfDay()->toDateTimeString();
-    
-    //             $request->merge([
-    //                 'user_id' => $user_id,
-    //                 'created_at' => [
-    //                     'gte' => $startOfDate,
-    //                     'lte' => $endOfDate 
-    //                 ],
-    //                 'type' => 'all'
-    //             ]);
-    //         }
-    //         $user = $this->userRepository->findById($user_id);
-    //         $user->load('user_catalogues');
-    //         $user->load('teams');
-    //         $user->load('units');
-
-    //         // $evaluations = $this->repository->findByCondition($user_id , $inputDate);
-    //         $evaluations = $this->paginate($request);
-            
-    //         // $evaluations->load('tasks');
-    //         // $evaluations->load('statuses');
-
-          
-    //         if(count($evaluations)){
-    //             foreach($evaluations as $evaluation){
-
-    //                 $leadershipApproval = [];
-    //                 $assessmentLeader = [];
-    //                 $selfAssessment = [];
-
-    //                 foreach($evaluation->statuses as $k  => $v){
-    //                     // if($v->pivot->lock == 1) {
-    //                     //     continue;
-    //                     // }
-    //                     $user_id = $v->pivot->user_id;
-    //                     $status_id = $v->pivot->status_id;
-    //                     $userInfo = $this->userRepository->findById($user_id);
-
-    //                     if($user_id == $evaluation->user_id){
-    //                         $selfAssessment = [
-    //                             'infoUser' => $userInfo,
-    //                             'infoStatus' => $this->statusRepository->findById($status_id),
-    //                         ];
-    //                         continue;
-    //                     }
-
-    //                     if($userInfo->parent_id == 0) {
-    //                         $leadershipApproval = [
-    //                             'infoUser' => $userInfo,
-    //                             'infoStatus' => $this->statusRepository->findById($status_id),
-    //                         ];
-    //                     } else {
-    //                         if (!isset($v->assessmentLeader) || 
-    //                             ($userInfo->parent_id < $v->assessmentLeader['infoUser']->parent_id && $userInfo->parent_id != 0)) {
-    //                             $assessmentLeader = [
-    //                                 'infoUser' => $userInfo,
-    //                                 'infoStatus' => $this->statusRepository->findById($status_id),
-    //                             ];
-    //                         }
-    //                     }
-    //                 }
-    //                 $evaluation->assessmentLeader = $assessmentLeader;
-    //                 $evaluation->leadershipApproval = $leadershipApproval;
-    //                 $evaluation->selfAssessment = $selfAssessment;
-    //             }
-    //         }
-    //         $user['evaluations'] = $evaluations;
-    //         return $user;
-    //     } catch (\Throwable $th) {
-    //         dd($th);
-    //        return false;
-    //     }
-    // }
 
     public function getDepartment($request, $dateType = 'month')
     {

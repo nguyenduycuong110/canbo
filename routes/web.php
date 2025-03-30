@@ -31,6 +31,8 @@ Route::middleware(['auth'])->group(function(){
         Route::get('user_catalogues/{id}/delete', [UserCatalogueController::class, 'delete'])->name('user_catalogues.delete');
         Route::resource('user_catalogues', UserCatalogueController::class);
 
+        Route::get('users/{id}/resetPassword', [UserController::class, 'resetPassword'])->name('users.resetPassword');
+        Route::post('users/{id}/updatePassword', [UserController::class, 'updatePassword'])->name('users.updatePassword');
         Route::get('users/{id}/delete', [UserController::class, 'delete'])->name('users.delete');
         Route::resource('users', UserController::class);
 
@@ -89,4 +91,6 @@ Route::middleware(['auth'])->group(function(){
     Route::get('ajax/evaluation/getDepartmentDay', [AjaxEvaluationController::class, 'getDepartmentEvaluationHistory']);
     Route::post('ajax/evaluation/setPoint', [AjaxEvaluationController::class, 'setPoint'])->name('ajax.evaluation.setPoint');
     Route::get('ajax/evaluation/filterOfficerTeam', [AjaxEvaluationController::class, 'filterOfficerTeam'])->name('ajax.evaluation.filterOfficerTeam');
+    Route::get('ajax/evaluation/getOfficer', [AjaxEvaluationController::class, 'getOfficer'])->name('ajax.evaluation.getOfficer');
+    Route::get('ajax/evaluation/filterViceTeam', [AjaxEvaluationController::class, 'filterViceTeam'])->name('ajax.evaluation.filterViceTeam');
 });

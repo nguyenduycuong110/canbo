@@ -8647,3 +8647,6 @@ body.md-skin {
 .hand input{
     cursor: pointer;
 }
+.mt-2 span{
+    color: #676a6c;
+}

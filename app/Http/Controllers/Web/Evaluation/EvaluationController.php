@@ -146,6 +146,7 @@ class EvaluationController extends BaseController{
         try {
             $auth = Auth::user();
             $currentUserCatalogue = $auth->user_catalogues;
+            $listSubordinate = $this->userCatalogueService->listSubordinate($auth,$currentUserCatalogue);
             $currentUserPosition = $currentUserCatalogue->name;
             $currentUserLevel = $currentUserCatalogue->level;
             $isDeputyTeamLeader = $currentUserLevel == 4;
@@ -298,6 +299,7 @@ class EvaluationController extends BaseController{
                 'config',
                 'allPositionsData',
                 'isDeputyTeamLeader',
+                'listSubordinate',
                 'statuses',
                 'userByLevel',
                 ...array_keys($data),
@@ -470,46 +472,5 @@ class EvaluationController extends BaseController{
         return $users;
     }
     
-
-    // public function getDoiTruongInsideNode($request){
-    //     /** @var \App\Models\User $auth */
-    //     $auth = Auth::user();
-    //     $auth->load(['subordinates']);
-    //     $subordinateIds = [];
-    //     if($auth->user_catalogues->level < 3){
-    //         $request->merge([
-    //             'lft' => ['gt' => $auth->lft],
-    //             'rgt' => ['lt' => $auth->rgt],
-    //             'level' => 3, 
-    //             'type' => 'all'
-    //         ]);
-    //         $users = $this->userService->paginate($request);
-    //         if(!is_null($users)){
-    //             foreach($users as $key => $user){ 
-    //                 if($user->user_catalogues->name == "Đội trưởng"){
-    //                     $subordinateIds[] = $user->id;
-    //                 }
-    //             }
-    //         }
-    //     }
-    //     $users = User::whereIn('id', $subordinateIds)->get();
-    //     return $users;
-    // }
-
-    // public function getDoiPhoInsideNode($request){
-    //     /** @var \App\Models\User $auth */
-    //     $auth = Auth::user();
-    //     $auth->load(['subordinates']);
-    //     if($auth->user_catalogues->level < 3){
-    //         $request->merge([
-    //             'lft' => ['gt' => $auth->lft],
-    //             'rgt' => ['lt' => $auth->rgt],
-    //             'level' => 4, 
-    //             'type' => 'all'
-    //         ]);
-    //         $users = $this->userService->paginate($request);
-    //     }
-    //     return $users;
-    // }
 
 }   

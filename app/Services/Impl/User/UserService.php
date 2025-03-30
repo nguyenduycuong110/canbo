@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Services\Interfaces\User\UserServiceInterface;
 use App\Repositories\User\UserRepository;
 use App\Classes\Nestedsetbie;
+use Illuminate\Support\Facades\Hash;
 
 class UserService extends BaseService implements UserServiceInterface{
 
@@ -87,5 +88,14 @@ class UserService extends BaseService implements UserServiceInterface{
     public function getUserByLevel($level){
         return $this->repository->getUserByLevel($level);
     }
+
+    public function updatePassword($request , $id){
+        $payload = [
+            'password' => Hash::make($request->password),
+        ];
+        return $this->repository->updatePassword($payload, $id);
+    }
+
+
 
 }

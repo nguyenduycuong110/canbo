@@ -39,4 +39,9 @@ class UserRepository extends  BaseRepository{
         })->get();
     }
 
+    public function updatePassword($payload = [], $id){
+        return $this->model->where('id', $id)->update($payload);
+    }
+    
+
 }

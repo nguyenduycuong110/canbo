@@ -20,6 +20,7 @@ use App\Repositories\User\UserRepository;
 use Illuminate\Support\Facades\Log;
 use App\Models\Evaluation;
 use App\Models\User;
+use Illuminate\Http\RedirectResponse;
 
 class EvaluationController extends BaseController
 {
@@ -42,6 +43,7 @@ class EvaluationController extends BaseController
         $this->userService = $userService;
         $this->userRepository = $userRepository;
     }
+
 
     public function evaluate(Request $request, $id){
         try {
@@ -433,6 +435,27 @@ class EvaluationController extends BaseController
         return response()->json(['response' => $response]); 
     }
 
+    public function filterViceTeam(Request $request){
+        $auth = Auth::user();
+        $users = [];
+        $userIds = [];
+        $vicers = User::where('lft', '>=' , $auth->lft)
+            ->where('rgt', '<=' , $auth->rgt)
+            ->where('level', '=', 4)
+            ->get();
+        $teamId = $request?->team_id;
+        if($vicers){
+            foreach($vicers as $k => $vicer){
+                if($vicer->teams->id != $teamId || in_array($vicer->id , $userIds)){
+                    continue;
+                }
+                $users[] = $vicer;
+            }
+        }
+        $response['users'] = $users;
+        return response()->json(['response' => $response]); 
+    }
+
     public function exportRank(Request $request){
         try {
             $currentUser = Auth::user();
@@ -472,6 +495,33 @@ class EvaluationController extends BaseController
         } catch (\Throwable $th) {
             dd($th);
         }
+    }
+
+    public function getOfficer(Request $request){
+        $auth = Auth::user();
+        $users = [];
+        $userIds = [];
+        $vicers = User::where('lft', '>=' , $auth->lft)
+            ->where('rgt', '<=' , $auth->rgt)
+            ->where('level', '=', 4)
+            ->get();
+        $teamId = $request?->team_id;
+        if($vicers){
+            foreach($vicers as $k => $vicer){
+                if(empty($vicer->subordinates)){
+                    continue;
+                }
+                foreach($vicer->subordinates as $item){
+                    if($item->teams->id != $teamId || in_array($item->id , $userIds)){
+                        continue;
+                    }
+                    $userIds[] = $item->id;
+                    $users[] = $item;
+                }
+            }
+        }
+        $response['users'] = $users;
+        return response()->json(['response' => $response]); 
     }
 
 }

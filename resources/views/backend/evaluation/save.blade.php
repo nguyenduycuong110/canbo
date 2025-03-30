@@ -8,7 +8,7 @@
 @php
     $url = ($config['method'] == 'create') ? route('evaluations.store') : route('evaluations.update', $model->id);
 @endphp
-<form action="{{ $url }}" method="post" class="box">
+<form action="{{ $url }}" method="post" class="box" enctype="multipart/form-data">
     @if($config['method'] == 'update')
         @method('PUT')
     @endif
@@ -124,17 +124,23 @@
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-lg-4">
+                            <div class="col-lg-12">
                                 <div class="form-row">
                                     <label for="" class="control-label text-left">Upload file</label>
                                     <input 
                                         type="file"
                                         name="file"
-                                        value="{{ old('file', (isset($model->file)) ? $model->file : '') }}"
-                                        class="form-control"
+                                        class="form-control mb10"
                                         placeholder=""
                                         autocomplete="off"
                                     >
+                                    @if(isset($model->file) && !empty($model->file))
+                                        <div class="mt-2">
+                                            <span class="text">
+                                                File hiện tại: <a href="{{ asset($model->file) }}" download>{{ basename($model->file) }}</a>
+                                            </span>
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
                         </div>

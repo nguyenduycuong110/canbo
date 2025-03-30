@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Web\User;
 use App\Http\Controllers\Web\BaseController;
 use App\Http\Requests\User\User\StoreRequest;
 use App\Http\Requests\User\User\UpdateRequest;
+use App\Http\Requests\User\User\UpdatePasswordRequest;
 use Illuminate\Http\RedirectResponse;
 use App\Services\Interfaces\User\UserServiceInterface as UserService;
 use App\Services\Interfaces\User\UserCatalogueServiceInterface as UserCatalogueService;
@@ -17,6 +18,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Request as FacadesRequest;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Lang;
 
 class UserController extends BaseController{
 
@@ -79,6 +81,32 @@ class UserController extends BaseController{
 
     public function update(UpdateRequest $request, int $id){
         return $this->baseSave($request, $id);
+    }
+
+    public function resetPassword(Request $request, $id): View | RedirectResponse{
+        try {
+            $config = $this->config();
+            return view("backend.{$this->namespace}.resetPassword", compact(
+                'config',
+                'id',
+            ));
+        } catch (\Throwable $th) {
+            return $this->handleWebLogException($th);
+        }
+    }
+
+    public function updatePassword(UpdatePasswordRequest $request, $id): RedirectResponse{
+        try {
+            if($response = $this->service->updatePassword($request, $id)){
+                flash()->success(Lang::get('message.save_success'));
+                return redirect()->route("{$this->route}.index");
+            }else{
+                flash()->error(Lang::get('message.save_failed'));
+                return redirect()->back();
+            }
+        } catch (\Throwable $th) {
+            return $this->handleWebLogException($th);
+        }
     }
 
     protected function getData(): array{

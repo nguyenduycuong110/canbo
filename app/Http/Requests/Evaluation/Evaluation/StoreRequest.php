@@ -26,10 +26,15 @@ class StoreRequest extends FormRequest
             'task_id' => 'gt:0',
             'start_date' => 'date',
             'due_date' => 'date',
-            // 'completion_date' => 'required',
             'status_id' => 'gt:0',
+            'file' => [
+                'file',    
+                'mimes:pdf,xlsx,doc,docx,rar,zip', 
+                'max:5120'  
+            ],
         ];
     }
+
 
     public function prepareForValidation(){
         $this->merge([
@@ -41,6 +46,15 @@ class StoreRequest extends FormRequest
                 ]
             ]
         ]);
+    }
+
+    public function messages(): array
+    {
+        return [
+            'file.file' => 'Dữ liệu upload phải là một file.',
+            'file.mimes' => 'File chỉ chấp nhận định dạng: pdf, xlsx, doc, docx, rar, zip.',
+            'file.max' => 'Kích thước file không được vượt quá 5MB.',
+        ];
     }
     
 }

@@ -61,6 +61,7 @@
                                 <td class="text-center"> 
                                     <a href="{{ route("{$config['route']}.edit", $record->id) }}" class="btn btn-success"><i class="fa fa-edit"></i></a>
                                     <a href="{{ route("{$config['route']}.delete", $record->id) }}" class="btn btn-danger"><i class="fa fa-trash"></i></a>
+                                    <a href="{{ route("users.resetPassword", $record->id) }}" class="btn btn-warning"><i class="fa fa-unlock"></i></a>
                                 </td>
                             </tr>
                             @endforeach

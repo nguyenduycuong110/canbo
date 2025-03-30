@@ -705,6 +705,31 @@
         $('.setupSelect2').select2();
     }
 
+    HT.filterViceTeam = () => {
+        $(document).on('change', '.team_vice_id', function(){
+            let _this = $(this)
+            let team_id = _this.val()
+            if(team_id == 0){
+                return;
+            }
+            let option = {
+                team_id : team_id,
+            }
+            $.ajax({
+                url: 'ajax/evaluation/filterViceTeam', 
+                type: 'GET', 
+                data: option,
+                dataType: 'json', 
+                success: function(res) {
+                    HT.appendSelectBoxUserStatitics(res.response)
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    
+                }
+            });
+        })
+    }
+
     HT.exportRankQuality = () => {
         $(document).on('click', '.btn-export-rank', function(e){
             e.preventDefault()
@@ -745,9 +770,59 @@
         })
     }
 
+    HT.filterOfficerByVice = () => {
+        $(document).on('change', '.vice_id', function(){
+            let _this = $(this)
+            let vice_id = _this.val()
+            if(vice_id == 0){
+                return;
+            }
+            $.ajax({
+                url: 'ajax/evaluation/getOfficer', 
+                type: 'GET', 
+                data: {
+                    vice_id : vice_id
+                },
+                dataType: 'json', 
+                success: function(res) {
+                    if(res.response){
+                        HT.appendSelectBoxOfficer(res.response)
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    
+                }
+            });
+        });
+    }
+
+
+    HT.appendSelectBoxOfficer = (res) => {
+        let userSelect = $('.filter-officer select[name="user_id"]');
+        userSelect.empty();
+        userSelect.append('<option value="0">Chọn công chức</option>');
+
+        if(res.users && res.users.length > 0) {
+            $.each(res.users, function(index, user) {
+                userSelect.append(
+                    $('<option></option>')
+                    .val(user.id)
+                    .text(user.name)
+                );
+            });
+        }
+        
+        $('.setupSelect2').select2();
+    };
+    
+
+
+
 
 	$(document).ready(function(){
        
+        HT.filterViceTeam()
+        HT.filterOfficerByVice()
         HT.exportRankQuality()
         HT.filterOfficerTeam()
         HT.setPointForEvaluation()

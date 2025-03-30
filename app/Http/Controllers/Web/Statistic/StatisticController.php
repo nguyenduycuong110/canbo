@@ -102,10 +102,12 @@ class StatisticController extends BaseController{
         try {
             $auth = Auth::user();
             $users = $this->getUser($request, $auth, $level);
+            $teams = $this->getTeamInsideNode($users);
             return view("backend.{$this->namespace}.leader.day", compact(
                 'auth',
                 'users',
-                'level'
+                'level',
+                'teams'
             ));
         } catch (\Throwable $th) {
             dd($th);
@@ -116,10 +118,12 @@ class StatisticController extends BaseController{
         try {
             $auth = Auth::user();
             $users = $this->getUser($request, $auth, $level);
+            $teams = $this->getTeamInsideNode($users);
             return view("backend.{$this->namespace}.leader.month", compact(
                 'auth',
                 'users',
-                'level'
+                'level',
+                'teams'
             ));
         } catch (\Throwable $th) {
             dd($th);
