@@ -15,6 +15,5 @@ class StatisticRepository extends  BaseRepository{
         parent::__construct($model);
     }
 
-    
 
 }

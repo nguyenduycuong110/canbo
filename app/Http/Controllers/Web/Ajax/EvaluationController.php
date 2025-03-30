@@ -15,6 +15,7 @@ use App\Exports\LeaderEvaluationExport;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Exports\MonthRateExport;
+use App\Exports\MonthRankExport;
 use App\Repositories\User\UserRepository;
 use Illuminate\Support\Facades\Log;
 use App\Models\Evaluation;
@@ -380,7 +381,6 @@ class EvaluationController extends BaseController
         return $selfRating;
     }
 
-
     private function getUser($request, $auth, $level = null){
         $auth = Auth::user();
         $request->merge([
@@ -431,6 +431,47 @@ class EvaluationController extends BaseController
         }
         $response['users'] = $users;
         return response()->json(['response' => $response]); 
+    }
+
+    public function exportRank(Request $request){
+        try {
+            $currentUser = Auth::user();
+            if (!$currentUser) {
+                return response()->json(['status' => 'error', 'message' => 'User not authenticated'], 401);
+            }
+            $monthInput = $request->month ?? now()->format('m/Y');
+            $month = Carbon::createFromFormat('m/Y', $monthInput)->startOfMonth();
+            $users = $this->userService->getUserInNode($currentUser);
+            $userIds = $users->pluck('id')->toArray();
+            $evaluations = $this->evaluationService->getEvaluationsByUserIdsAndMonth($userIds, $month);
+            $ratedUsers = [];
+            foreach ($users as $user) {
+                $rating = $this->calculateUserRating($user, $month, $evaluations);
+                $statistic = $user->statistics->where('month', $month->format('Y-m-d'))->first();
+                $ratedUsers[] = [
+                    'user' => $user,
+                    'working_days_in_month' => $statistic ? $statistic->working_days_in_month : 0,
+                    'working_actual_days_in_month' => $statistic ? ($statistic->working_days_in_month - $statistic->leave_days_with_permission) : 0,
+                    'leave_days_with_permission' => $statistic ? $statistic->leave_days_with_permission : 0,
+                    'violation_count' => $statistic ? $statistic->violation_count : 0,
+                    'disciplinary_action' => $statistic ? $statistic->disciplinary_action : '',
+                    'final_rating' => $rating['final_rating'],
+                ];
+            }
+            $export = new MonthRankExport($ratedUsers, $monthInput);
+            $temp_file = $export->export();
+            $temp_file = $export->export();
+            $filename = "Bảng tổng hợp xếp loại tháng {$monthInput}.xlsx";
+
+            return response()->json([
+                'status' => 'success',
+                'file_url' => url('temp/' . basename($temp_file)), // URL của file tạm thời
+                'filename' => $filename,
+            ]);
+            return response()->download($filePath)->deleteFileAfterSend(true);
+        } catch (\Throwable $th) {
+            dd($th);
+        }
     }
 
 }

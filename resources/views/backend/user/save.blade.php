@@ -172,7 +172,7 @@
                                 <div class="form-row">
                                     <label for="" class="control-label text-left">Người quản lý<span class="text-danger">(*)</span></label>
                                     <select name="parent_id" class="form-control setupSelect2" id="">
-                                        @if(isset($dropdown))
+                                        {{-- @if(isset($dropdown))
                                             @php
                                                 function getChildren($id, $dropdown) {
                                                     $children = [];
@@ -191,6 +191,36 @@
                                                 @php
                                                     $isSelected = $val->id == $selectedId;
                                                     $isDisabled = in_array($val->id, $disabledOptions);
+                                                @endphp
+                                                <option 
+                                                    {{ $isSelected ? 'selected' : '' }}
+                                                    {{ $isDisabled ? 'disabled' : '' }}
+                                                    value="{{ $val->id }}">
+                                                    {{ str_repeat('|----', (($val->level > 0) ? ($val->level - 1) : 0)) . $val->name }}
+                                                </option>
+                                            @endforeach
+                                        @endif --}}
+                                        @if(isset($dropdown))
+                                            @php
+                                                function getChildren($id, $dropdown) {
+                                                    $children = [];
+                                                    foreach ($dropdown as $val) {
+                                                        if ($val->parent_id == $id) {
+                                                            $children[] = $val->id;
+                                                            $children = array_merge($children, getChildren($val->id, $dropdown));
+                                                        }
+                                                    }
+                                                    return $children;
+                                                }
+
+                                                $selectedId = old('parent_id', isset($model->parent_id) ? $model->parent_id : '');
+                                                $disabledOptions = getChildren($selectedId, $dropdown);
+                                                $modelLevel = isset($model->level) ? $model->level : null; 
+                                            @endphp
+                                            @foreach($dropdown as $key => $val)
+                                                @php
+                                                    $isSelected = $val->id == $selectedId;
+                                                    $isDisabled = in_array($val->id, $disabledOptions) || $val->level == $modelLevel;
                                                 @endphp
                                                 <option 
                                                     {{ $isSelected ? 'selected' : '' }}
@@ -239,7 +269,7 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="col-lg-6">
+                            <div class="col-lg-6 mb15">
                                 <div class="form-row">
                                     <label for="" class="control-label text-left">Phòng / chi cục <span class="text-danger">(*)</span></label>
                                     <select name="unit_id" class="form-control setupSelect2">
@@ -252,6 +282,12 @@
                                             @endforeach
                                         @endif
                                     </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-row hand">
+                                    <input type="checkbox" id="handover" name="handover">
+                                    <label for="handover">Bàn giao nhân sự</label>
                                 </div>
                             </div>
                         </div>

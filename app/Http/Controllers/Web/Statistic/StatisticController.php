@@ -130,6 +130,10 @@ class StatisticController extends BaseController{
         return view("backend.{$this->namespace}.export.index");
     }
 
+    public function rankQuality(Request $request){
+        return view("backend.{$this->namespace}.rank.index");
+    }
+
     private function getUser($request, $auth, $level = null){
         $auth = Auth::user();
         $request->merge([

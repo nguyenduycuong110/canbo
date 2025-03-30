@@ -83,6 +83,13 @@ $fullMenu = [
             'class' => 'special'
         ],
         [
+            'title' => 'Xếp loại chất lượng',
+            'icon' => 'fa fa-github',
+            'name' => ['statistics'],
+            'route' => 'team/rank',
+            'class' => 'special'
+        ],
+        [
             'title' => 'Lịch sử đánh giá',
             'icon' => 'fa fa-github',
             'name' => ['statistics'],

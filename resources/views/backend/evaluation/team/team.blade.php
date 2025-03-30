@@ -11,7 +11,7 @@
                 <h5>Quản lý đánh giá</h5>
             </div>
             <div class="ibox-content">
-                @include('backend.evaluation.filterTeam')
+                @include('backend.evaluation.component.filterCongChuc')
                 
                 <div class="table-responsive">
                     <table class="table table-striped table-bordered">

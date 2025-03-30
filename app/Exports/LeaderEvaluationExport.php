@@ -169,10 +169,10 @@ class LeaderEvaluationExport
                 $evaluation->failed_tasks_count ?? '',
                 $selfAssessmentRating, // Thêm dữ liệu cho cột "Tự đánh giá"
                 $leaderRating,
-                $leaderPoint,
+                $leaderPoint ?? '',
                 $leaderName,
                 $approvalRating,
-                $approverPoint,
+                $approverPoint ?? '',
                 $approverName,
                 '', // Cột "Ghi chú" để trống nếu không có dữ liệu
             ];

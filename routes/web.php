@@ -61,6 +61,7 @@ Route::middleware(['auth'])->group(function(){
         Route::get('statistics/departmentMonth/{level}', [StatisticController::class, 'evaluationStatisticMonth'])->name('statistics.department.month');
         Route::get('statistics/departmentDay/{level}', [StatisticController::class, 'leaderEvaluationStatisticDay'])->name('statistics.department.day');
         Route::get('team/export', [StatisticController::class, 'exportHistory'])->name('statistics.exportHistory');
+        Route::get('team/rank', [StatisticController::class, 'rankQuality'])->name('statistics.rankQuality');
 
         Route::get('statistics/departmentMonth/leader/{level}', [StatisticController::class, 'leaderStatisticMonth'])->name('statistics.leader.month');
         Route::get('statistics/departmentDay/leader/{level}', [StatisticController::class, 'leaderStatisticDay'])->name('statistics.leader.day');
@@ -81,12 +82,11 @@ Route::middleware(['auth'])->group(function(){
     
     Route::post('ajax/statistics/export', [AjaxEvaluationController::class, 'export'])->name('statistics.export');
     Route::post('ajax/statistics/exportHistory', [AjaxEvaluationController::class, 'exportHistory'])->name('statistics.exportHistory');
+    Route::post('ajax/statistics/exportRank', [AjaxEvaluationController::class, 'exportRank'])->name('statistics.exportRank');
     Route::post('ajax/dashboard/changeStatus', [AjaxDashboardController::class, 'changeStatus'])->name('ajax.dashboard.changeStatus');
     Route::get('ajax/location/getLocation', [AjaxLocationController::class, 'getLocation'])->name('ajax.location.index');
     Route::get('ajax/evaluation/getDepartment', [AjaxEvaluationController::class, 'getDepartment'])->name('ajax.evaluation.getDepartment');
     Route::get('ajax/evaluation/getDepartmentDay', [AjaxEvaluationController::class, 'getDepartmentEvaluationHistory']);
     Route::post('ajax/evaluation/setPoint', [AjaxEvaluationController::class, 'setPoint'])->name('ajax.evaluation.setPoint');
     Route::get('ajax/evaluation/filterOfficerTeam', [AjaxEvaluationController::class, 'filterOfficerTeam'])->name('ajax.evaluation.filterOfficerTeam');
-    // Route::get('ajax/evaluation/getVice', [AjaxEvaluationController::class, 'getVice'])->name('ajax.evaluation.getVice');
-    // Route::get('ajax/evaluation/getOfficer', [AjaxEvaluationController::class, 'getOfficer'])->name('ajax.evaluation.getOfficer');
 });

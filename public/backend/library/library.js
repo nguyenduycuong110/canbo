@@ -486,7 +486,6 @@
             let date = $('.evaluation-time').val()
             let option = {date : date}
             HT.setupDataForStatisticExport(option);
-            
         })
     }
 
@@ -572,7 +571,6 @@
         });
     }
 
-
     HT.dayAndUserChange = () => {
         $(document).on('change', '.evaluation-day, .user_day_id', function(){
             let date = $('.evaluation-day').val();
@@ -612,7 +610,6 @@
         }
         
     }
-
 
     HT.manager = () => {
         $(document).ready(function(){
@@ -708,143 +705,50 @@
         $('.setupSelect2').select2();
     }
 
-    // HT.appendSelectBoxVice = (res) => {
-    //     let viceSelect = $('select[name="vice_id"]');
-    //     viceSelect.empty();
-    //     viceSelect.append('<option value="0">Chọn đội phó</option>');
-    //     if(res.vicers && res.vicers.length > 0) {
-    //         $.each(res.vicers, function(index, vice) {
-    //             viceSelect.append(
-    //                 $('<option></option>')
-    //                 .val(vice.id)
-    //                 .text(vice.name)
-    //             );
-    //         });
-    //     }
-        
-    //     let userSelect = $('select[name="user_id"]');
-    //     userSelect.empty();
-    //     userSelect.append('<option value="0">Chọn công chức</option>');
+    HT.exportRankQuality = () => {
+        $(document).on('click', '.btn-export-rank', function(e){
+            e.preventDefault()
+            let _this = $(this)
+            let date = $('.evaluation-time').val()
+            let option = {date : date}
+            HT.setupDataForRankQuality(option);
+        })
+    }
 
-        
-    //     if(res.users && res.users.length > 0) {
-    //         $.each(res.users, function(index, user) {
-    //             userSelect.append(
-    //                 $('<option></option>')
-    //                 .val(user.id)
-    //                 .text(user.name)
-    //             );
-    //         });
-    //     }
-        
-    //     $('.setupSelect2').select2();
-    // };
-
-    // HT.getListVice = () => {
-    //     $(document).on('change', 'select[name="captain_id"]', function(){
-    //         let _this = $(this)
-    //         let captain_id = _this.val()
-    //         if(captain_id == 0){
-    //             return;
-    //         }
-    //         $.ajax({
-    //             url: 'ajax/evaluation/getVice', 
-    //             type: 'GET', 
-    //             data: {
-    //                 captain_id : captain_id
-    //             },
-    //             dataType: 'json', 
-    //             success: function(res) {
-    //                 if(res.response){
-    //                     HT.appendSelectBoxVice(res.response)
-    //                 }
-    //             },
-    //             error: function(jqXHR, textStatus, errorThrown) {
-                    
-    //             }
-    //         });
-    //     });
-    // }
-
-    // HT.getListOfficer = () => {
-    //     $(document).on('change', 'select[name="vice_id"]', function(){
-    //         let _this = $(this)
-    //         let vice_id = _this.val()
-    //         if(vice_id == 0){
-    //             return;
-    //         }
-    //         $.ajax({
-    //             url: 'ajax/evaluation/getOfficer', 
-    //             type: 'GET', 
-    //             data: {
-    //                 vice_id : vice_id
-    //             },
-    //             dataType: 'json', 
-    //             success: function(res) {
-    //                 if(res.response){
-    //                     HT.appendSelectBoxOfficer(res.response)
-    //                 }
-    //             },
-    //             error: function(jqXHR, textStatus, errorThrown) {
-                    
-    //             }
-    //         });
-    //     });
-    // }
-
-    // HT.appendSelectBoxVice = (res) => {
-    //     let viceSelect = $('select[name="vice_id"]');
-    //     viceSelect.empty();
-    //     viceSelect.append('<option value="0">Chọn đội phó</option>');
-    //     if(res.vicers && res.vicers.length > 0) {
-    //         $.each(res.vicers, function(index, vice) {
-    //             viceSelect.append(
-    //                 $('<option></option>')
-    //                 .val(vice.id)
-    //                 .text(vice.name)
-    //             );
-    //         });
-    //     }
-        
-    //     let userSelect = $('select[name="user_id"]');
-    //     userSelect.empty();
-    //     userSelect.append('<option value="0">Chọn công chức</option>');
-
-        
-    //     if(res.users && res.users.length > 0) {
-    //         $.each(res.users, function(index, user) {
-    //             userSelect.append(
-    //                 $('<option></option>')
-    //                 .val(user.id)
-    //                 .text(user.name)
-    //             );
-    //         });
-    //     }
-        
-    //     $('.setupSelect2').select2();
-    // };
-
-    // HT.appendSelectBoxOfficer = (res) => {
-    //     let userSelect = $('select[name="user_id"]');
-    //     userSelect.empty();
-    //     userSelect.append('<option value="0">Chọn công chức</option>');
-
-    //     if(res.users && res.users.length > 0) {
-    //         $.each(res.users, function(index, user) {
-    //             userSelect.append(
-    //                 $('<option></option>')
-    //                 .val(user.id)
-    //                 .text(user.name)
-    //             );
-    //         });
-    //     }
-        
-    //     $('.setupSelect2').select2();
-    // };
+    HT.setupDataForRankQuality = (option) => {
+        $.ajax({
+            url: 'ajax/statistics/exportRank', 
+            type: 'POST', 
+            data: {
+                ...option,
+                _token: $('meta[name="csrf-token"]').attr('content') // Thêm CSRF token
+            },
+            dataType: 'json', 
+            success: function(res) {
+                if (res.status === 'success') {
+                    // Tạo một link ẩn để tải file
+                    const link = document.createElement('a');
+                    link.href = res.file_url;
+                    link.download = res.filename; // Sử dụng tên file từ response
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                } else {
+                    console.error('Error:', res.message);
+                }
+                loadingOverlay.remove();
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                console.error('AJAX Error:', textStatus, errorThrown);
+                loadingOverlay.remove();
+            }
+        })
+    }
 
 
 	$(document).ready(function(){
        
+        HT.exportRankQuality()
         HT.filterOfficerTeam()
         HT.setPointForEvaluation()
         HT.changeStatusEvaluate()

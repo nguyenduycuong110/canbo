@@ -8632,3 +8632,18 @@ body.md-skin {
 .custom tbody  > tr .check{
     border-left: 1px solid #e7eaec !important; 
 }
+.hand{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.hand label{
+    margin-bottom: 0;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    padding-top: 1px;
+}
+.hand input{
+    cursor: pointer;
+}
