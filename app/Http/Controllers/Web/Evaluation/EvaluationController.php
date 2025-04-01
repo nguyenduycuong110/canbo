@@ -390,6 +390,7 @@ class EvaluationController extends BaseController{
             'level' => $level, // Lấy user ở cấp $level (ví dụ: 4 cho Đội phó)
             'type' => 'all'
         ]);
+
     
         $users = $this->userService->paginate($request);
 

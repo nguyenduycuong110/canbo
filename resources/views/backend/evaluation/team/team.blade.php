@@ -18,6 +18,7 @@
                         <thead>
                             <tr>
                                 <th class="text-center col-stt">STT</th>
+                                <th>Tiêu đề</th>
                                 <th>Ngày giao</th>
                                 <th>Ngày xong</th>
                                 <th>Thời gian</th>
@@ -36,6 +37,9 @@
                                     <tr>
                                         <td class="text-center col-stt">
                                             {{ $record->id }}
+                                        </td>
+                                        <td class="text-center col-stt">
+                                            {{ $record->tasks->name }}
                                         </td>
                                         <td class="col-time">
                                             {{ $record->start_date }}

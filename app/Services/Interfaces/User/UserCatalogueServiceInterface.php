@@ -5,4 +5,5 @@ use Illuminate\Http\Request;
 
 interface UserCatalogueServiceInterface extends BaseServiceInterface {
     public function save($request, ?int $id = null);
+    public function listSubordinate($auth,$currentUserCatalogue);
 }
