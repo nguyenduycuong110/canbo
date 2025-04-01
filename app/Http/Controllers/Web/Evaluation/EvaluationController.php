@@ -320,7 +320,7 @@ class EvaluationController extends BaseController{
             $request->merge([
                 'lft' => ['gt' => $auth->lft],
                 'rgt' => ['lt' => $auth->rgt],
-                'level' => $level - 1,  // 4 --> là level của đội phó
+                'relationFilter' => ['user_catalogues' => ['level' => ['lte' => $level - 1]]], // 4 --> là level của đội phó
                 'type' => 'all'
             ]);
             $users = $this->userService->paginate($request);
@@ -387,11 +387,10 @@ class EvaluationController extends BaseController{
         $request->merge([
             'lft' => ['gt' => $auth->lft],
             'rgt' => ['lt' => $auth->rgt],
-            'level' => $level, // Lấy user ở cấp $level (ví dụ: 4 cho Đội phó)
+            'relationFilter' => ['user_catalogues' => ['level' => ['eq' => $level - 1]]], // Lấy user ở cấp $level (ví dụ: 4 cho Đội phó)
             'type' => 'all'
         ]);
 
-    
         $users = $this->userService->paginate($request);
 
         if (!is_null($users) && count($users)) {
@@ -453,7 +452,7 @@ class EvaluationController extends BaseController{
             $request->merge([
                 'lft' => ['gt' => $auth->lft],
                 'rgt' => ['lt' => $auth->rgt],
-                'level' => $level - 1,  // 4 --> là level của đội phó
+                'relationFilter' => ['user_catalogues' => ['level' => ['eq' => $level - 1]]], // Lấy user ở cấp $level (ví dụ: 4 cho Đội phó)
                 'type' => 'all'
             ]);
             $users = $this->userService->paginate($request);

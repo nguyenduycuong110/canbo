@@ -412,10 +412,13 @@ class EvaluationController extends BaseController
         $auth = Auth::user();
         $users = [];
         $userIds = [];
-        $vicers = User::where('lft', '>=' , $auth->lft)
-            ->where('rgt', '<=' , $auth->rgt)
-            ->where('level', '=', 4)
-            ->get();
+        $request->merge([
+            'lft' => ['gt' => $auth->lft],
+            'rgt' => ['lt' => $auth->rgt],
+            'relationFilter' => ['user_catalogues' => ['level' => ['eq' => 4]]], // Lấy user ở cấp $level (ví dụ: 4 cho Đội phó)
+            'type' => 'all'
+        ]);
+        $vicers = $this->userService->paginate($request);
         $teamId = $request?->team_id;
         if($vicers){
             foreach($vicers as $k => $vicer){
@@ -439,10 +442,13 @@ class EvaluationController extends BaseController
         $auth = Auth::user();
         $users = [];
         $userIds = [];
-        $vicers = User::where('lft', '>=' , $auth->lft)
-            ->where('rgt', '<=' , $auth->rgt)
-            ->where('level', '=', 4)
-            ->get();
+        $request->merge([
+            'lft' => ['gt' => $auth->lft],
+            'rgt' => ['lt' => $auth->rgt],
+            'relationFilter' => ['user_catalogues' => ['level' => ['eq' => 4]]], // Lấy user ở cấp $level (ví dụ: 4 cho Đội phó)
+            'type' => 'all'
+        ]);
+        $vicers = $this->userService->paginate($request);
         $teamId = $request?->team_id;
         if($vicers){
             foreach($vicers as $k => $vicer){
@@ -501,10 +507,7 @@ class EvaluationController extends BaseController
         $auth = Auth::user();
         $users = [];
         $userIds = [];
-        $vicers = User::where('lft', '>=' , $auth->lft)
-            ->where('rgt', '<=' , $auth->rgt)
-            ->where('level', '=', 4)
-            ->get();
+     
         $teamId = $request?->team_id;
         if($vicers){
             foreach($vicers as $k => $vicer){

@@ -37,7 +37,7 @@ class StatisticController extends BaseController{
             $request->merge([
                 'lft' => ['gt' => $auth->lft],
                 'rgt' => ['lt' => $auth->rgt],
-                'level' => $level - 1,  // 4 --> là level của đội phó
+                'relationFilter' => ['user_catalogues' => ['level' => ['lte' => $level - 1]]], // 4 --> là level của đội phó
                 'type' => 'all'
             ]);
             $users = $this->userService->paginate($request); // tìm ra đội phó
