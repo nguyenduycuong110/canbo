@@ -72,7 +72,7 @@
                                         type="text"
                                         name="cid"
                                         value="{{ old('cid', ($model->cid) ?? '' ) }}"
-                                        class="form-control cid"
+                                        class="form-control"
                                         placeholder=""
                                         autocomplete="off"
                                     >
