@@ -35,12 +35,14 @@ class BaseController extends Controller{
 
     public function index(Request $request): View | RedirectResponse{
         try {
+            $auth = Auth::user();
             $records = $this->service->paginate($request);
             $config = $this->config();
             $config['model'] = Str::studly(Str::singular($this->route));
             $data = $this->getData();
             extract($data);
             return view("backend.{$this->namespace}.index", compact(
+                'auth',
                 'records',
                 'config',
                 ...array_keys($data)

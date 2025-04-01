@@ -27,24 +27,24 @@
                     <tbody>
                         @if(isset($records) && (is_object($records) || is_array($records)) && count($records) > 0)
                             @foreach($records as $record)
-                            <tr >
-                                <td>
-                                    <input type="checkbox" value="{{ $record->id }}" class="input-checkbox checkBoxItem">
-                                </td>
-                                <td>
-                                    {{ $record->name }}
-                                </td>
-                                <td>
-                                    {{ $record->description }}
-                                </td>
-                                <td class="text-center js-switch-{{ $record->id }}"> 
-                                    <input type="checkbox" value="{{ $record->publish }}" class="js-switch status " data-field="publish" {{ ($record->publish == 2) ? 'checked' : '' }} data-model="{{ $config['model'] }}" data-modelId="{{ $record->id }}" />
-                                </td>
-                                <td class="text-center"> 
-                                    <a href="{{ route("{$config['route']}.edit", $record->id) }}" class="btn btn-success"><i class="fa fa-edit"></i></a>
-                                    <a href="{{ route("{$config['route']}.delete", $record->id) }}" class="btn btn-danger"><i class="fa fa-trash"></i></a>
-                                </td>
-                            </tr>
+                                <tr >
+                                    <td>
+                                        <input type="checkbox" value="{{ $record->id }}" class="input-checkbox checkBoxItem">
+                                    </td>
+                                    <td>
+                                        {{ $record->name }}
+                                    </td>
+                                    <td>
+                                        {{ $record->description }}
+                                    </td>
+                                    <td class="text-center js-switch-{{ $record->id }}"> 
+                                        <input type="checkbox" value="{{ $record->publish }}" class="js-switch status " data-field="publish" {{ ($record->publish == 2) ? 'checked' : '' }} data-model="{{ $config['model'] }}" data-modelId="{{ $record->id }}" />
+                                    </td>
+                                    <td class="text-center"> 
+                                        <a href="{{ route("{$config['route']}.edit", $record->id) }}" class="btn btn-success"><i class="fa fa-edit"></i></a>
+                                        <a href="{{ route("{$config['route']}.delete", $record->id) }}" class="btn btn-danger"><i class="fa fa-trash"></i></a>
+                                    </td>
+                                </tr>
                             @endforeach
                         @else
                             <tr>
