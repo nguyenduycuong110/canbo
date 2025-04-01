@@ -22,7 +22,7 @@ class StoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'account' => 'required|string|min:6',
+            'account' => 'required|string|min:4',
             'email' => 'required|string|email|unique:users|max:191',
             'name' => 'required|string',
             'cid' => 'required',
@@ -51,7 +51,7 @@ class StoreRequest extends FormRequest
         return [
             'account.required' => 'Bạn chưa nhập :attribute',
             'account.string' => 'Tên :attribute phải là kiểu chuỗi',
-            'account.min' => 'Tên :attribute phải có tối thiểu 6 ký tự',
+            'account.min' => 'Tên :attribute phải có tối thiểu 4 ký tự',
             'email.required' => 'Bạn chưa nhập :attribute',
             'email.string' => 'Tên :attribute phải là kiểu chuỗi',
             'email.email' => 'Email chưa đúng định dạng. Ví dụ: abc@gmail.com',
