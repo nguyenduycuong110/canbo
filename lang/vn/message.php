@@ -1,6 +1,6 @@
 <?php  
 return [
-    'auth_failed' => "Đăng nhập không thành công. Email hoặc mật khẩu không chính xác",
+    'auth_failed' => "Đăng nhập không thành công. Tài khoản hoặc mật khẩu không chính xác",
     'auth_success' => 'Đăng nhập vào hệ thống thành công',
     'signout_success' => 'Đăng xuất khỏi hệ thống thành công',
     'error' => 'Có vấn đề xảy ra, hãy thử lại',

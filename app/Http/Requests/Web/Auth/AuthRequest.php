@@ -22,14 +22,14 @@ class AuthRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => 'required|email|exists:users,email',
+            'account' => 'required|min:4|exists:users,account',
             'password' => 'required|min:6'
         ];
     }
 
     public function attributes(): array {
         return [
-            'email' => 'Email',
+            'account' => 'Tài khoản',
             'password' => 'Mật khẩu'
         ];
     }

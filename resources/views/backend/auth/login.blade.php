@@ -49,13 +49,13 @@
                             <div class="form-group">
                                 <input 
                                     type="text" 
-                                    name="email"
+                                    name="account"
                                     class="form-control" 
-                                    placeholder="Email" 
-                                    value="{{ old('email') }}"
+                                    placeholder="Account" 
+                                    value="{{ old('account') }}"
                                 >
-                                @if ($errors->has('email'))
-                                    <span class="error-message">* {{ $errors->first('email') }}</span>
+                                @if ($errors->has('account'))
+                                    <span class="error-message">* {{ $errors->first('account') }}</span>
                                 @endif
                             </div>
                             <div class="form-group">

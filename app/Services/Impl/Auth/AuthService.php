@@ -20,7 +20,7 @@ class AuthService implements AuthWebServiceInterface{
     {
         try {
             $credentials = [
-                'email' => $request->string('email'),
+                'account' => $request->string('account'),
                 'password' => $request->string('password')
             ];
 
