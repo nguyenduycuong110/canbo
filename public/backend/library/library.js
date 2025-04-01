@@ -324,11 +324,9 @@
             data: option,
             dataType: 'json', 
             success: function(res) {
-                
                 $('.statistic-form').find('.name').text(res.response.name)
                 $('.statistic-form').find('.cat_name').text(res.response.user_catalogues.name + ' - ' + res.response.units.name)
-
-
+                HT.renderStatistic(res.response.statistics)
                 if(res.response.evaluations && res.response.evaluations.length > 0){
                     HT.renderTd(res.response.evaluations, res.response.id, res)
                 }else{
@@ -341,6 +339,7 @@
         });
     }
 
+
     HT.formatDate = (isoDate) => {
         if (!isoDate) return 'N/A'; // Xử lý trường hợp không có ngày
         const date = new Date(isoDate);
@@ -349,6 +348,26 @@
         const year = date.getFullYear();
         return `${day}/${month}/${year}`;
     };
+
+    HT.renderStatistic = (res) => {
+        if (res.length == 0) {
+            $('.statistic-form').find('input[name="working_days_in_month"]').val('')
+            $('.statistic-form').find('input[name="leave_days_with_permission"]').val('')
+            $('.statistic-form').find('input[name="leave_days_without_permission"]').val('')
+            $('.statistic-form').find('input[name="violation_count"]').val('')
+            $('.statistic-form').find('input[name="violation_behavior"]').val('')
+            $('.statistic-form').find('input[name="disciplinary_action"]').val('')
+            return;
+        }
+        res.forEach((item, index) => {
+            $('.statistic-form').find('input[name="working_days_in_month"]').val(item.working_days_in_month)
+            $('.statistic-form').find('input[name="leave_days_with_permission"]').val(item.leave_days_with_permission)
+            $('.statistic-form').find('input[name="leave_days_without_permission"]').val(item.leave_days_without_permission)
+            $('.statistic-form').find('input[name="violation_count"]').val(item.violation_count)
+            $('.statistic-form').find('input[name="violation_behavior"]').val(item.violation_behavior)
+            $('.statistic-form').find('input[name="disciplinary_action"]').val(item.disciplinary_action)
+        })
+    }
 
     HT.renderTd = (res, user_id, resOriginal = null) => {
         if (res.length == 0) {
