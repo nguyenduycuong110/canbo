@@ -504,25 +504,33 @@ class EvaluationController extends BaseController
     }
 
     public function getOfficer(Request $request){
-        $auth = Auth::user();
         $users = [];
         $userIds = [];
-     
-        $teamId = $request?->team_id;
-        if($vicers){
-            foreach($vicers as $k => $vicer){
-                if(empty($vicer->subordinates)){
+        $vicer_id = $request?->vice_id;
+        $vicer = $this->userService->findById($vicer_id);
+        if(!empty($vicer->subordinates)){
+            foreach($vicer->subordinates as $item){
+                if(in_array($item->id , $userIds)){
                     continue;
                 }
-                foreach($vicer->subordinates as $item){
-                    if($item->teams->id != $teamId || in_array($item->id , $userIds)){
-                        continue;
-                    }
-                    $userIds[] = $item->id;
-                    $users[] = $item;
-                }
+                $userIds[] = $item->id;
+                $users[] = $item;
             }
         }
+        $response['users'] = $users;
+        return response()->json(['response' => $response]); 
+    }
+
+    public function filterCaptainDeputy(Request $request){
+        $deputy_id = $request?->deputy_id;
+        $deputy = $this->userService->findById($deputy_id);
+        $request->merge([
+            'lft' => ['gt' => $deputy->lft],
+            'rgt' => ['lt' => $deputy->rgt],
+            'relationFilter' => ['user_catalogues' => ['level' => ['eq' => $deputy->user_catalogues->level + 1]]], // Lấy user ở cấp $level (ví dụ: 4 cho Đội phó)
+            'type' => 'all'
+        ]);
+        $users = $this->userService->paginate($request);
         $response['users'] = $users;
         return response()->json(['response' => $response]); 
     }

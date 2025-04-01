@@ -11,8 +11,10 @@
                 <h5>Quản lý đánh giá</h5>
             </div>
             <div class="ibox-content">
-                @include('backend.evaluation.component.filterCongChuc')
-                
+                @php
+                    $level = $auth->user_catalogues->level;
+                @endphp
+                @include('backend.evaluation.component.filterCongChuc-lv'.$level)
                 <div class="table-responsive">
                     <table class="table table-striped table-bordered">
                         <thead>

@@ -9,7 +9,16 @@
                 <h5>Quản lý đánh giá</h5>
             </div>
             <div class="ibox-content">
-                @include('backend.evaluation.component.filterTeam')
+                @php
+                   $levelCurrentUser = $auth->user_catalogues->level;
+                @endphp
+                @if($config['level'] == 4)
+                    @include('backend.evaluation.component.filterDoiPho-lv'.$levelCurrentUser)
+                @elseif($config['level'] == 3)
+                    @include('backend.evaluation.component.filterDoiTruong-lv'.$levelCurrentUser)
+                @else
+                @include('backend.evaluation.component.filterChiCucPho')
+                @endif
                 @php
                     // Khởi tạo mảng chứa tất cả các vị trí và thông tin
                     $allPositionsData = [];
@@ -275,7 +284,7 @@
                         </tbody>
                     </table>
                 </div>
-                {{  $records->links('pagination::bootstrap-4') }}
+                {{ (!is_null($records)) ? $records->links('pagination::bootstrap-4') : '' }}
             </div>
         </div>
     </div>

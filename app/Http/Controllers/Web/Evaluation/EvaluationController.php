@@ -290,6 +290,18 @@ class EvaluationController extends BaseController{
 
             $userByLevel = $this->userService->getUserByLevel($level);
 
+            $deputyDepartment = null;
+
+            if($auth->parent_id == 0){
+                $request->merge([
+                    'lft' => ['gt' => $auth->lft],
+                    'rgt' => ['lt' => $auth->rgt],
+                    'relationFilter' => ['user_catalogues' => ['level' => ['eq' => $auth->user_catalogues->level + 1]]], // 4 --> là level của đội phó
+                    'type' => 'all'
+                ]);
+                $deputyDepartment = $this->userService->paginate($request);
+            }
+
             $data = $this->getData();
             extract($data);
             $template = ($level != self::CANBO_LEVEL) ? "backend.{$this->namespace}.team.teamSuperior" : "backend.{$this->namespace}.team.team";
@@ -302,6 +314,7 @@ class EvaluationController extends BaseController{
                 'listSubordinate',
                 'statuses',
                 'userByLevel',
+                'deputyDepartment',
                 ...array_keys($data),
             ));
         } catch (\Throwable $th) {

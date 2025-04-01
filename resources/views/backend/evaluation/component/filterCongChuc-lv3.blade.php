@@ -3,7 +3,7 @@
     $level = $config['level'];
 @endphp
 <form action="{{ route('evaluations.teams', ['level' => $level]) }}">
-    <div class="filter-wrapper">
+    <div class="filter-wrapper filter-officer">
         <div class="uk-flex uk-flex-middle uk-flex-space-between">
             <div class="perpage">
                 @php
@@ -32,20 +32,24 @@
                 <div class="uk-flex uk-flex-middle">
                     <div class="uk-search uk-flex uk-flex-middle mr10">
                         <input type="text" value="{{ request('start_date.eq') ?: old('start_date.eq') }}"  placeholder="Chọn ngày giao việc" name="start_date[eq]" class="datepicker mr10 form-control">
-                        <select name="team_id" class="form-control setupSelect2">
-                            <option value="0">Chọn Đội</option>
-                            @foreach($teams as $team)
-                                <option 
-                                    {{ ($team_id == $team->id)  ? 'selected' : '' }}
-                                    value="{{ $team->id }}"
-                                >
-                                    {{ $team->name }}
-                                </option>
-                            @endforeach
-                        </select>
+                        @foreach($listSubordinate as $subordinate)
+                            @if($subordinate['level'] > $auth->user_catalogues->level && $subordinate['level'] == 4)
+                                <select name="vice_id" class="form-control setupSelect2 vice_id">
+                                    <option value="0">Chọn Đội phó</option>
+                                    @foreach($subordinate['users'] as $item)
+                                        <option 
+                                            {{ ($vice_id == $item->id)  ? 'selected' : '' }}
+                                            value="{{ $item->id }}"
+                                        >
+                                            {{ $item->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            @endif
+                        @endforeach
                         <select name="user_id" class="form-control setupSelect2 ">
-                            <option value="0">Chọn lãnh đạo</option>
-                            @foreach($userByLevel as $record)
+                            <option value="0">Chọn công chức</option>
+                            @foreach($config['usersOnBranch'] as $record)
                                 <option 
                                     {{ ($user_id == $record->id)  ? 'selected' : '' }}
                                     value="{{ $record->id }}"

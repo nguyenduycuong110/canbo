@@ -749,6 +749,48 @@
         })
     }
 
+    HT.filterCaptainDeputy = () => {
+        $(document).on('change', '.deputy_id', function(){
+            let _this = $(this)
+            let deputy_id = _this.val()
+            if(deputy_id == 0){
+                return;
+            }
+            let option = {
+                deputy_id : deputy_id,
+            }
+            $.ajax({
+                url: 'ajax/evaluation/filterCaptainDeputy', 
+                type: 'GET', 
+                data: option,
+                dataType: 'json', 
+                success: function(res) {
+                    HT.appendSelectBoxCaptain(res.response)
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    
+                }
+            });
+        })
+    }
+
+    HT.appendSelectBoxCaptain = (res) => {
+        console.log(res.users)
+        let userSelect = $('select[name="user_id"]');
+        userSelect.empty();
+        userSelect.append('<option value="0">Chọn lãnh đạo</option>');
+        if(res.users && res.users.length > 0) {
+            $.each(res.users, function(index, user) {
+                userSelect.append(
+                    $('<option></option>')
+                    .val(user.id)
+                    .text(user.name)
+                );
+            });
+        }
+        $('.setupSelect2').select2();
+    }
+
     HT.exportRankQuality = () => {
         $(document).on('click', '.btn-export-rank', function(e){
             e.preventDefault()
@@ -840,6 +882,7 @@
 
 	$(document).ready(function(){
        
+        HT.filterCaptainDeputy()
         HT.filterViceTeam()
         HT.filterOfficerByVice()
         HT.exportRankQuality()
