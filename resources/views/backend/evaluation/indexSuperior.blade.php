@@ -157,7 +157,6 @@
                                             {{ $statuses[$status_id]['name'] }}
                                         @endif
                                     </td>
-                                    
                                     <!-- Hiển thị đánh giá theo từng vị trí -->
                                     @foreach($positions as $position)
                                         <td>

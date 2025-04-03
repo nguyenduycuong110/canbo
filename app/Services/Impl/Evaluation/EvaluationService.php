@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Models\Evaluation;
+use DateTime;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Carbon;
@@ -136,12 +137,13 @@ class EvaluationService extends BaseService implements EvaluationServiceInterfac
             $user->load('statistics');
             if($user->statistics && $dateType == 'month'){
                 foreach($user->statistics as $k => $item){
-                    if($item->created_at <= $startOfMonth || $item->created_at >= $endOfMonth){
+                    $dateTime = new DateTime($item->month);
+                    $month = $dateTime->format('Y-m-d H:i:s');
+                    if($month < $startOfMonth || $month > $endOfMonth){
                         unset($user->statistics[$k]);
                     }
                 }
             }
-            
             // Lấy danh sách đánh giá
             $evaluations = $this->paginate($request);
             $evaluationList = is_array($evaluations) ? $evaluations : (isset($evaluations->data) ? $evaluations->data : $evaluations);

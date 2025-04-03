@@ -72,3 +72,4 @@
         </div>
     </div>
 </form>
+@include('backend.evaluation.component.generalCongChuc')

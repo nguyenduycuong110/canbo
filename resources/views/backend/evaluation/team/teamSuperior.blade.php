@@ -113,168 +113,170 @@
                         <tbody>
                             @if(isset($records) && (is_object($records) || is_array($records)) && count($records) > 0)
                                 @foreach($records as $k => $record)
-                                @php
-                                    // Lấy đánh giá của bản thân
-                                    $seftEvaluation = $record->statuses()->where('user_id', $record->user_id)->first()->pivot->status_id ?? null;
-                                    
-                                    // Lấy đánh giá hiện tại của người đăng nhập (nếu có)
-                                    $currentUser = Auth::user();
-                                    $currentUserEvaluation = $record->statuses()
-                                        ->where('user_id', $currentUser->id)
-                                        ->first();
-                                    
-                                    $currentUserStatusId = $currentUserEvaluation ? $currentUserEvaluation->pivot->status_id : 0;
-                                    $lock = $currentUserEvaluation ? $currentUserEvaluation->pivot->lock : 0;
-                                    
-                                    // Lấy đánh giá theo chức vụ
-                                    $positionEvaluations = [];
-                                    $evaluations = $record->statuses;
-                                    
-                                    foreach($evaluations as $evaluation) {
-                                        $userId = $evaluation->pivot->user_id;
-                                        
-                                        // Bỏ qua nếu là người được đánh giá
-                                        if($userId == $record->user_id) {
-                                            continue;
-                                        }
-                                        
-                                        $user = \App\Models\User::find($userId);
-                                        
-                                        if($user) {
-                                            $userCatalogue = $user->user_catalogues()->first();
+                                    @if(isset($allParams['perpage']) ?  true : $record->created_at >= $startOfMonth && $record->created_at <= $endOfMonth )
+                                        @php
+                                            // Lấy đánh giá của bản thân
+                                            $seftEvaluation = $record->statuses()->where('user_id', $record->user_id)->first()->pivot->status_id ?? null;
                                             
-                                            if($userCatalogue) {
-                                                $positionEvaluations[$userCatalogue->name] = [
-                                                    'status_id' => $evaluation->pivot->status_id,
-                                                    'user_name' => $user->name
-                                                ];
-                                            }
-                                        }
-                                    }
-                                    // Kiểm tra xem có cấp cao hơn đã đánh giá chưa
-                                    $higherLevelEvaluated = false;
-                                    $currentUserLevel = $currentUserCatalogue ? $currentUserCatalogue->level : null;
-
-                                    if ($currentUserLevel !== null) {
-                                        // Kiểm tra từng đánh giá trong statuses của bản ghi hiện tại
-                                        foreach($record->statuses as $status) {
-                                            $evaluatorId = $status->pivot->user_id;
+                                            // Lấy đánh giá hiện tại của người đăng nhập (nếu có)
+                                            $currentUser = Auth::user();
+                                            $currentUserEvaluation = $record->statuses()
+                                                ->where('user_id', $currentUser->id)
+                                                ->first();
                                             
-                                            // Chỉ kiểm tra đánh giá của người KHÁC
-                                            if ($evaluatorId == Auth::id() || $evaluatorId == $record->user_id) {
-                                                continue;
-                                            }
+                                            $currentUserStatusId = $currentUserEvaluation ? $currentUserEvaluation->pivot->status_id : 0;
+                                            $lock = $currentUserEvaluation ? $currentUserEvaluation->pivot->lock : 0;
                                             
-                                            // Lấy thông tin người đánh giá
-                                            $evaluator = \App\Models\User::find($evaluatorId);
-                                            if ($evaluator) {
-                                                $evaluatorCatalogue = $evaluator->user_catalogues()->first();
-                                                $evaluatorLevel = $evaluatorCatalogue ? $evaluatorCatalogue->level : null;
+                                            // Lấy đánh giá theo chức vụ
+                                            $positionEvaluations = [];
+                                            $evaluations = $record->statuses;
+                                            
+                                            foreach($evaluations as $evaluation) {
+                                                $userId = $evaluation->pivot->user_id;
                                                 
-                                                // Chỉ xem là cấp cao hơn nếu level thực sự nhỏ hơn
-                                                if ($evaluatorLevel !== null && $evaluatorLevel < $currentUserLevel) {
-                                                    $higherLevelEvaluated = true;
-                                                    break;
+                                                // Bỏ qua nếu là người được đánh giá
+                                                if($userId == $record->user_id) {
+                                                    continue;
                                                 }
-                                            }
-                                        }
-                                    }
-
-                                    // Kiểm tra xem người dùng hiện tại có phải là cấp cao nhất không
-                                    $isHighestLevel = true;
-                                    if ($currentUserLevel !== null) {
-                                        foreach($record->statuses as $s) {
-                                            $evaluatorId = $s->pivot->user_id;
-                                            if($evaluatorId != Auth::id() && $evaluatorId != $record->user_id) {
-                                                $evaluator = \App\Models\User::find($evaluatorId);
-                                                if($evaluator) {
-                                                    $evaluatorCatalogue = $evaluator->user_catalogues()->first();
-                                                    $evaluatorLevel = $evaluatorCatalogue ? $evaluatorCatalogue->level : null;
-                                                    if($evaluatorLevel !== null && $evaluatorLevel < $currentUserLevel) {
-                                                        $isHighestLevel = false;
-                                                        break;
+                                                
+                                                $user = \App\Models\User::find($userId);
+                                                
+                                                if($user) {
+                                                    $userCatalogue = $user->user_catalogues()->first();
+                                                    
+                                                    if($userCatalogue) {
+                                                        $positionEvaluations[$userCatalogue->name] = [
+                                                            'status_id' => $evaluation->pivot->status_id,
+                                                            'user_name' => $user->name
+                                                        ];
                                                     }
                                                 }
                                             }
-                                        }
-                                    }
-                                @endphp
-                                <tr>
-                                    <td class="text-center col-stt">
-                                        {{ $record->id }}
-                                    </td>
-                                    <td>
-                                        {{ $record->tasks->name }}
-                                    </td>
-                                    <td class="col-time">
-                                        {{ convertDateTime( $record->created_at, 'Y-m-d') }}
-                                    </td>
-                                    <td class="text-center">
-                                        {{ $record->total_tasks }}
-                                    </td>
-                                    <td class="text-center">
-                                        {{ $record->overachieved_tasks }}
-                                    </td>
-                                    <td class="text-center">
-                                        {{ $record->completed_tasks_ontime }}
-                                    </td>
-                                    <td class="text-center" style="width:200px;">
-                                        {{ $record->failed_tasks_count }}
-                                    </td>
-                                    <td>
-                                        @if($seftEvaluation)
-                                            {{ $statuses->where('id', $seftEvaluation)->first()->name ?? 'N/A' }}
-                                        @else
-                                            Chưa đánh giá
-                                        @endif
-                                    </td>
-                                    
-                                    @foreach($allPositionsData as $posKey => $posData)
-                                        <td>
-                                            @if($posData['is_current_user'])
-                                                {{-- Hiển thị đánh giá của người dùng hiện tại --}}
-                                                @if($higherLevelEvaluated && $currentUserStatusId == 0)
-                                                    <span class="text-danger">Đã khóa đánh giá</span>
-                                                @elseif($higherLevelEvaluated && $currentUserStatusId > 0)
-                                                    {{ $statuses->where('id', $currentUserStatusId)->first()->name ?? 'N/A' }}
-                                                @elseif($isHighestLevel || (!$higherLevelEvaluated && $record->canEvaluate))
-                                                    <select name="status_id" class="form-control setupSelect2" data-record-id="{{ $record->id }}">
-                                                        <option value="0">[Chọn Đánh Giá]</option>
-                                                        @foreach($statuses as $status)
-                                                            <option value="{{ $status->id }}" {{ $status->id == $currentUserStatusId ? 'selected' : '' }}>
-                                                                {{ $status->name }}
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
+                                            // Kiểm tra xem có cấp cao hơn đã đánh giá chưa
+                                            $higherLevelEvaluated = false;
+                                            $currentUserLevel = $currentUserCatalogue ? $currentUserCatalogue->level : null;
+
+                                            if ($currentUserLevel !== null) {
+                                                // Kiểm tra từng đánh giá trong statuses của bản ghi hiện tại
+                                                foreach($record->statuses as $status) {
+                                                    $evaluatorId = $status->pivot->user_id;
+                                                    
+                                                    // Chỉ kiểm tra đánh giá của người KHÁC
+                                                    if ($evaluatorId == Auth::id() || $evaluatorId == $record->user_id) {
+                                                        continue;
+                                                    }
+                                                    
+                                                    // Lấy thông tin người đánh giá
+                                                    $evaluator = \App\Models\User::find($evaluatorId);
+                                                    if ($evaluator) {
+                                                        $evaluatorCatalogue = $evaluator->user_catalogues()->first();
+                                                        $evaluatorLevel = $evaluatorCatalogue ? $evaluatorCatalogue->level : null;
+                                                        
+                                                        // Chỉ xem là cấp cao hơn nếu level thực sự nhỏ hơn
+                                                        if ($evaluatorLevel !== null && $evaluatorLevel < $currentUserLevel) {
+                                                            $higherLevelEvaluated = true;
+                                                            break;
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+                                            // Kiểm tra xem người dùng hiện tại có phải là cấp cao nhất không
+                                            $isHighestLevel = true;
+                                            if ($currentUserLevel !== null) {
+                                                foreach($record->statuses as $s) {
+                                                    $evaluatorId = $s->pivot->user_id;
+                                                    if($evaluatorId != Auth::id() && $evaluatorId != $record->user_id) {
+                                                        $evaluator = \App\Models\User::find($evaluatorId);
+                                                        if($evaluator) {
+                                                            $evaluatorCatalogue = $evaluator->user_catalogues()->first();
+                                                            $evaluatorLevel = $evaluatorCatalogue ? $evaluatorCatalogue->level : null;
+                                                            if($evaluatorLevel !== null && $evaluatorLevel < $currentUserLevel) {
+                                                                $isHighestLevel = false;
+                                                                break;
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        @endphp
+                                        <tr>
+                                            <td class="text-center col-stt">
+                                                {{ $record->id }}
+                                            </td>
+                                            <td>
+                                                {{ $record->tasks->name }}
+                                            </td>
+                                            <td class="col-time">
+                                                {{ convertDateTime( $record->created_at, 'Y-m-d') }}
+                                            </td>
+                                            <td class="text-center">
+                                                {{ $record->total_tasks }}
+                                            </td>
+                                            <td class="text-center">
+                                                {{ $record->overachieved_tasks }}
+                                            </td>
+                                            <td class="text-center">
+                                                {{ $record->completed_tasks_ontime }}
+                                            </td>
+                                            <td class="text-center" style="width:200px;">
+                                                {{ $record->failed_tasks_count }}
+                                            </td>
+                                            <td>
+                                                @if($seftEvaluation)
+                                                    {{ $statuses->where('id', $seftEvaluation)->first()->name ?? 'N/A' }}
                                                 @else
-                                                    <span class="text-warning">Không có quyền đánh giá</span>
+                                                    Chưa đánh giá
                                                 @endif
-                                            @else
-                                                {{-- Hiển thị đánh giá của các vị trí khác --}}
-                                                @if(isset($positionEvaluations[$posData['name']]))
-                                                    {{ $statuses->where('id', $positionEvaluations[$posData['name']]['status_id'])->first()->name ?? 'N/A' }}
-                                                    <br>
-                                                    <small class="text-success">Họ Tên: {{ $positionEvaluations[$posData['name']]['user_name'] }}</small>
-                                                @else
-                                                    <span class="text-muted">Chưa đánh giá</span>
-                                                @endif
-                                            @endif
-                                        </td>
-                                    @endforeach
-                                    <td>
-                                        <input 
-                                            type="number" 
-                                            class="form-control text-left setPoint" 
-                                            name="point"
-                                            value="{{ $record->pointForCurrentUser ?? 0  }}"
-                                            min="1"
-                                            data-id="{{ $auth->id }}"
-                                            data-user-seft-evaluation="{{ $record->user_id }}"
-                                            data-evaluation="{{ $record->id }}"
-                                            max="100"
-                                        >
-                                    </td>
-                                </tr>
+                                            </td>
+                                            
+                                            @foreach($allPositionsData as $posKey => $posData)
+                                                <td>
+                                                    @if($posData['is_current_user'])
+                                                        {{-- Hiển thị đánh giá của người dùng hiện tại --}}
+                                                        @if($higherLevelEvaluated && $currentUserStatusId == 0)
+                                                            <span class="text-danger">Đã khóa đánh giá</span>
+                                                        @elseif($higherLevelEvaluated && $currentUserStatusId > 0)
+                                                            {{ $statuses->where('id', $currentUserStatusId)->first()->name ?? 'N/A' }}
+                                                        @elseif($isHighestLevel || (!$higherLevelEvaluated && $record->canEvaluate))
+                                                            <select name="status_id" class="form-control setupSelect2" data-record-id="{{ $record->id }}">
+                                                                <option value="0">[Chọn Đánh Giá]</option>
+                                                                @foreach($statuses as $status)
+                                                                    <option value="{{ $status->id }}" {{ $status->id == $currentUserStatusId ? 'selected' : '' }}>
+                                                                        {{ $status->name }}
+                                                                    </option>
+                                                                @endforeach
+                                                            </select>
+                                                        @else
+                                                            <span class="text-warning">Không có quyền đánh giá</span>
+                                                        @endif
+                                                    @else
+                                                        {{-- Hiển thị đánh giá của các vị trí khác --}}
+                                                        @if(isset($positionEvaluations[$posData['name']]))
+                                                            {{ $statuses->where('id', $positionEvaluations[$posData['name']]['status_id'])->first()->name ?? 'N/A' }}
+                                                            <br>
+                                                            <small class="text-success">Họ Tên: {{ $positionEvaluations[$posData['name']]['user_name'] }}</small>
+                                                        @else
+                                                            <span class="text-muted">Chưa đánh giá</span>
+                                                        @endif
+                                                    @endif
+                                                </td>
+                                            @endforeach
+                                            <td>
+                                                <input 
+                                                    type="number" 
+                                                    class="form-control text-left setPoint" 
+                                                    name="point"
+                                                    value="{{ $record->pointForCurrentUser ?? 0  }}"
+                                                    min="1"
+                                                    data-id="{{ $auth->id }}"
+                                                    data-user-seft-evaluation="{{ $record->user_id }}"
+                                                    data-evaluation="{{ $record->id }}"
+                                                    max="100"
+                                                >
+                                            </td>
+                                        </tr>
+                                    @endif
                                 @endforeach
                             @else
                                 <tr>

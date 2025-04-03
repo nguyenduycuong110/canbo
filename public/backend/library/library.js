@@ -359,7 +359,7 @@
             $('.statistic-form').find('input[name="disciplinary_action"]').val('')
             return;
         }
-        res.forEach((item, index) => {
+        Object.values(res).forEach(item => {
             $('.statistic-form').find('input[name="working_days_in_month"]').val(item.working_days_in_month)
             $('.statistic-form').find('input[name="leave_days_with_permission"]').val(item.leave_days_with_permission)
             $('.statistic-form').find('input[name="leave_days_without_permission"]').val(item.leave_days_without_permission)
@@ -502,8 +502,8 @@
         $(document).on('click', '.btn-export-total', function(e){
             e.preventDefault()
             let _this = $(this)
-            let date = $('.evaluation-time').val()
-            let option = {date : date}
+            let month = $('.evaluation-time').val()
+            let option = {month : month}
             HT.setupDataForStatisticExport(option);
         })
     }
@@ -692,19 +692,23 @@
             let option = {
                 team_id : team_id,
             }
-            $.ajax({
-                url: 'ajax/evaluation/filterOfficerTeam', 
-                type: 'GET', 
-                data: option,
-                dataType: 'json', 
-                success: function(res) {
-                    HT.appendSelectBoxUserStatitics(res.response)
-                },
-                error: function(jqXHR, textStatus, errorThrown) {
-                    
-                }
-            });
+            HT.sendAjaxFilterOfficerTeam(option)
         })
+    }
+
+    HT.sendAjaxFilterOfficerTeam = (option) => {
+        $.ajax({
+            url: 'ajax/evaluation/filterOfficerTeam', 
+            type: 'GET', 
+            data: option,
+            dataType: 'json', 
+            success: function(res) {
+                HT.appendSelectBoxUserStatitics(res.response)
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                
+            }
+        });
     }
 
     HT.appendSelectBoxUserStatitics = (res) => {
@@ -734,19 +738,23 @@
             let option = {
                 team_id : team_id,
             }
-            $.ajax({
-                url: 'ajax/evaluation/filterViceTeam', 
-                type: 'GET', 
-                data: option,
-                dataType: 'json', 
-                success: function(res) {
-                    HT.appendSelectBoxUserStatitics(res.response)
-                },
-                error: function(jqXHR, textStatus, errorThrown) {
-                    
-                }
-            });
+            HT.sendAjaxFilterViceTeam(option)
         })
+    }
+
+    HT.sendAjaxFilterViceTeam = (option) => {
+        $.ajax({
+            url: 'ajax/evaluation/filterViceTeam', 
+            type: 'GET', 
+            data: option,
+            dataType: 'json', 
+            success: function(res) {
+                HT.appendSelectBoxUserStatitics(res.response)
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                
+            }
+        });
     }
 
     HT.filterCaptainDeputy = () => {
@@ -774,6 +782,21 @@
         })
     }
 
+    HT.sendAjaxFilterCaptainDeputy = (option) => {
+        $.ajax({
+            url: 'ajax/evaluation/filterCaptainDeputy', 
+            type: 'GET', 
+            data: option,
+            dataType: 'json', 
+            success: function(res) {
+                HT.appendSelectBoxCaptain(res.response)
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                
+            }
+        });
+    }
+
     HT.appendSelectBoxCaptain = (res) => {
         console.log(res.users)
         let userSelect = $('select[name="user_id"]');
@@ -795,8 +818,8 @@
         $(document).on('click', '.btn-export-rank', function(e){
             e.preventDefault()
             let _this = $(this)
-            let date = $('.evaluation-time').val()
-            let option = {date : date}
+            let month = $('.evaluation-time').val()
+            let option = {month : month}
             HT.setupDataForRankQuality(option);
         })
     }
@@ -877,11 +900,39 @@
     };
     
 
+    HT.loadUser = () => {
+        if(typeof team_id !== 'undefined' && team_id != ''){
+            let option = {
+                team_id : team_id,
+            }
+            HT.sendAjaxFilterOfficerTeam(option)
+        }
+    }
 
+    HT.loadVice = () => {
+        if(typeof team_vice_id !== 'undefined' && team_vice_id != ''){
+            let option = {
+                team_id : team_vice_id,
+            }
+            HT.sendAjaxFilterViceTeam(option)
+        }
+    }
+
+    HT.loadCaptain = () => {
+        if(typeof deputy_id !== 'undefined' && deputy_id != ''){
+            let option = {
+                deputy_id : deputy_id,
+            }
+            HT.sendAjaxFilterCaptainDeputy(option)
+        }
+    }
 
 
 	$(document).ready(function(){
        
+        HT.loadUser()
+        HT.loadVice()
+        HT.loadCaptain()
         HT.filterCaptainDeputy()
         HT.filterViceTeam()
         HT.filterOfficerByVice()

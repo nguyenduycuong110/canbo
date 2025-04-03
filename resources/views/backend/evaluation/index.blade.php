@@ -64,7 +64,6 @@
                     
                     // Lấy lại mảng positions đã sắp xếp (chỉ giữ keys)
                     $positions = array_keys($sortableArray);
-
                 @endphp
                 <div class="table-responsive">
                     <table class="table table-striped table-bordered">

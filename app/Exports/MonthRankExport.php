@@ -73,21 +73,23 @@ class MonthRankExport
         $sheet->getStyle('A6:J6')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
         $sheet->getStyle('A6:J6')->getAlignment()->setWrapText(true);
 
+        $sheet->mergeCells('A7:B7');
+
         // Thêm số thứ tự văn bản
         $sheet->setCellValue('A7', '1');
-        $sheet->setCellValue('B7', '2');
-        $sheet->setCellValue('C7', '3');
-        $sheet->setCellValue('D7', '4');
-        $sheet->setCellValue('E7', '5');
-        $sheet->setCellValue('F7', '6');
-        $sheet->setCellValue('G7', '7');
-        $sheet->setCellValue('H7', '8');
-        $sheet->setCellValue('I7', '9');
-        $sheet->setCellValue('J7', '10');
+        $sheet->setCellValue('B7', '');
+        $sheet->setCellValue('C7', '2');
+        $sheet->setCellValue('D7', '3');
+        $sheet->setCellValue('E7', '4');
+        $sheet->setCellValue('F7', '5');
+        $sheet->setCellValue('G7', '6');
+        $sheet->setCellValue('H7', '7');
+        $sheet->setCellValue('I7', '8');
+        $sheet->setCellValue('J7', '9');
         $sheet->getStyle('A7:J7')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         // Định nghĩa vị trí lãnh đạo Chi cục (cố định)
-        $leadershipPositions = ['Chi cục trưởng', 'Phó Chi cục trưởng', 'Chi cục phó'];
+        $leadershipPositions = ['Chi cục trưởng',  'Chi cục phó'];
 
         // Hàm xác định phòng ban cho user
         $getDepartment = function ($user) use ($leadershipPositions) {
@@ -159,29 +161,29 @@ class MonthRankExport
         // Tạo bảng với cấu trúc phòng ban
         $currentRow = 8;
         $globalIndex = 1;
-        $romanNumerals = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+        $romanNumerals = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
         $deptIndex = 0;
+        $sequentialIndex  = 1;
         
         foreach ($sortedDepartments as $deptName => $users) {
             if (empty($users)) continue;
             
             // Viết tên phòng ban
-            $sheet->setCellValue('A' . $currentRow, $globalIndex);
-            $sheet->setCellValue('B' . $currentRow, $romanNumerals[$deptIndex]);
+            $sheet->setCellValue('A' . $currentRow, '');
+            $sheet->setCellValue('B' . $currentRow, ( $deptIndex == 0 ) ? '' : $romanNumerals[$deptIndex]);
             $sheet->mergeCells('C' . $currentRow . ':J' . $currentRow);
             $sheet->setCellValue('C' . $currentRow, $deptName);
             $sheet->getStyle('C' . $currentRow)->getFont()->setBold(true);
             
             $currentRow++;
-            
-            // Thêm dữ liệu nhân viên
             $localIndex = 1;
+            // Thêm dữ liệu nhân viên
             foreach ($users as $userData) {
                 $user = $userData['user'];
                 $position = $userData['position'];
                 $evaluation = $userData['evaluation'];
                 
-                $sheet->setCellValue('A' . $currentRow, $globalIndex . '.' . $localIndex);
+                $sheet->setCellValue('A' . $currentRow, $sequentialIndex);
                 $sheet->setCellValue('B' . $currentRow, $localIndex);
                 $sheet->setCellValue('C' . $currentRow, $user->name ?? 'Không xác định');
                 $sheet->setCellValue('D' . $currentRow, $position);
@@ -200,7 +202,8 @@ class MonthRankExport
                     'row' => $currentRow
                 ]);
                 
-                $localIndex++;
+                $localIndex++; // Increment local index
+                $sequentialIndex++; // Increment global sequential index
                 $currentRow++;
             }
             

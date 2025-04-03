@@ -146,11 +146,13 @@ class EvaluationController extends BaseController
             }
 
             $monthInput = $request->month ?? now()->format('m/Y');
+
             $month = Carbon::createFromFormat('m/Y', $monthInput)->startOfMonth();
 
             $users = $this->userService->getUserInNode($currentUser);
             
             $userIds = $users->pluck('id')->toArray();
+
             $evaluations = $this->evaluationService->getEvaluationsByUserIdsAndMonth($userIds, $month);
 
             // Tính xếp loại cho từng người dùng
@@ -220,6 +222,7 @@ class EvaluationController extends BaseController
         $level1Tasks = 0;
 
         foreach ($userEvaluations as $evaluation) {
+
             $statuses = $evaluation->statuses;
 
             $finalStatus = null;
@@ -281,76 +284,83 @@ class EvaluationController extends BaseController
             $selfRating = 'D';
         }
 
+        if($totalTasks == 0) { $selfRating = ''; }
+
         // Bước 6: Đánh giá theo cấp dưới
         $user->load('user_catalogues');
+
         $level = $user->user_catalogues->level ?? 5;
 
         if ($level < 5) {
-            $subordinates = collect();
-            if ($level <= 3) {
-                $subordinates = $this->userRepository->findByField('parent_id', $user->id);
-            } elseif ($level == 4) {
-                $subordinateIds = DB::table('user_subordinate')
-                    ->where('manager_id', $user->id)
-                    ->pluck('subordinate_id')
-                    ->toArray();
+            if($totalTasks == 0){
+                $finalRating = $this->combineRatings($selfRating, 'Không đánh giá', $totalTasks);
+            }else{
+                $subordinates = collect();
+                if ($level <= 3) {
+                    $subordinates = $this->userRepository->findByField('parent_id', $user->id);
+                } elseif ($level == 4) {
+                    $subordinateIds = DB::table('user_subordinate')
+                        ->where('manager_id', $user->id)
+                        ->pluck('subordinate_id')
+                        ->toArray();
 
-                Log::info('Subordinate IDs for User', [
+                    Log::info('Subordinate IDs for User', [
+                        'user_id' => $user->id,
+                        'subordinate_ids' => $subordinateIds,
+                    ]);
+
+                    if (!empty($subordinateIds)) {
+                        $subordinates = $this->userRepository->findWhereIn('id', $subordinateIds);
+                    }
+                }
+
+                $subordinateRatings = [];
+                foreach ($subordinates as $subordinate) {
+                    $subordinateRating = $this->calculateUserRating($subordinate, $month, $evaluations);
+                    $subordinateRatings[] = $subordinateRating['final_rating'];
+                }
+
+                Log::info('Subordinate Ratings for User', [
                     'user_id' => $user->id,
-                    'subordinate_ids' => $subordinateIds,
+                    'subordinate_ratings' => $subordinateRatings,
                 ]);
 
-                if (!empty($subordinateIds)) {
-                    $subordinates = $this->userRepository->findWhereIn('id', $subordinateIds);
+                $totalSubordinates = count($subordinateRatings);
+                if ($totalSubordinates > 0) {
+                    $typeACount = count(array_filter($subordinateRatings, fn($rating) => $rating == 'A'));
+                    $typeBCount = count(array_filter($subordinateRatings, fn($rating) => $rating == 'B'));
+                    $typeCCount = count(array_filter($subordinateRatings, fn($rating) => $rating == 'C'));
+                    $typeDCount = count(array_filter($subordinateRatings, fn($rating) => $rating == 'D'));
+
+                    $typeAPercentage = ($typeACount / $totalSubordinates) * 100;
+                    $typeBPercentage = ($typeBCount / $totalSubordinates) * 100;
+                    $typeCOrBetterPercentage = (($typeACount + $typeBCount + $typeCCount) / $totalSubordinates) * 100;
+                    $typeDPercentage = ($typeDCount / $totalSubordinates) * 100;
+
+                    if ($typeAPercentage >= 70) {
+                        $subordinateRating = 'A';
+                    } elseif ($typeBPercentage >= 70 && $typeDCount == 0) {
+                        $subordinateRating = 'B';
+                    } elseif ($typeCOrBetterPercentage >= 70) {
+                        $subordinateRating = 'C';
+                    } elseif ($typeDPercentage > 30) {
+                        $subordinateRating = 'D';
+                    } else {
+                        $subordinateRating = 'Không đánh giá'; // Giá trị mặc định nếu không thỏa mãn điều kiện nào
+                    }
                 }
+                $finalRating = $this->combineRatings($selfRating, $subordinateRating, $totalTasks);
+                Log::info('Final Rating for User', [
+                    'user_id' => $user->id,
+                    'self_rating' => $selfRating,
+                    'subordinate_rating' => $subordinateRating,
+                    'total_tasks' => $totalTasks,
+                    'final_rating' => $finalRating,
+                ]);
             }
-
-            $subordinateRatings = [];
-            foreach ($subordinates as $subordinate) {
-                $subordinateRating = $this->calculateUserRating($subordinate, $month, $evaluations);
-                $subordinateRatings[] = $subordinateRating['final_rating'];
-            }
-
-            Log::info('Subordinate Ratings for User', [
-                'user_id' => $user->id,
-                'subordinate_ratings' => $subordinateRatings,
-            ]);
-
-            $totalSubordinates = count($subordinateRatings);
-            if ($totalSubordinates > 0) {
-                $typeACount = count(array_filter($subordinateRatings, fn($rating) => $rating == 'A'));
-                $typeBCount = count(array_filter($subordinateRatings, fn($rating) => $rating == 'B'));
-                $typeCCount = count(array_filter($subordinateRatings, fn($rating) => $rating == 'C'));
-                $typeDCount = count(array_filter($subordinateRatings, fn($rating) => $rating == 'D'));
-
-                $typeAPercentage = ($typeACount / $totalSubordinates) * 100;
-                $typeBPercentage = ($typeBCount / $totalSubordinates) * 100;
-                $typeCOrBetterPercentage = (($typeACount + $typeBCount + $typeCCount) / $totalSubordinates) * 100;
-                $typeDPercentage = ($typeDCount / $totalSubordinates) * 100;
-
-                if ($typeAPercentage >= 70) {
-                    $subordinateRating = 'A';
-                } elseif ($typeBPercentage >= 70 && $typeDCount == 0) {
-                    $subordinateRating = 'B';
-                } elseif ($typeCOrBetterPercentage >= 70) {
-                    $subordinateRating = 'C';
-                } elseif ($typeDPercentage > 30) {
-                    $subordinateRating = 'D';
-                } else {
-                    $subordinateRating = 'C'; // Giá trị mặc định nếu không thỏa mãn điều kiện nào
-                }
-            }
-
-            $finalRating = $this->combineRatings($selfRating, $subordinateRating, $totalTasks);
-            Log::info('Final Rating for User', [
-                'user_id' => $user->id,
-                'self_rating' => $selfRating,
-                'subordinate_rating' => $subordinateRating,
-                'total_tasks' => $totalTasks,
-                'final_rating' => $finalRating,
-            ]);
-        } else {
-            $finalRating = $selfRating;
+        } 
+        else {
+            $finalRating = ($totalTasks != 0 ) ? $selfRating : 'Không đánh giá';
         }
 
         return [
@@ -366,7 +376,7 @@ class EvaluationController extends BaseController
     {
         // Nếu không có selfRating, trả về subordinateRating (mặc định là 'D' nếu không có)
         if (!$selfRating) {
-            return $subordinateRating ?? 'D';
+            return $subordinateRating ?? '';
         }
 
         // Nếu không có subordinateRating, trả về selfRating
@@ -474,7 +484,7 @@ class EvaluationController extends BaseController
             $userIds = $users->pluck('id')->toArray();
             $evaluations = $this->evaluationService->getEvaluationsByUserIdsAndMonth($userIds, $month);
             $ratedUsers = [];
-            foreach ($users as $user) {
+            foreach ($users as $user) { 
                 $rating = $this->calculateUserRating($user, $month, $evaluations);
                 $statistic = $user->statistics->where('month', $month->format('Y-m-d'))->first();
                 $ratedUsers[] = [

@@ -10,7 +10,7 @@
                     $perpage = request('perpage') ?: old('perpage');
                     $user_id = request('user_id') ?: old('user_id');
                     $team_id = request('team_id') ?: old('team_id');
-                    $captain_id = request('captain_id') ?: old('captain_id');
+                    $deputy_id = request('deputy_id') ?: old('deputy_id');
                     $vice_id = request('vice_id') ?: old('vice_id');
                     $oldValueDay = request()->old('created_at.eq') ?? request('created_at')['eq'] ?? null;
                     $selectedDay = $oldValueDay ? (int)substr($oldValueDay, 0, 2) : null;
@@ -36,7 +36,7 @@
                             <option value="0">Chọn chi cục phó</option>
                             @foreach($deputyDepartment as $record)
                                 <option 
-                                    {{ ($user_id == $record->id)  ? 'selected' : '' }}
+                                    {{ ($deputy_id == $record->id)  ? 'selected' : '' }}
                                     value="{{ $record->id }}"
                                 >
                                     {{ $record->name }}
@@ -83,3 +83,4 @@
         </div>
     </div>
 </form>
+@include('backend.evaluation.component.generalDoiTruong')

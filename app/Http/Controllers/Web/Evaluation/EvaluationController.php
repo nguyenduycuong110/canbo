@@ -17,7 +17,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request as CustomRequest;
 use App\Models\User;
+use App\Models\Task;
 use App\Services\Interfaces\Team\TeamServiceInterface as TeamService;
+use Illuminate\Support\Carbon;
 
 class EvaluationController extends BaseController{
 
@@ -85,10 +87,12 @@ class EvaluationController extends BaseController{
             $config['user_id'] = Auth::user()->id;
             $config['method'] = 'create';
             $data = $this->getData();
+            $tasks = $this->getTask($request , $user);
             extract($data);
             $template = ($user->user_catalogue_id != config('apps.general.officer')) ? "backend.{$this->namespace}.superior" :  "backend.{$this->namespace}.save";
             return view($template, compact(
                 'config',
+                'tasks',
                 ...array_keys($data)
             ));
         }catch (ModelNotFoundException $e) {
@@ -106,12 +110,14 @@ class EvaluationController extends BaseController{
             $model = $this->service->findById($id);
             $config = $this->config();
             $data = $this->getData();
+            $tasks = $this->getTask($request , $user);
             extract($data);
             $config['method'] = 'update';
             $template = ($user->rgt - $user ->lft > 1) ? "backend.{$this->namespace}.superior" :  "backend.{$this->namespace}.save";
             return view($template, compact(
                 'config',
                 'model',
+                'tasks',
                 ...array_keys($data)
             ));
 
@@ -135,7 +141,7 @@ class EvaluationController extends BaseController{
 
     protected function getData(): array{
         return [
-            'tasks' =>  $this->taskService->checkTask(),
+            // 'tasks' =>  $this->taskService->checkTask(),
             'statuses' => $this->statusService->all(),
             'teams' => $this->teamService->teamPublish(),
         ];
@@ -144,6 +150,10 @@ class EvaluationController extends BaseController{
     public function teams(Request $request, int $level)
     {
         try {
+            $date = now()->format('m/Y');
+            $monthCurrent = \Carbon\Carbon::createFromFormat('m/Y', $date);
+            $startOfMonth = $monthCurrent->copy()->startOfMonth()->toDateTimeString();
+            $endOfMonth = $monthCurrent->copy()->endOfMonth()->toDateTimeString();
             $auth = Auth::user();
             $currentUserCatalogue = $auth->user_catalogues;
             $listSubordinate = $this->userCatalogueService->listSubordinate($auth,$currentUserCatalogue);
@@ -152,11 +162,14 @@ class EvaluationController extends BaseController{
             $isDeputyTeamLeader = $currentUserLevel == 4;
             
             $records = match ($level) {
-                5 => $this->getCongChucInsideNodeEvaluation($request, $level),
+                5 => $this->getCongChucInsideNodeEvaluation($request, $level, $monthCurrent),
                 default => $this->getInsideNodeEvaluation($request, $level),
             };
 
+            $allParams = $request->query();
+            
             $allPositionsData = [];
+
             $hasCurrentUserEvaluated = false;
 
             if (!is_null($records)) {
@@ -315,6 +328,9 @@ class EvaluationController extends BaseController{
                 'statuses',
                 'userByLevel',
                 'deputyDepartment',
+                'startOfMonth',
+                'endOfMonth',
+                'allParams',
                 ...array_keys($data),
             ));
         } catch (\Throwable $th) {
@@ -323,7 +339,7 @@ class EvaluationController extends BaseController{
     }
 
    
-    public function getCongChucInsideNodeEvaluation($request, $level){
+    public function getCongChucInsideNodeEvaluation($request, $level, $monthCurrent = null){
         /** @var \App\Models\User $auth */
         $auth = Auth::user();
         $auth->load(['subordinates']);
@@ -381,6 +397,7 @@ class EvaluationController extends BaseController{
                 'start_date' => $request->start_date
             ]);
         }
+
 
         $evaluationRequest->merge([
             'relationFilter' => $relationFilter
@@ -485,5 +502,25 @@ class EvaluationController extends BaseController{
         return $users;
     }
     
+    private function getTask($request, $user){
+        $level = $user->user_catalogues->level;
+        $request->merge([
+            'lft' => ['lte' => $user->lft],
+            'rgt' => ['gte' => $user->rgt],
+            'relationFilter' => 
+                [
+                    'user_catalogues' => [
+                        'level' => [
+                            'lte' => $level,
+                            'gte' => $level - 2
+                        ],
+                    ]
+                ], 
+            'type' => 'all'
+        ]);
+        $users = $this->userService->paginate($request)->pluck('id')->toArray();
+        $tasks = Task::whereIn('user_id', $users)->get();
+        return $tasks;
+    }
 
 }   
