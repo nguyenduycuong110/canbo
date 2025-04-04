@@ -282,7 +282,6 @@ class EvaluationService extends BaseService implements EvaluationServiceInterfac
                     ]);
                 }
             }
-
             $user['evaluations'] = $evaluationList;
             return $user;
         } catch (\Throwable $th) {

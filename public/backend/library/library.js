@@ -370,12 +370,14 @@
     }
 
     HT.renderTd = (res, user_id, resOriginal = null) => {
+        let countCompletionDate = 0;
         if (res.length == 0) {
             return;
         }
         let html = ``;
     
         res.forEach((item, index) => {
+            countCompletionDate += item.completion_date
             // Lãnh đạo phê duyệt (cấp cao nhất)
             let leadershipApprovalName = (item.leadershipApproval && Object.keys(item.leadershipApproval).length > 0) 
                 ? item.leadershipApproval.infoUser.name 
@@ -467,8 +469,16 @@
                 `
             }
         });
-    
-        return $('.statistic-form').find('tbody').html(html);
+
+        let countTr = `
+            <tr>
+                <td colspan="4" class="text-right">Tổng thời gian</td>
+                <td class="text-success text-bold">${ countCompletionDate }</td>
+            </tr>
+            
+        `
+
+        return $('.statistic-form').find('tbody').html(html).append(countTr);
     }
 
     HT.MonthChangeStatisticEvaluation = () => {

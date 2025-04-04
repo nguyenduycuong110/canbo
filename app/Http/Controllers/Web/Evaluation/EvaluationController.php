@@ -67,7 +67,6 @@ class EvaluationController extends BaseController{
             $data = $this->getData();
             extract($data);
             $template = ($user->rgt - $user->lft > 1) ? "backend.{$this->namespace}.indexSuperior" : "backend.{$this->namespace}.index";
-            
             return view($template, compact(
                 'records',
                 'config',
@@ -212,7 +211,8 @@ class EvaluationController extends BaseController{
                         $record->deputyEvaluation = [
                             'status_id' => $latestDeputyEvaluation->pivot->status_id,
                             'user_id' => $userId,
-                            'user_name' => $user->name
+                            'user_name' => $user->name,
+                            'point' => $latestDeputyEvaluation->pivot->point
                         ];
                     }
 

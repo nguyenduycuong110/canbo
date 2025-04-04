@@ -159,7 +159,7 @@ class EvaluationController extends BaseController
             $ratedUsers = [];
             foreach ($users as $user) {
                 $rating = $this->calculateUserRating($user, $month, $evaluations);
-
+                
                 $statistic = $user->statistics->where('month', $month->format('Y-m-d'))->first();
 
                 $ratedUsers[] = [
@@ -274,7 +274,7 @@ class EvaluationController extends BaseController
         $level2Percentage = $totalTasks > 0 ? ($level2Tasks / $totalTasks) * 100 : 0;
         $level1Percentage = $totalTasks > 0 ? ($level1Tasks / $totalTasks) * 100 : 0;
 
-        if ($level3Percentage == 100 && $level4Percentage >= 50) {
+        if ($level3Percentage == 100 && $level4Percentage >= 50 || $level2Percentage == 100) {
             $selfRating = 'A';
         } elseif ($level3Percentage == 100) {
             $selfRating = 'B';
@@ -315,6 +315,7 @@ class EvaluationController extends BaseController
                 }
 
                 $subordinateRatings = [];
+
                 foreach ($subordinates as $subordinate) {
                     $subordinateRating = $this->calculateUserRating($subordinate, $month, $evaluations);
                     $subordinateRatings[] = $subordinateRating['final_rating'];
@@ -326,6 +327,8 @@ class EvaluationController extends BaseController
                 ]);
 
                 $totalSubordinates = count($subordinateRatings);
+
+
                 if ($totalSubordinates > 0) {
                     $typeACount = count(array_filter($subordinateRatings, fn($rating) => $rating == 'A'));
                     $typeBCount = count(array_filter($subordinateRatings, fn($rating) => $rating == 'B'));
@@ -381,6 +384,12 @@ class EvaluationController extends BaseController
 
         // Nếu không có subordinateRating, trả về selfRating
         if (!$subordinateRating) {
+            return $selfRating;
+        }
+
+        if($subordinateRating == 'Không đánh giá')
+        {
+            $selfRating = 'D';
             return $selfRating;
         }
 

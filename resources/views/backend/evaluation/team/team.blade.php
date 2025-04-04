@@ -97,7 +97,7 @@
                                                     @if($record->deputyEvaluation)
                                                         {{ $statuses->where('id', $record->deputyEvaluation['status_id'])->first()->name ?? 'N/A' }}
                                                         <br>
-                                                        <small class="text-success">Họ Tên: {{ $record->deputyEvaluation['user_name'] }}</small>
+                                                        <small class="text-success">Họ Tên: {{ $record->deputyEvaluation['user_name'] }} <span class="text-danger">({{  $record->deputyEvaluation['point'] }}đ)</span></small>
                                                     @else
                                                         <span class="text-muted">Chưa đánh giá</span>
                                                     @endif

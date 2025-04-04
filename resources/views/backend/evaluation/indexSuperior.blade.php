@@ -17,14 +17,14 @@
                     $positions = [];
                     $positionLevels = []; // Thêm mảng để lưu trữ level của từng vị trí
                     $currentUserPosition = null;
-                
+
                     // Lấy chức vụ của người đăng nhập
                     $currentUser = Auth::user();
                     $currentUserCatalogue = $currentUser->user_catalogues()->first();
                     if ($currentUserCatalogue) {
                         $currentUserPosition = $currentUserCatalogue->name;
                     }
-                
+
                     if(isset($records) && count($records) > 0) {
                         foreach($records as $record) {
                             $evaluationUsers = $record->statuses;
@@ -87,98 +87,103 @@
                         <tbody>
                             @if(isset($records) && (is_object($records) || is_array($records)) && count($records) > 0)
                                 @foreach($records as $key => $record)
-                                @php
-                                    $lock = $record->statuses()->where('user_id', $record->user_id)->first()->pivot->lock;
-                                    $status_id = $record->statuses()->where('user_id', $record->user_id)->first()->pivot->status_id;
-                                    
-                                    // Lấy đánh giá theo từng vị trí
-                                    $positionEvaluations = [];
-                                    $evaluations = $record->statuses;
-                                    
-                                    foreach($evaluations as $evaluation) {
-                                        $userId = $evaluation->pivot->user_id;
+                                    @php
+                                        $lock = $record->statuses()->where('user_id', $record->user_id)->first()->pivot->lock;
+                                        $status_id = $record->statuses()->where('user_id', $record->user_id)->first()->pivot->status_id;
                                         
-                                        // Bỏ qua nếu là người được đánh giá
-                                        if($userId == $record->user_id) {
-                                            continue;
-                                        }
+                                        // Lấy đánh giá theo từng vị trí
+                                        $positionEvaluations = [];
+                                        $evaluations = $record->statuses;
                                         
-                                        $user = \App\Models\User::find($userId);
-                                        
-                                        if($user) {
-                                            $userCatalogue = $user->user_catalogues()->first();
+                                        foreach($evaluations as $evaluation) {
+                                            $userId = $evaluation->pivot->user_id;
                                             
-                                            if($userCatalogue && in_array($userCatalogue->name, $positions)) {
-                                                $positionEvaluations[$userCatalogue->name] = [
-                                                    'status_id' => $evaluation->pivot->status_id,
-                                                    'user_name' => $user->name
-                                                ];
+                                            // Bỏ qua nếu là người được đánh giá
+                                            if($userId == $record->user_id) {
+                                                continue;
+                                            }
+                                            
+                                            $user = \App\Models\User::find($userId);
+                                            
+                                            if($user) {
+                                                $userCatalogue = $user->user_catalogues()->first();
+                                                
+                                                if($userCatalogue && in_array($userCatalogue->name, $positions)) {
+                                                    $positionEvaluations[$userCatalogue->name] = [
+                                                        'status_id' => $evaluation->pivot->status_id,
+                                                        'user_name' => $user->name
+                                                    ];
+                                                }
                                             }
                                         }
-                                    }
-                                @endphp
-                                <tr>
-                                    <td class="col-stt">
-                                        {{ $key + 1 }}
-                                    </td>
-                                    <td>
-                                        {{ $record->tasks->name }}
-                                    </td>
-                                    <td>
-                                        {{ $record->start_date }}
-                                    </td>
-                                    <td class="text-center">
-                                        {{ $record->total_tasks }}
-                                    </td>
-                                    <td class="text-center">
-                                        {{ $record->overachieved_tasks }}
-                                    </td>
-                                    <td class="text-center">
-                                        {{ $record->completed_tasks_ontime }}
-                                    </td>
-                                    <td class="text-center" style="width:200px;">
-                                        {{ $record->failed_tasks_count }}
-                                    </td>
-                                    <td>
-                                        @if($lock == 0)
-                                            <select name="status_id" class="form-control setupSelect2" data-record-id="{{ $record->id }}">
-                                                <option value="0">[Chọn Đánh Giá]</option>
-                                                @if(isset($statuses))
-                                                    @foreach($statuses as $key => $val)
-                                                        <option 
-                                                            {{
-                                                                $val->id == old('status_id', $status_id ) ? 'selected' : '' 
-                                                            }}
-                                                            value="{{ $val->id }}">{{ $val->name }}</option>
-                                                    @endforeach
-                                                @endif
-                                            </select>
-                                        @else
-                                            {{ $statuses[$status_id]['name'] }}
-                                        @endif
-                                    </td>
-                                    <!-- Hiển thị đánh giá theo từng vị trí -->
-                                    @foreach($positions as $position)
+                                    @endphp
+                                    <tr>
+                                        <td class="col-stt">
+                                            {{ $key + 1 }}
+                                        </td>
                                         <td>
-                                            @if(isset($positionEvaluations[$position]))
-                                                {{ $statuses->where('id', $positionEvaluations[$position]['status_id'])->first()->name ?? 'N/A' }}
-                                                <br>
-                                                <small class="text-success">Họ Tên: {{ $positionEvaluations[$position]['user_name'] }}</small>
+                                            {{ $record->tasks->name }}
+                                        </td>
+                                        <td>
+                                            {{ $record->start_date }}
+                                        </td>
+                                        <td class="text-center">
+                                            {{ $record->total_tasks }}
+                                        </td>
+                                        <td class="text-center">
+                                            {{ $record->overachieved_tasks }}
+                                        </td>
+                                        <td class="text-center">
+                                            {{ $record->completed_tasks_ontime }}
+                                        </td>
+                                        <td class="text-center" style="width:200px;">
+                                            {{ $record->failed_tasks_count }}
+                                        </td>
+                                        <td>
+                                            @if($lock == 0)
+                                                <select name="status_id" class="form-control setupSelect2" data-record-id="{{ $record->id }}">
+                                                    <option value="0">[Chọn Đánh Giá]</option>
+                                                    @if(isset($statuses))
+                                                        @foreach($statuses as $key => $val)
+                                                            <option 
+                                                                {{
+                                                                    $val->id == old('status_id', $status_id ) ? 'selected' : '' 
+                                                                }}
+                                                                value="{{ $val->id }}">{{ $val->name }}</option>
+                                                        @endforeach
+                                                    @endif
+                                                </select>
                                             @else
-                                                <span class="text-muted">Chưa đánh giá</span>
+                                                @foreach($statuses as $k => $v)
+                                                    @if($v->id == $status_id)
+                                                       {{ $v['name'] }}
+                                                    @endif
+                                                @endforeach
+                                                {{-- {{ $statuses[$status_id]['name'] }} --}}
                                             @endif
                                         </td>
-                                    @endforeach
-                                    
-                                    <td class="text-center"> 
-                                        @if($lock == 0)
-                                            <a href="{{ route("{$config['route']}.edit", $record->id) }}" class="btn btn-success"><i class="fa fa-edit"></i></a>
-                                            <a href="{{ route("{$config['route']}.delete", $record->id) }}" class="btn btn-danger"><i class="fa fa-trash"></i></a>
-                                        @else
-                                            Đã khóa
-                                        @endif
-                                    </td>
-                                </tr>
+                                        <!-- Hiển thị đánh giá theo từng vị trí -->
+                                        @foreach($positions as $position)
+                                            <td>
+                                                @if(isset($positionEvaluations[$position]))
+                                                    {{ $statuses->where('id', $positionEvaluations[$position]['status_id'])->first()->name ?? 'N/A' }}
+                                                    <br>
+                                                    <small class="text-success">Họ Tên: {{ $positionEvaluations[$position]['user_name'] }}</small>
+                                                @else
+                                                    <span class="text-muted">Chưa đánh giá</span>
+                                                @endif
+                                            </td>
+                                        @endforeach
+                                        
+                                        <td class="text-center"> 
+                                            @if($lock == 0)
+                                                <a href="{{ route("{$config['route']}.edit", $record->id) }}" class="btn btn-success"><i class="fa fa-edit"></i></a>
+                                                <a href="{{ route("{$config['route']}.delete", $record->id) }}" class="btn btn-danger"><i class="fa fa-trash"></i></a>
+                                            @else
+                                                Đã khóa
+                                            @endif
+                                        </td>
+                                    </tr>
                                 @endforeach
                             @else
                                 <tr>
