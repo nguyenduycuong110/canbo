@@ -31,7 +31,7 @@
             <div class="action">
                 <div class="uk-flex uk-flex-middle">
                     <div class="uk-search uk-flex uk-flex-middle mr10">
-                        <input type="text" value="{{ request('start_date.eq') ?: old('start_date.eq') }}"  placeholder="Chọn ngày giao việc" name="start_date[eq]" class="datepicker mr10 form-control">
+                        <input type="text" value="{{ request('start_date.eq') ?: old('start_date.eq') }}"  placeholder="Chọn ngày giao việc" name="start_date[eq]" class="datepicker start_date mr10 form-control">
                         <select name="team_id" class="form-control setupSelect2 team_id">
                             <option value="0">Chọn Đội</option>
                             @foreach($teams as $team)
@@ -43,7 +43,7 @@
                                 </option>
                             @endforeach
                         </select>
-                        <select name="user_id" class="form-control setupSelect2 ">
+                        <select name="user_id" class="form-control setupSelect2 user_id">
                             <option value="0">Chọn công chức</option>
                             @foreach($config['usersOnBranch'] as $record)
                                 <option 

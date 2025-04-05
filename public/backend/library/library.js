@@ -197,8 +197,6 @@
         })
     }
 
-
-
     HT.addCommas = (nStr) => { 
         nStr = String(nStr);
         nStr = nStr.replace(/\./gi, "");
@@ -310,7 +308,6 @@
             let date = $('.evaluation-time').val();
             let user_id = $('.user_id').val()
             let option = {user_id : user_id, date : date}
-            
             HT.loadEvaluation(option)
         }
        
@@ -318,14 +315,24 @@
 
 
     HT.loadEvaluation = (option) => {
+        console.log(option)
         $.ajax({
             url: 'ajax/evaluation/getDepartment', 
             type: 'GET', 
             data: option,
             dataType: 'json', 
             success: function(res) {
-                $('.statistic-form').find('.name').text(res.response.name)
-                $('.statistic-form').find('.cat_name').text(res.response.user_catalogues.name + ' - ' + res.response.units.name)
+                $('.statistic-form').find('.name').text(res.response?.name || '');
+
+                let displayText = '';
+                if (res.response?.user_catalogues?.name) {
+                    displayText = res.response.user_catalogues.name;
+                }
+                if (res.response?.units?.name) {
+                    displayText = displayText ? `${displayText} - ${res.response.units.name}` : res.response.units.name;
+                }
+
+                $('.statistic-form').find('.cat_name').text(displayText);
                 HT.renderStatistic(res.response.statistics)
                 if(res.response.evaluations && res.response.evaluations.length > 0){
                     HT.renderTd(res.response.evaluations, res.response.id, res)
@@ -350,7 +357,7 @@
     };
 
     HT.renderStatistic = (res) => {
-        if (res.length == 0) {
+        if (!res) {
             $('.statistic-form').find('input[name="working_days_in_month"]').val('')
             $('.statistic-form').find('input[name="leave_days_with_permission"]').val('')
             $('.statistic-form').find('input[name="leave_days_without_permission"]').val('')
@@ -375,7 +382,7 @@
             return;
         }
         let html = ``;
-    
+
         res.forEach((item, index) => {
             countCompletionDate += item.completion_date
             // Lãnh đạo phê duyệt (cấp cao nhất)
@@ -413,16 +420,21 @@
                     statuesUser = val;
                 }
             });
+
+            let file = (item.file == null) ? '' : 'Click để dowload'
     
             if (resOriginal.response.user_catalogues.level == 5) {
                 html += `
                     <tr>
                         <td>${index + 1}</td>
                         <td>${item.tasks.name}</td>
+                        <td>
+                           <a href="${file}" dowload>${file}</a>
+                        </td>
                         <td>${item.start_date}</td>
                         <td>${item.due_date}</td>
                         <td>${item.completion_date}</td>
-                        <td>${item.output}</td>
+                        <td class="output"><span>${item.output}</span></td>
                         <td>
                             ${selfAssessmentStatus || 'Chưa tự đánh giá'}
                             <br>
@@ -444,7 +456,7 @@
                 html += `
                     <tr>
                         <td>${index + 1}</td>
-                        <td>${item.tasks.name}</td>
+                        <td class="title"><span>${item.tasks.name}</span></td>
                         <td>${HT.formatDate(item.created_at)}</td>
                         <td>${item.total_tasks}</td>
                         <td>${item.overachieved_tasks}</td>
@@ -619,9 +631,16 @@
                 data: option,
                 dataType: 'json', 
                 success: function(res) {
+                    console.log(res)
+                    let displayText = '';
+                    if (res.response?.user_catalogues?.name) {
+                        displayText = res.response.user_catalogues.name;
+                    }
+                    if (res.response?.units?.name) {
+                        displayText = displayText ? `${displayText} - ${res.response.units.name}` : res.response.units.name;
+                    }
 
-                    $('.statistic-form').find('.name').text(res.response.name)
-                    $('.statistic-form').find('.cat_name').text(res.response.user_catalogues.name + ' - ' + res.response.units.name)
+                    $('.statistic-form').find('.cat_name').text(displayText);
     
     
                     if(res.response.evaluations && res.response.evaluations.length > 0){
@@ -937,10 +956,33 @@
         }
     }
 
+    HT.filterEvaluationByField = () => {
+        $('.start_date, .perpage, .team_id, .user_id, .deputy_id, .vice_id').change(function() {
+            const $this = $(this);
+            if ($this.closest('.filter-officer').length) {
+                $this.closest('form').submit();
+            }
+        });
+        
+        $('.start_date').on('changeDate', function() {
+            const $this = $(this);
+            if ($this.closest('.filter-officer').length) {
+                $this.closest('form').submit();
+            }
+        });
+        
+        $('.team_id, .user_id, .deputy_id, .vice_id').on('select2:select', function() {
+            const $this = $(this);
+            if ($this.closest('.filter-officer').length) {
+                $this.closest('form').submit();
+            }
+        });
+    };
 
 	$(document).ready(function(){
        
         HT.loadUser()
+        HT.filterEvaluationByField()
         HT.loadVice()
         HT.loadCaptain()
         HT.filterCaptainDeputy()

@@ -259,7 +259,7 @@
                                     <select {{ (isset($model) && $model->user_catalogues->level == 5 ) ? '' : 'disabled' }} multiple name="managers[]" class="form-control setupSelect2 manager-select">
                                         @if(isset($dropdown))
                                             @foreach($dropdown as $key => $val)
-                                                @if($val->user_catalogues->level !== 4 || isset($model) &&  $val->lft > $model->lft || isset($model) &&  $val->rgt < $model->rgt ) @continue @endif
+                                                @if($val->user_catalogues->level !== 4 ) @continue @endif
                                                 <option
                                                 @if(isset($model->managers))
                                                     {{ (in_array($val->id, $model->managers->pluck('id')->toArray()) && $val->id != $model->parent_id) ? 'selected' : '' }}

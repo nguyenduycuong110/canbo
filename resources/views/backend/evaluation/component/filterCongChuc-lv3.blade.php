@@ -31,23 +31,45 @@
             <div class="action">
                 <div class="uk-flex uk-flex-middle">
                     <div class="uk-search uk-flex uk-flex-middle mr10">
-                        <input type="text" value="{{ request('start_date.eq') ?: old('start_date.eq') }}"  placeholder="Chọn ngày giao việc" name="start_date[eq]" class="datepicker mr10 form-control">
-                        @foreach($listSubordinate as $subordinate)
-                            @if($subordinate['level'] > $auth->user_catalogues->level && $subordinate['level'] == 4)
-                                <select name="vice_id" class="form-control setupSelect2 vice_id">
-                                    <option value="0">Chọn Đội phó</option>
-                                    @foreach($subordinate['users'] as $item)
+                        <input type="text" value="{{ request('start_date.eq') ?: old('start_date.eq') }}"  placeholder="Chọn ngày giao việc" name="start_date[eq]" class="datepicker start_date mr10 form-control">
+                        @php
+                            $usersByLevel = [];
+                            
+                            foreach($listSubordinate as $subordinate) {
+                                $level = $subordinate['level'];
+                                
+                                if($level > $auth->user_catalogues->level) {
+                                    if(!isset($usersByLevel[$level])) {
+                                        $usersByLevel[$level] = [];
+                                    }
+                                    
+                                    foreach($subordinate['users'] as $user) {
+                                        $usersByLevel[$level][] = $user;
+                                    }
+                                }
+                            }
+                            
+                            $levelNames = [
+                                3 => 'Đội trưởng',
+                                4 => 'Đội phó'
+                            ];
+                        @endphp
+                        @foreach($usersByLevel as $level => $users)
+                            @if(count($users) > 0)
+                                <select name="{{ $level == 4 ? 'vice_id' : 'captain_id' }}" class="form-control setupSelect2 {{ $level == 4 ? 'vice_id' : 'captain_id' }}">
+                                    <option value="0">Chọn {{ $levelNames[$level] ?? 'Người dùng' }}</option>
+                                    @foreach($users as $user)
                                         <option 
-                                            {{ ($vice_id == $item->id)  ? 'selected' : '' }}
-                                            value="{{ $item->id }}"
+                                            {{ (($level == 4 ? $vice_id : $captain_id) == $user->id) ? 'selected' : '' }}
+                                            value="{{ $user->id }}"
                                         >
-                                            {{ $item->name }}
+                                            {{ $user->name }}
                                         </option>
                                     @endforeach
                                 </select>
                             @endif
                         @endforeach
-                        <select name="user_id" class="form-control setupSelect2 ">
+                        <select name="user_id" class="form-control setupSelect2 user_id">
                             <option value="0">Chọn công chức</option>
                             @foreach($config['usersOnBranch'] as $record)
                                 <option 

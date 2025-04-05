@@ -71,6 +71,7 @@
                         <tr>
                             <th class="col-stt">STT</th>
                             <th>Nội dung công việc</th>
+                            <th>File</th>
                             <th>Ngày giao việc</th>
                             <th>Ngày hoàn thành</th>
                             <th style="width:50px;">Thời gian thực tế</th>
@@ -124,7 +125,17 @@
                                         {{ $key + 1 }}
                                     </td>
                                     <td>
-                                        {{ $record->tasks->name }}
+                                        <span>{{ $record->tasks->name }}</span>
+                                    </td>
+                                    <td class="file">
+                                        @if($record->file != null)
+                                            <a 
+                                                href="{{  $record->file }}" 
+                                                download
+                                            >
+                                                Click để dowload
+                                            </a>
+                                        @endif
                                     </td>
                                     <td>
                                         {{ $record->start_date }}
@@ -135,8 +146,8 @@
                                     <td style="width:50px;">
                                         {{ $record->completion_date }}
                                     </td>
-                                    <td>
-                                        {{ $record->output }}
+                                    <td class="output">
+                                        <span>{{ $record->output }}</span>
                                     </td>
                                     <td>
                                         {{-- @dd($statuses, $status_id) --}}

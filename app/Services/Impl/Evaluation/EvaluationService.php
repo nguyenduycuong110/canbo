@@ -146,6 +146,7 @@ class EvaluationService extends BaseService implements EvaluationServiceInterfac
             }
             // Lấy danh sách đánh giá
             $evaluations = $this->paginate($request);
+
             $evaluationList = is_array($evaluations) ? $evaluations : (isset($evaluations->data) ? $evaluations->data : $evaluations);
 
             if (!empty($evaluationList)) {
@@ -223,6 +224,7 @@ class EvaluationService extends BaseService implements EvaluationServiceInterfac
                             return $status->pivot->lock == 0 ? 1 : 0; // Ưu tiên lock = 0
                         });
 
+
                     // Log để kiểm tra leadershipStatuses
                     Log::info('Leadership Statuses after sorting:', [
                         'evaluation_id' => $evaluation->id,
@@ -236,6 +238,7 @@ class EvaluationService extends BaseService implements EvaluationServiceInterfac
                             ];
                         })->toArray(),
                     ]);
+
 
                     if ($leadershipStatuses->isNotEmpty()) {
                         // Lấy bản ghi đầu tiên (có updated_at mới nhất và lock = 0)
@@ -251,6 +254,7 @@ class EvaluationService extends BaseService implements EvaluationServiceInterfac
                         if ($latestStatuses->isNotEmpty()) {
                             $highestLeaderStatus = $latestStatuses->first();
                         }
+
 
                         $leaderUserId = $highestLeaderStatus->pivot->user_id;
 
@@ -271,8 +275,8 @@ class EvaluationService extends BaseService implements EvaluationServiceInterfac
                     // Gán dữ liệu vào evaluation
                     $evaluation->selfAssessment = $selfAssessment;
                     $evaluation->deputyAssessment = $deputyAssessment;
-                    $evaluation->leadershipApproval = $leadershipApproval;
-
+                    $evaluation->leadershipApproval = (count($deputyAssessment) && $deputyAssessment['infoUser']->user_catalogues->level == $leadershipApproval['infoUser']->user_catalogues->level) ? '' : $leadershipApproval;
+                    
                     // Log dữ liệu cuối cùng
                     Log::info('Evaluation Data:', [
                         'evaluation_id' => $evaluation->id,

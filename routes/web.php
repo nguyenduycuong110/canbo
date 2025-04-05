@@ -94,4 +94,5 @@ Route::middleware(['auth'])->group(function(){
     Route::get('ajax/evaluation/getOfficer', [AjaxEvaluationController::class, 'getOfficer'])->name('ajax.evaluation.getOfficer');
     Route::get('ajax/evaluation/filterViceTeam', [AjaxEvaluationController::class, 'filterViceTeam'])->name('ajax.evaluation.filterViceTeam');
     Route::get('ajax/evaluation/filterCaptainDeputy', [AjaxEvaluationController::class, 'filterCaptainDeputy'])->name('ajax.evaluation.filterCaptainDeputy');
+    Route::get('ajax/evaluation/filterEvaluationByField', [AjaxEvaluationController::class, 'filterEvaluationByField'])->name('ajax.evaluation.filterEvaluationByField');
 });

@@ -31,7 +31,8 @@
                         <thead>
                             <tr>
                                 <th class="text-center col-stt">STT</th>
-                                <th>Tiêu đề</th>
+                                <th class="text-left">Tiêu đề</th>
+                                <th>File</th>
                                 <th>Ngày giao</th>
                                 <th>Ngày xong</th>
                                 <th>Thời gian</th>
@@ -39,15 +40,14 @@
                                 <th>Cá nhân tự đánh giá</th>
                                 <th>Đánh giá của Đội phó</th>
                                 @foreach($positionsByLevel as $level => $positions)
-                                    @php
-                                        $positionNames = array_column($positions, 'name');
-                                        $headerText = 'Đánh giá của ' . implode(', ', $positionNames);
-                                    @endphp
-                                    <th>{{ $headerText }}</th>
+                                    @if($level != 4) <!-- Bỏ qua level 4 (Đội phó) vì đã có cột riêng -->
+                                        @php
+                                            $positionNames = array_column($positions, 'name');
+                                            $headerText = 'Đánh giá của ' . implode(', ', $positionNames);
+                                        @endphp
+                                        <th>{{ $headerText }}</th>
+                                    @endif
                                 @endforeach
-                                {{-- @foreach($allPositionsData as $posKey => $posData)
-                                    <th>Đánh giá của {{ $posData['name'] }}</th>
-                                @endforeach --}}
                                 <th>Điểm</th>
                             </tr>
                         </thead>
@@ -59,8 +59,13 @@
                                             <td class="text-center col-stt">
                                                 {{ $record->id }}
                                             </td>
-                                            <td class="text-center col-stt">
-                                                {{ $record->tasks->name }}
+                                            <td class="text-left col-stt title">
+                                                <span>{{ $record->tasks->name }}</span>
+                                            </td>
+                                            <td>
+                                                @if($record->file != null)
+                                                    <a href="{{  $record->file }}" download>Click để dowload</a>
+                                                @endif
                                             </td>
                                             <td class="col-time">
                                                 {{ $record->start_date }}
@@ -71,8 +76,8 @@
                                             <td class="text-center col-time">
                                                 {{ $record->completion_date }}
                                             </td>
-                                            <td>
-                                                {{ $record->output }}
+                                            <td class="output">
+                                                <span>{{ $record->output }}</span>
                                             </td>
                                             <td>
                                                 @if($record->selfEvaluation)
@@ -108,64 +113,66 @@
                                                 @endif
                                             </td>
                                             @foreach($positionsByLevel as $level => $positionsGroup)
-                                                <td class="p-w-100">
-                                                    @php
-                                                        $currentUserInLevel = false;
-                                                        $evaluationFound = false;
-                                                        $evaluationData = null;
-                                                        $currentUserPosition = null;
-                                                        
-                                                        foreach($positionsGroup as $posKey => $posData) {
-                                                            if($posData['is_current_user']) {
-                                                                $currentUserInLevel = true;
-                                                                $currentUserPosition = $posData;
-                                                                break;
+                                                @if($level != 4)
+                                                    <td class="p-w-100">
+                                                        @php
+                                                            $currentUserInLevel = false;
+                                                            $evaluationFound = false;
+                                                            $evaluationData = null;
+                                                            $currentUserPosition = null;
+                                                            
+                                                            foreach($positionsGroup as $posKey => $posData) {
+                                                                if($posData['is_current_user']) {
+                                                                    $currentUserInLevel = true;
+                                                                    $currentUserPosition = $posData;
+                                                                    break;
+                                                                }
                                                             }
-                                                        }
-                                                        
-                                                        // Find first evaluation for this level group
-                                                        foreach($positionsGroup as $posKey => $posData) {
-                                                            if(isset($record->positionEvaluations[$posData['name']])) {
-                                                                $evaluationFound = true;
-                                                                $evaluationData = $record->positionEvaluations[$posData['name']];
-                                                                break;
+                                                            
+                                                            // Find first evaluation for this level group
+                                                            foreach($positionsGroup as $posKey => $posData) {
+                                                                if(isset($record->positionEvaluations[$posData['name']])) {
+                                                                    $evaluationFound = true;
+                                                                    $evaluationData = $record->positionEvaluations[$posData['name']];
+                                                                    break;
+                                                                }
                                                             }
-                                                        }
-                                                    @endphp
-                                                    
-                                                    @if($currentUserInLevel && !$record->higherLevelEvaluated)
-                                                        <select name="status_id" class="form-control setupSelect2 w-100" data-record-id="{{ $record->id }}">
-                                                            <option value="0">[Chọn Đánh Giá]</option>
-                                                            @foreach($statuses as $status)
-                                                                <option value="{{ $status->id }}" {{ $status->id == $record->currentUserStatusId ? 'selected' : '' }}>
-                                                                    {{ $status->name }}
-                                                                </option>
-                                                            @endforeach
-                                                        </select>
-                                                    @elseif($currentUserInLevel && $record->higherLevelEvaluated && $record->currentUserStatusId > 0)
-                                                        {{ $statuses->where('id', $record->currentUserStatusId)->first()->name ?? 'N/A' }}
-                                                        <br>
-                                                        <span class="text-danger">Đã khóa đánh giá</span>
-                                                    @elseif($currentUserInLevel && $record->higherLevelEvaluated)
-                                                        <span class="text-muted">Chưa đánh giá</span>
-                                                        <br>
-                                                        <span class="text-danger">Đã khóa đánh giá</span>
-                                                    @else
-                                                        @if($evaluationFound)
-                                                            {{ $statuses->where('id', $evaluationData['status_id'])->first()->name ?? 'N/A' }}
-                                                            <br>
-                                                            <small class="text-success">
-                                                                Họ Tên: {{ $evaluationData['user_name'] }} <span class="text-danger">({{ $evaluationData['point'] }}đ)</span>
-                                                            </small>
-                                                        @else
-                                                            <span class="text-muted">Chưa đánh giá</span>
-                                                        @endif
-                                                        @if($record->higherLevelEvaluated)
+                                                        @endphp
+                                                        
+                                                        @if($currentUserInLevel && !$record->higherLevelEvaluated)
+                                                            <select name="status_id" class="form-control setupSelect2 w-100" data-record-id="{{ $record->id }}">
+                                                                <option value="0">[Chọn Đánh Giá]</option>
+                                                                @foreach($statuses as $status)
+                                                                    <option value="{{ $status->id }}" {{ $status->id == $record->currentUserStatusId ? 'selected' : '' }}>
+                                                                        {{ $status->name }}
+                                                                    </option>
+                                                                @endforeach
+                                                            </select>
+                                                        @elseif($currentUserInLevel && $record->higherLevelEvaluated && $record->currentUserStatusId > 0)
+                                                            {{ $statuses->where('id', $record->currentUserStatusId)->first()->name ?? 'N/A' }}
                                                             <br>
                                                             <span class="text-danger">Đã khóa đánh giá</span>
+                                                        @elseif($currentUserInLevel && $record->higherLevelEvaluated)
+                                                            <span class="text-muted">Chưa đánh giá</span>
+                                                            <br>
+                                                            <span class="text-danger">Đã khóa đánh giá</span>
+                                                        @else
+                                                            @if($evaluationFound)
+                                                                {{ $statuses->where('id', $evaluationData['status_id'])->first()->name ?? 'N/A' }}
+                                                                <br>
+                                                                <small class="text-success">
+                                                                    Họ Tên: {{ $evaluationData['user_name'] }} <span class="text-danger">({{ $evaluationData['point'] }}đ)</span>
+                                                                </small>
+                                                            @else
+                                                                <span class="text-muted">Chưa đánh giá</span>
+                                                            @endif
+                                                            @if($record->higherLevelEvaluated)
+                                                                <br>
+                                                                <span class="text-danger">Đã khóa đánh giá</span>
+                                                            @endif
                                                         @endif
-                                                    @endif
-                                                </td>
+                                                    </td>
+                                                @endif
                                             @endforeach
                                             <td>
                                                 <input 

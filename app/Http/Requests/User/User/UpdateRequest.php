@@ -26,7 +26,12 @@ class UpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'account' => 'required|string|min:4',
+            'account' => [
+                'required',
+                'string',
+                'min:4',
+                Rule::unique('users')->ignore($this->route('user'))
+            ],
             'email' => 'required|string|email|max:191',
             'name' => 'required|string',
             'cid' => 'required',

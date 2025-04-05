@@ -8650,3 +8650,18 @@ body.md-skin {
 .mt-2 span{
     color: #676a6c;
 }
+td.output span,
+td.file a{
+    width: 300px;
+    display: inline-block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: wrap;
+}
+td.title span{
+    width: 400px;
+    display: inline-block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: wrap;
+}

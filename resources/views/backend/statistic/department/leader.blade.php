@@ -128,6 +128,7 @@
                             <tr>
                                 <th class="col-stt">STT</th>
                                 <th>Nội dung công việc</th>
+                                <th>File</th>
                                 <th>Ngày giao việc</th>
                                 <th>Ngày hoàn thành</th>
                                 <th>Thời gian thực tế</th>

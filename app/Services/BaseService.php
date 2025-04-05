@@ -21,7 +21,7 @@ abstract class BaseService implements BaseServiceInterface{
     private $result;
     protected $modelData;
 
-    protected $fieldSearchs = ['name'];
+    protected $fieldSearchs = ['name','account'];
     protected $simpleFilter = ['publish','user_id']; // hook
     protected $complexFilter = ['id']; // hook
     protected $dateFilter = ['created_at', 'updated_at'];

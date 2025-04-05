@@ -25,7 +25,7 @@
                                     style="height:32px;"
                                 />
                                 <input type="hidden" value="day" class="date-type">
-                                @if($level == 4)
+                                @if($auth->user_catalogues->level == 1 || $auth->user_catalogues->level == 2)
                                     <select name="team_id" class="setupSelect2 team_vice_id">
                                         <option value="">[Chọn đội]</option>
                                         @foreach($teams as $team)

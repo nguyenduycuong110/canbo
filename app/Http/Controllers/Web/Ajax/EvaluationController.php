@@ -431,15 +431,26 @@ class EvaluationController extends BaseController
         $auth = Auth::user();
         $users = [];
         $userIds = [];
-        $request->merge([
-            'lft' => ['gt' => $auth->lft],
-            'rgt' => ['lt' => $auth->rgt],
-            'relationFilter' => ['user_catalogues' => ['level' => ['eq' => 4]]], // Lấy user ở cấp $level (ví dụ: 4 cho Đội phó)
-            'type' => 'all'
-        ]);
-        $vicers = $this->userService->paginate($request);
         $teamId = $request?->team_id;
-        if($vicers){
+        if($auth->user_catalogues->level == 4){
+            $vicer = $auth;
+            if(!empty($vicer->subordinates)){
+                foreach($vicer->subordinates as $item){
+                    if($item->teams->id != $teamId || in_array($item->id , $userIds)){
+                        continue;
+                    }
+                    $userIds[] = $item->id;
+                    $users[] = $item;
+                }
+            }
+        }else{
+            $request->merge([
+                'lft' => ['gt' => $auth->lft],
+                'rgt' => ['lt' => $auth->rgt],
+                'relationFilter' => ['user_catalogues' => ['level' => ['eq' => 4]]], // Lấy user ở cấp $level (ví dụ: 4 cho Đội phó)
+                'type' => 'all'
+            ]);
+            $vicers = $this->userService->paginate($request);
             foreach($vicers as $k => $vicer){
                 if(empty($vicer->subordinates)){
                     continue;
@@ -553,5 +564,6 @@ class EvaluationController extends BaseController
         $response['users'] = $users;
         return response()->json(['response' => $response]); 
     }
+
 
 }
