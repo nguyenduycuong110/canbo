@@ -8665,3 +8665,7 @@ td.title span{
     text-overflow: ellipsis;
     white-space: wrap;
 }
+td.completion-time span{
+    display: inline-block;
+    width: 70px;
+}

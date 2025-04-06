@@ -174,6 +174,28 @@ foreach ($fullMenu['module'] as $module) {
             break;
         }
     }
+    if (isset($module['route']) && $module['route'] === 'team/rank') {
+        // Kiểm tra xem người dùng có quyền "statistics:rankQuality" không
+        $hasPermission = false;
+        foreach ($user->user_catalogues->permissions as $permission) {
+            if ($permission->module === 'statistics' && $permission->name=== 'statistics:rankQuality') {
+                $hasPermission = true;
+                break;
+            }
+        }
+    }
+    
+    // Tương tự, thêm kiểm tra cho menu "Kết xuất"
+    if (isset($module['route']) && $module['route'] === 'team/export') {
+        // Kiểm tra xem người dùng có quyền "statistics:export" không
+        $hasPermission = false;
+        foreach ($user->user_catalogues->permissions as $permission) {
+            if ($permission->module === 'statistics' && $permission->name=== 'statistics:exportHistory') {
+                $hasPermission = true;
+                break;
+            }
+        }
+    }
     if ($hasPermission) {
         if (isset($module['items'])) {
             $filteredItems = [];

@@ -28,6 +28,6 @@ class StatusService extends BaseService implements StatusServiceInterface{
         $this->modelData = $request->only($fillable);
         return $this;
     }
-   
+
 
 }

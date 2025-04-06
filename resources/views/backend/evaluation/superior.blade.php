@@ -68,7 +68,7 @@
                                         class="form-control"
                                         placeholder=""
                                         autocomplete="off"
-                                        min="1"
+                                        min="0"
                                         max="100"
                                         step="1"
                                     >
@@ -86,7 +86,7 @@
                                         class="form-control"
                                         placeholder=""
                                         autocomplete="off"
-                                        min="1"
+                                        min="0"
                                         max="100"
                                         step="1"
                                     >
@@ -102,14 +102,14 @@
                                         class="form-control"
                                         placeholder=""
                                         autocomplete="off"
-                                        min="1"
+                                        min="0"
                                         max="100"
                                         step="1"
                                     >
                                 </div>
                             </div>
                         </div>
-                        <div class="row">
+                        <div class="row mb15">
                             <div class="col-lg-6">
                                 <div class="form-row">
                                     <label for="" class="control-label text-left">Số công việc / nhiệm vụ không hoàn thành đúng hạn hoặc không đảm bảo yêu cầu<span class="text-danger">(*)</span></label>
@@ -120,7 +120,7 @@
                                         class="form-control"
                                         placeholder=""
                                         autocomplete="off"
-                                        min="1"
+                                        min="0"
                                         max="100"
                                         step="1"
                                     >
@@ -145,6 +145,21 @@
                                             @endforeach
                                         @endif
                                     </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <div class="form-row">
+                                    <label for="" class="control-label text-left">Ghi chú</label>
+                                    <input 
+                                        type="text"
+                                        name="note"
+                                        value="{{ old('note', (isset($model->note)) ? $model->note : '') }}"
+                                        class="form-control"
+                                        placeholder=""
+                                        autocomplete="off"
+                                    >
                                 </div>
                             </div>
                         </div>

@@ -25,6 +25,8 @@ Route::middleware(['noAuth'])->group(function(){
 Route::middleware(['auth'])->group(function(){
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
     Route::get('signout', [AuthController::class, 'signout'])->name('auth.signout');
+    Route::get('users/profile', [UserController::class, 'profile'])->name('users.profile');
+    Route::patch('users/{id}/profile/update', [UserController::class, 'updateProfile'])->name('users.profile.update');
 
     Route::middleware(['permission'])->group(function(){
 

@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use App\Services\Interfaces\User\UserServiceInterface;
 use App\Repositories\User\UserRepository;
 use App\Classes\Nestedsetbie;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
 
 class UserService extends BaseService implements UserServiceInterface{
 
@@ -95,7 +95,12 @@ class UserService extends BaseService implements UserServiceInterface{
         ];
         return $this->repository->updatePassword($payload, $id);
     }
-
+    
+    public function updateProfile($request , $id){
+        $payload = $request->all();
+        $payload['password'] = $request->password ?? Auth::user()->password;
+        return $this->repository->update($id, $payload);
+    }
 
 
 }

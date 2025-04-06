@@ -32,15 +32,14 @@
                             <tr>
                                 <th class="text-center col-stt">STT</th>
                                 <th class="text-left">Tiêu đề</th>
-                                <th>File</th>
                                 <th>Ngày giao</th>
                                 <th>Ngày xong</th>
-                                <th>Thời gian</th>
+                                <th class="completion-time text-center">Thời gian</th>
                                 <th>SP đầu ra</th>
                                 <th>Cá nhân tự đánh giá</th>
                                 <th>Đánh giá của Đội phó</th>
                                 @foreach($positionsByLevel as $level => $positions)
-                                    @if($level != 4) <!-- Bỏ qua level 4 (Đội phó) vì đã có cột riêng -->
+                                    @if($level != 4) 
                                         @php
                                             $positionNames = array_column($positions, 'name');
                                             $headerText = 'Đánh giá của ' . implode(', ', $positionNames);
@@ -49,6 +48,7 @@
                                     @endif
                                 @endforeach
                                 <th>Điểm</th>
+                                <th>File</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -62,19 +62,14 @@
                                             <td class="text-left col-stt title">
                                                 <span>{{ $record->tasks->name }}</span>
                                             </td>
-                                            <td>
-                                                @if($record->file != null)
-                                                    <a href="{{  $record->file }}" download>Click để dowload</a>
-                                                @endif
-                                            </td>
                                             <td class="col-time">
                                                 {{ $record->start_date }}
                                             </td>
                                             <td class="col-time">
                                                 {{ $record->due_date }}
                                             </td>
-                                            <td class="text-center col-time">
-                                                {{ $record->completion_date }}
+                                            <td class="text-center completion-time">
+                                                <span>{{ $record->completion_date }}</span>
                                             </td>
                                             <td class="output">
                                                 <span>{{ $record->output }}</span>
@@ -186,6 +181,11 @@
                                                     data-evaluation="{{ $record->id }}"
                                                     max="100"
                                                 >
+                                            </td>
+                                            <td>
+                                                @if($record->file != null)
+                                                    <a href="{{  $record->file }}" download>Click để dowload</a>
+                                                @endif
                                             </td>
                                         </tr>
                                     @endif

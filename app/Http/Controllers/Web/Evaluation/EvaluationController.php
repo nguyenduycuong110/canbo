@@ -140,7 +140,6 @@ class EvaluationController extends BaseController{
 
     protected function getData(): array{
         return [
-            // 'tasks' =>  $this->taskService->checkTask(),
             'statuses' => $this->statusService->all(),
             'teams' => $this->teamService->teamPublish(),
         ];
@@ -394,16 +393,19 @@ class EvaluationController extends BaseController{
 
         if($request->has('start_date') && $request->start_date != ''){
             $evaluationRequest->merge([
-                'start_date' => $request->start_date
+                'start_date' => $request->start_date,
             ]);
         }
 
 
+
         $evaluationRequest->merge([
+            'sort' => 'start_date,desc',
             'relationFilter' => $relationFilter
         ]);
 
         $evaluations = $this->service->paginate($evaluationRequest);
+
         return $evaluations;
     }
 

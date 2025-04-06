@@ -5,6 +5,7 @@ use App\Http\Controllers\Web\BaseController;
 use App\Http\Requests\User\User\StoreRequest;
 use App\Http\Requests\User\User\UpdateRequest;
 use App\Http\Requests\User\User\UpdatePasswordRequest;
+use App\Http\Requests\User\User\UpdateProfileRequest;
 use Illuminate\Http\RedirectResponse;
 use App\Services\Interfaces\User\UserServiceInterface as UserService;
 use App\Services\Interfaces\User\UserCatalogueServiceInterface as UserCatalogueService;
@@ -155,6 +156,37 @@ class UserController extends BaseController{
             ],
         ]);
         return $request;
+    }
+
+    public function profile(Request $request): View | RedirectResponse{
+        try {
+            $data = $this->getData();
+            extract($data);
+            $auth = Auth::user();
+            $config = $this->config();
+            $config['model'] = Str::studly(Str::singular($this->route));
+            return view("backend.{$this->namespace}.profile", compact(
+                'auth',
+                'config',
+                ...array_keys($data)
+            ));
+        } catch (\Throwable $th) {
+            return $this->handleWebLogException($th);
+        }
+    }
+
+    public function updateProfile(UpdateProfileRequest $request, $id): RedirectResponse{
+        try {
+            if($response = $this->service->updateProfile($request, $id)){
+                flash()->success(Lang::get('message.save_success'));
+                return redirect()->route("{$this->route}.index");
+            }else{
+                flash()->error(Lang::get('message.save_failed'));
+                return redirect()->back();
+            }
+        } catch (\Throwable $th) {
+            return $this->handleWebLogException($th);
+        }
     }
 
 }   

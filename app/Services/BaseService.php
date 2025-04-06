@@ -32,7 +32,6 @@ abstract class BaseService implements BaseServiceInterface{
 
     protected const PERPAGE = 15;
 
-
     public function __construct(
         $repository
     )

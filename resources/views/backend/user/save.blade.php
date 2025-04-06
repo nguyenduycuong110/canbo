@@ -85,7 +85,7 @@
                                         <option value="0">Chọn chức vụ</option>
                                         @if(isset($user_catalogues))
                                             @foreach($user_catalogues as $key => $val)
-                                                @if($val->level > $auth->user_catalogues->level)
+                                                @if($val->level >= $auth->user_catalogues->level)
                                                     <option {{ 
                                                         $val->id == old('user_catalogue_id', (isset($model->user_catalogues->id)) ? $model->user_catalogues->id : '') ? 'selected' : '' 
                                                         }}  value="{{ $val->id }}">{{ $val->name }}</option>

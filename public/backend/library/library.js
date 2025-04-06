@@ -426,14 +426,11 @@
             if (resOriginal.response.user_catalogues.level == 5) {
                 html += `
                     <tr>
-                        <td>${index + 1}</td>
+                        <td class="text-center col-stt">${index + 1}</td>
                         <td>${item.tasks.name}</td>
-                        <td>
-                           <a href="${file}" dowload>${file}</a>
-                        </td>
                         <td>${item.start_date}</td>
                         <td>${item.due_date}</td>
-                        <td>${item.completion_date}</td>
+                        <td class="completion-time text-center"><span>${item.completion_date}</span></td>
                         <td class="output"><span>${item.output}</span></td>
                         <td>
                             ${selfAssessmentStatus || 'Chưa tự đánh giá'}
@@ -449,6 +446,9 @@
                             ${leadershipApprovalStatus || 'Chưa phê duyệt'}
                             <br>
                             <span class="text-success">Họ Tên: ${leadershipApprovalName}<span class="text-danger">(${leadershipApprovalPoint}đ)</span></span>
+                        </td>
+                        <td>
+                           <a href="${file}" dowload>${file}</a>
                         </td>
                     </tr>
                 `;

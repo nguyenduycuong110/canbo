@@ -74,14 +74,14 @@
                             <tr>
                                 <th class="col-stt">STT</th>
                                 <th>Nội dung công việc</th>
-                                <th>File</th>
                                 <th>Ngày giao việc</th>
                                 <th>Ngày hoàn thành</th>
-                                <th>Thời gian thực tế</th>
+                                <th class="text-center completion-time">Thời gian thực tế</th>
                                 <th>Sản phẩm đầu ra</th>
                                 <th style="width:220px;">Cá nhân tự đánh giá</th>
                                 <th>Lãnh đạo trực tiếp đánh giá</th>
                                 <th>Lãnh đạo phê duyệt</th>
+                                <th>File</th>
                             </tr>
                         </thead>
                         <tbody>

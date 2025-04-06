@@ -28,7 +28,6 @@
                     <tbody>
                         @if(isset($records) && (is_object($records) || is_array($records)) && count($records) > 0)
                             @foreach($records as $record)
-                            @if($record->user_id != $auth->id) @continue; @endif
                                 <tr >
                                     <td>
                                         <input type="checkbox" value="{{ $record->id }}" class="input-checkbox checkBoxItem">

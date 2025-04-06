@@ -19,6 +19,7 @@ class Evaluation extends Model
         'due_date',
         'completion_date',
         'output',
+        'note',
         'file',
         'total_tasks',
         'overachieved_tasks',

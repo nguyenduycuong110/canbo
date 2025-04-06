@@ -15,6 +15,8 @@ class StatusRepository extends  BaseRepository{
         parent::__construct($model);
     }
 
-    
+    public function all(){
+        return $this->model->select('*')->orderBy('level','desc')->get();
+    }
 
 }
