@@ -385,7 +385,7 @@ class EvaluationController extends BaseController
         $completionPercentage = 0;
         $finalRating = 'D';
 
-        $userLevel = Auth::user()->user_catalogues->level;
+        // $userLevel = Auth::user()->user_catalogues->level;
 
         // Lấy statistic của user trong tháng
         $statistic = $user->statistics->where('month', $month->format('Y-m-d'))->first();
@@ -466,25 +466,32 @@ class EvaluationController extends BaseController
             ];
         }
 
+        $user->load('user_catalogues');
+        $level = $user->user_catalogues->level ?? 5;
+
         // Bước 5: Tính tự đánh giá
         $level4Percentage = $totalTasks > 0 ? ($level4Tasks / $totalTasks) * 100 : 0;
         $level3Percentage = $totalTasks > 0 ? (($level3Tasks + $level4Tasks) / $totalTasks) * 100 : 0;
         $level2Percentage = $totalTasks > 0 ? ($level2Tasks / $totalTasks) * 100 : 0;
         $level1Percentage = $totalTasks > 0 ? ($level1Tasks / $totalTasks) * 100 : 0;
 
-        if ($level3Percentage == 100 && $level4Percentage >= 50) {
+        if ($totalTasks > 0) {
+            if ($level3Percentage == 100 && $level4Percentage >= 50) {
+                $selfRating = 'A';
+            } elseif ($level3Percentage == 100) {
+                $selfRating = 'B';
+            } elseif ($level2Percentage <= 20) {
+                $selfRating = 'C';
+            } else {
+                $selfRating = 'D';
+            }
+        } elseif ($level < 5 && !$hasSelfEvaluation) {
             $selfRating = 'A';
-        } elseif ($level3Percentage == 100) {
-            $selfRating = 'B';
-        } elseif ($level2Percentage <= 20) {
-            $selfRating = 'C';
-        } else {
-            $selfRating = 'D';
+        } elseif ($level = 5 && !$hasSelfEvaluation) {
+            $selfRating = 'Không đánh giá';
         }
 
         // Bước 6: Đánh giá dựa trên cấp dưới
-        $user->load('user_catalogues');
-        $level = $user->user_catalogues->level ?? 5;
 
         // Chỉ xử lý nếu cấp < 5
         if ($level < 5) {
@@ -591,7 +598,7 @@ class EvaluationController extends BaseController
                     }
                 }
             } else {
-                $finalRating = ($totalTasks > 0) ? $selfRating : 'Không đánh giá';
+                $finalRating = ($totalTasks > 0 || $selfRating === 'A') ? $selfRating : 'Không đánh giá';
             }
         } else {
             $finalRating = ($totalTasks > 0) ? $selfRating : 'Không đánh giá';

@@ -65,7 +65,7 @@ class EvaluationController extends BaseController{
             $endOfMonth = $monthCurrent->copy()->endOfMonth()->toDateTimeString();
             $request->merge([
                 'user_id' => $user->id,
-                'created_at' => [
+                'start_date' => [
                     'gte' => $startOfMonth,
                     'lte' => $endOfMonth
                 ]
@@ -165,7 +165,7 @@ class EvaluationController extends BaseController{
             $currentUserPosition = $currentUserCatalogue->name;
             $currentUserLevel = $currentUserCatalogue->level;
             $isDeputyTeamLeader = $currentUserLevel == 4;
-            
+
             $records = match ($level) {
                 5 => $this->getCongChucInsideNodeEvaluation($request, $level, $monthCurrent),
                 default => $this->getInsideNodeEvaluation($request, $level, $monthCurrent),
@@ -205,7 +205,7 @@ class EvaluationController extends BaseController{
                         if ($user) {
                             $user->load('user_catalogues');
                             $userCatalogue = $user->user_catalogues()->first();
-                            return $userCatalogue && $userCatalogue->name === 'Đội phó';
+                            return $userCatalogue && $userCatalogue->level == 4;
                         }
                         return false;
                     })->sortByDesc('pivot.updated_at'); // Sắp xếp theo updated_at (mới nhất trước)
@@ -407,7 +407,7 @@ class EvaluationController extends BaseController{
 
 
         $evaluationRequest->merge([
-            'created_at' => [
+            'start_date' => [
                 'gte' => $startOfMonth,
                 'lte' => $endOfMonth
             ],
@@ -481,7 +481,7 @@ class EvaluationController extends BaseController{
         }
 
         $evaluationRequest->merge([
-            'created_at' => [
+            'start_date' => [
                 'gte' => $startOfMonth,
                 'lte' => $endOfMonth
             ],

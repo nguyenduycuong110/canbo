@@ -24,12 +24,12 @@ class StoreRequest extends FormRequest
     {
         return [
             'task_id' => 'gt:0',
-            'start_date' => 'date',
-            'due_date' => 'date',
+            'start_date' => 'date_format:d/m/Y', 
+            'due_date' => 'date_format:d/m/Y',
             'status_id' => 'gt:0',
             'file' => [
                 'file',    
-                'mimes:pdf,xlsx,doc,docx,rar,zip', 
+                'mimes:pdf,xlsx,doc,docx,rar,zip,jpg,jpeg,png', 
                 'max:5120'  
             ],
         ];
@@ -52,7 +52,7 @@ class StoreRequest extends FormRequest
     {
         return [
             'file.file' => 'Dữ liệu upload phải là một file.',
-            'file.mimes' => 'File chỉ chấp nhận định dạng: pdf, xlsx, doc, docx, rar, zip.',
+            'file.mimes' => 'File chỉ chấp nhận định dạng: pdf, xlsx, doc, docx, rar, zip, jpg, jpeg, png.',
             'file.max' => 'Kích thước file không được vượt quá 5MB.',
         ];
     }

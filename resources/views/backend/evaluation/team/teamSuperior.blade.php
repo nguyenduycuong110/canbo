@@ -202,7 +202,7 @@
                                         @endphp
                                         <tr>
                                             <td class="text-center col-stt">
-                                                {{ $record->id }}
+                                                {{ $k + 1 }}
                                             </td>
                                             <td>
                                                 <span>

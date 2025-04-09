@@ -15,16 +15,7 @@
     @csrf
     <div class="wrapper wrapper-content animated fadeInRight">
         <div class="row">
-            <div class="col-lg-4">
-                <div class="panel-head">
-                    <div class="panel-title">Thông tin chung</div>
-                    <div class="panel-description">
-                        <p>Nhập thông tin chung của phiếu đánh giá</p>
-                        <p>Lưu ý: Những trường đánh dấu <span class="text-danger">(*)</span> là bắt buộc</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-8">
+            <div class="col-lg-12">
                 <div class="ibox">
                     <div class="ibox-content">
                         <div class="row mb15">

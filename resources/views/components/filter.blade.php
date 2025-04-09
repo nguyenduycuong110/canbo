@@ -33,7 +33,7 @@
                             </select>
                         @endif
                         @if($config['route'] == 'evaluations')
-                            <input type="text" value="{{ request('start_date.eq') ?: old('start_date.eq') }}"  placeholder="Chọn ngày tạo" name="start_date[eq]" class="datepicker start_date mr10 form-control">
+                            <input type="text" value="{{ request('start_date.eq') ?: old('start_date.eq') }}"  placeholder="Chọn ngày giao việc" name="start_date[eq]" class="datepicker start_date mr10 form-control">
                         @endif
                         <div class="input-group">
                             <input 

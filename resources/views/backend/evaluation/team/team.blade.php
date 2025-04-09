@@ -43,7 +43,9 @@
                                     @if($level != 4) 
                                         @php
                                             $positionNames = array_column($positions, 'name');
-                                            $headerText = 'Đánh giá của ' . implode(', ', $positionNames);
+                                            $positionIsCurrents = array_column($positions, 'is_current_user');
+                                            $isCurrentUser = in_array(true, $positionIsCurrents);
+                                            $headerText = $isCurrentUser ? implode(', ', $positionNames) : 'Đánh giá của ' . implode(', ', $positionNames);
                                         @endphp
                                         <th>{{ $headerText }}</th>
                                     @endif
@@ -56,7 +58,7 @@
                                 @foreach($records as $k => $record)
                                     <tr>
                                         <td class="text-center col-stt">
-                                            {{ $record->id }}
+                                            {{ $k + 1 }}
                                         </td>
                                         <td class="text-left col-stt title">
                                             <span>

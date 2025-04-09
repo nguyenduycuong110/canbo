@@ -175,6 +175,7 @@
                                             <a 
                                                 href="{{  $record->file }}" 
                                                 download
+                                                target="_blank"
                                             >
                                                 Click để dowload
                                             </a>

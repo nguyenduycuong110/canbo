@@ -210,22 +210,28 @@
     }
 
     HT.setupDatepicker = () => {
-        if ($('.datepicker').length) {
+        // Khởi tạo tất cả .datepicker
+        const $allDatepickers = $('.datepicker');
+        if ($allDatepickers.length) {
+            $allDatepickers.datetimepicker({
+                timepicker: true,
+                format: 'd/m/Y',
+            });
+        }
+    
+        const $colLg6Datepickers = $('.col-lg-6 .datepicker');
+        if ($colLg6Datepickers.length) {
             const today = new Date();
             const currentDate = today.getDate().toString().padStart(2, '0') + '/' + 
                 (today.getMonth() + 1).toString().padStart(2, '0') + '/' + 
-                today.getFullYear(); // Ví dụ: "08/04/2025"
+                today.getFullYear(); // Ví dụ: "09/04/2025"
     
-            const $input = $('.datepicker');
-    
-            // Chỉ gán ngày hiện tại nếu input không có giá trị ban đầu
-            if (!$input.val()) {
-                $input.val(currentDate);
-            }
-    
-            $input.datetimepicker({
-                timepicker: true,
-                format: 'd/m/Y',
+            $colLg6Datepickers.each(function() {
+                const $input = $(this);
+                // Chỉ gán ngày hiện tại nếu input không có giá trị ban đầu
+                if (!$input.val()) {
+                    $input.val(currentDate);
+                }
             });
         }
     };
@@ -459,7 +465,7 @@
                             <span class="text-success">Họ Tên: ${leadershipApprovalName}<span class="text-danger">(${leadershipApprovalPoint}đ)</span></span>
                         </td>
                         <td>
-                           <a href="${file}" dowload>${file}</a>
+                           <a href="${item.file}" target="_blank" dowload>${file}</a>
                         </td>
                     </tr>
                 `;
