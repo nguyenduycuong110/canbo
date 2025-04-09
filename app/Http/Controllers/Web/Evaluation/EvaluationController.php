@@ -59,8 +59,16 @@ class EvaluationController extends BaseController{
     public function index(Request $request): View | RedirectResponse{
         try {
             $user = Auth::user();
+            $date = now()->format('m/Y');
+            $monthCurrent = \Carbon\Carbon::createFromFormat('m/Y', $date);
+            $startOfMonth = $monthCurrent->copy()->startOfMonth()->toDateTimeString();
+            $endOfMonth = $monthCurrent->copy()->endOfMonth()->toDateTimeString();
             $request->merge([
-                'user_id' => $user->id
+                'user_id' => $user->id,
+                'created_at' => [
+                    'gte' => $startOfMonth,
+                    'lte' => $endOfMonth
+                ]
             ]);
             $records = $this->service->paginate($request);
             $config = $this->config();
@@ -161,7 +169,7 @@ class EvaluationController extends BaseController{
             
             $records = match ($level) {
                 5 => $this->getCongChucInsideNodeEvaluation($request, $level, $monthCurrent),
-                default => $this->getInsideNodeEvaluation($request, $level),
+                default => $this->getInsideNodeEvaluation($request, $level, $monthCurrent),
             };
 
             $allParams = $request->query();
@@ -343,7 +351,8 @@ class EvaluationController extends BaseController{
         $auth = Auth::user();
         $auth->load(['subordinates']);
         $subordinateIds = [];
-       
+        $startOfMonth = $monthCurrent->copy()->startOfMonth()->toDateTimeString();
+        $endOfMonth = $monthCurrent->copy()->endOfMonth()->toDateTimeString();
         if($auth->user_catalogues->level < 4){
             $request->merge([
                 'lft' => ['gt' => $auth->lft],
@@ -398,8 +407,11 @@ class EvaluationController extends BaseController{
         }
 
 
-
         $evaluationRequest->merge([
+            'created_at' => [
+                'gte' => $startOfMonth,
+                'lte' => $endOfMonth
+            ],
             'sort' => 'start_date,desc',
             'relationFilter' => $relationFilter
         ]);
@@ -409,13 +421,15 @@ class EvaluationController extends BaseController{
         return $evaluations;
     }
 
-    public function getInsideNodeEvaluation($request, $level)
+    public function getInsideNodeEvaluation($request, $level, $monthCurrent = null)
     {
         /** @var \App\Models\User $user */
         $auth = Auth::user();
     
         // Lấy danh sách user thuộc cấp $level trong nhánh của người đăng nhập
         $userIds = [];
+        $startOfMonth = $monthCurrent->copy()->startOfMonth()->toDateTimeString();
+        $endOfMonth = $monthCurrent->copy()->endOfMonth()->toDateTimeString();
         $request->merge([
             'lft' => ['gt' => $auth->lft],
             'rgt' => ['lt' => $auth->rgt],
@@ -468,6 +482,10 @@ class EvaluationController extends BaseController{
         }
 
         $evaluationRequest->merge([
+            'created_at' => [
+                'gte' => $startOfMonth,
+                'lte' => $endOfMonth
+            ],
             'relationFilter' => $relationFilter
         ]);
     

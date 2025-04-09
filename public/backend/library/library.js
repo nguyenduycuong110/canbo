@@ -531,6 +531,8 @@
     }
 
     HT.setupDataForStatisticExport = (option) => {
+        const loadingOverlay = $('<div class="loading-overlay">Đang tải file...</div>');
+        $('body').append(loadingOverlay);
         $.ajax({
             url: 'ajax/statistics/exportHistory', 
             type: 'POST', 
@@ -854,6 +856,8 @@
     }
 
     HT.setupDataForRankQuality = (option) => {
+        const loadingOverlay = $('<div class="loading-overlay">Đang tải file...</div>');
+        $('body').append(loadingOverlay);
         $.ajax({
             url: 'ajax/statistics/exportRank', 
             type: 'POST', 
@@ -959,6 +963,9 @@
     HT.filterEvaluationByField = () => {
         $('.start_date, .perpage, .team_id, .user_id, .deputy_id, .vice_id').change(function() {
             const $this = $(this);
+            if(!$this.val()){
+                return;
+            }
             if ($this.closest('.filter-officer').length) {
                 $this.closest('form').submit();
             }
@@ -966,6 +973,9 @@
         
         $('.start_date').on('changeDate', function() {
             const $this = $(this);
+            if(!$this.val()){
+                return;
+            }
             if ($this.closest('.filter-officer').length) {
                 $this.closest('form').submit();
             }
@@ -973,6 +983,9 @@
         
         $('.team_id, .user_id, .deputy_id, .vice_id').on('select2:select', function() {
             const $this = $(this);
+            if(!$this.val()){
+                return;
+            }
             if ($this.closest('.filter-officer').length) {
                 $this.closest('form').submit();
             }

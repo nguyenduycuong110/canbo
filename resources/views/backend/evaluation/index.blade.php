@@ -71,7 +71,6 @@
                         <tr>
                             <th class="col-stt">STT</th>
                             <th>Nội dung công việc</th>
-                            <th>File</th>
                             <th>Ngày giao việc</th>
                             <th>Ngày hoàn thành</th>
                             <th style="width:50px;">Thời gian thực tế</th>
@@ -80,6 +79,7 @@
                             @foreach($positions as $position)
                                 <th>Đánh giá của {{ $position }}</th>
                             @endforeach
+                            <th>File</th>
                             <th class="text-center">Thao tác</th>
                         </tr>
                         </thead>
@@ -127,21 +127,11 @@
                                     <td>
                                         <span>{{ $record->tasks->name }}</span>
                                     </td>
-                                    <td class="file">
-                                        @if($record->file != null)
-                                            <a 
-                                                href="{{  $record->file }}" 
-                                                download
-                                            >
-                                                Click để dowload
-                                            </a>
-                                        @endif
+                                    <td>
+                                        {{ !is_null($record->start_date) ? convertDateTime($record->start_date, 'd-m-Y', 'Y-m-d') : '' }}
                                     </td>
                                     <td>
-                                        {{ $record->start_date }}
-                                    </td>
-                                    <td>
-                                        {{ $record->due_date }}
+                                        {{ !is_null($record->due_date) ? convertDateTime($record->due_date, 'd-m-Y', 'Y-m-d') : '' }}
                                     </td>
                                     <td style="width:50px;">
                                         {{ $record->completion_date }}
@@ -168,7 +158,6 @@
                                             {{ $statuses->where('id', 4)->first()->name }}
                                         @endif
                                     </td>
-                                    
                                     <!-- Hiển thị đánh giá theo từng vị trí -->
                                     @foreach($positions as $position)
                                         <td>
@@ -181,7 +170,16 @@
                                             @endif
                                         </td>
                                     @endforeach
-                                    
+                                    <td class="file">
+                                        @if($record->file != null)
+                                            <a 
+                                                href="{{  $record->file }}" 
+                                                download
+                                            >
+                                                Click để dowload
+                                            </a>
+                                        @endif
+                                    </td>
                                     <td class="text-center"> 
                                         @if($lock == 0)
                                             <a href="{{ route("{$config['route']}.edit", $record->id) }}" class="btn btn-success"><i class="fa fa-edit"></i></a>

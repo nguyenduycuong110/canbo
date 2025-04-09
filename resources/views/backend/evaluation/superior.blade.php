@@ -68,9 +68,9 @@
                                         class="form-control"
                                         placeholder=""
                                         autocomplete="off"
-                                        min="0"
-                                        max="100"
-                                        step="1"
+                                        min="0.0"
+                                        max="100.0"
+                                        step="0.1"
                                     >
                                 </div>
                             </div>
@@ -86,9 +86,9 @@
                                         class="form-control"
                                         placeholder=""
                                         autocomplete="off"
-                                        min="0"
-                                        max="100"
-                                        step="1"
+                                        min="0.0"
+                                        max="100.0"
+                                        step="0.1"
                                     >
                                 </div>
                             </div>
@@ -102,9 +102,9 @@
                                         class="form-control"
                                         placeholder=""
                                         autocomplete="off"
-                                        min="0"
-                                        max="100"
-                                        step="1"
+                                        min="0.0"
+                                        max="100.0"
+                                        step="0.1"
                                     >
                                 </div>
                             </div>
@@ -120,9 +120,9 @@
                                         class="form-control"
                                         placeholder=""
                                         autocomplete="off"
-                                        min="0"
-                                        max="100"
-                                        step="1"
+                                        min="0.0"
+                                        max="100.0"
+                                        step="0.1"
                                     >
                                 </div>
                             </div>

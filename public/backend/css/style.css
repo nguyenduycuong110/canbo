@@ -8669,3 +8669,8 @@ td.completion-time span{
     display: inline-block;
     width: 70px;
 }
+.profile-element img{
+    width: 50px;
+    height: 48px;
+    border-radius: 50%;
+}

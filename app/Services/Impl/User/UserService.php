@@ -7,12 +7,15 @@ use App\Services\Interfaces\User\UserServiceInterface;
 use App\Repositories\User\UserRepository;
 use App\Classes\Nestedsetbie;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class UserService extends BaseService implements UserServiceInterface{
 
     protected $repository;
     protected $route = 'users';
     protected $nestedset;
+
+    protected $fieldSearchs = ['name','account'];
 
     protected $sort = ['lft', 'asc'];
 

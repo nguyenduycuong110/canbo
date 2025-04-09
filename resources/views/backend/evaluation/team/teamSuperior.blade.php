@@ -113,7 +113,7 @@
                         <tbody>
                             @if(isset($records) && (is_object($records) || is_array($records)) && count($records) > 0)
                                 @foreach($records as $k => $record)
-                                    @if(isset($allParams['perpage']) ?  true : $record->created_at >= $startOfMonth && $record->created_at <= $endOfMonth )
+                                    {{-- @if(isset($allParams['perpage']) ?  true : $record->created_at >= $startOfMonth && $record->created_at <= $endOfMonth ) --}}
                                         @php
                                             // Lấy đánh giá của bản thân
                                             $seftEvaluation = $record->statuses()->where('user_id', $record->user_id)->first()->pivot->status_id ?? null;
@@ -208,7 +208,7 @@
                                                 {{ $record->tasks->name }}
                                             </td>
                                             <td class="col-time">
-                                                {{ convertDateTime( $record->created_at, 'Y-m-d') }}
+                                                {{ convertDateTime( $record->created_at, 'd-m-Y') }}
                                             </td>
                                             <td class="text-center">
                                                 {{ $record->total_tasks }}
@@ -276,7 +276,7 @@
                                                 >
                                             </td>
                                         </tr>
-                                    @endif
+                                    {{-- @endif --}}
                                 @endforeach
                             @else
                                 <tr>

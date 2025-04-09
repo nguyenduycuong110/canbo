@@ -8,8 +8,8 @@
         <ul class="nav metismenu" id="side-menu">
             <li class="nav-header">
                 <div class="dropdown profile-element"> <span>
-                        <img alt="image" class="img-circle" src="backend/img/profile_small.jpg" />
-                         </span>
+                        <img alt="image" class="img-scaledown" src="{{ $user->image ?? '/userfiles/image/avartar.jpg' }}" />
+                        </span>    
                     <a data-toggle="dropdown" class="dropdown-toggle" href="#">
                         <span class="clear"> <span class="block m-t-xs"> <strong class="font-bold">{{ $user->name }}</strong>
                          </span> <span class="text-muted text-xs block">{{ $user->user_catalogues->name }}<b class="caret"></b></span> </span> </a>

@@ -15,7 +15,7 @@
     @csrf
     <div class="wrapper wrapper-content animated fadeInRight">
         <div class="row">
-            <div class="col-lg-5">
+            <div class="col-lg-4">
                 <div class="panel-head">
                     <div class="panel-title">Thông tin chung</div>
                     <div class="panel-description">
@@ -24,7 +24,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-lg-7">
+            <div class="col-lg-8">
                 <div class="ibox">
                     <div class="ibox-content">
                         <div class="row mb15">
@@ -83,8 +83,9 @@
                                         class="form-control"
                                         placeholder=""
                                         autocomplete="off"
-                                        min="1.0"
+                                        min="0.0"
                                         max="100.0"
+                                        step="0.1"
                                     >
                                 </div>
                             </div>

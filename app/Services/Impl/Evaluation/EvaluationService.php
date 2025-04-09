@@ -151,6 +151,8 @@ class EvaluationService extends BaseService implements EvaluationServiceInterfac
 
             if (!empty($evaluationList)) {
                 foreach ($evaluationList as $evaluation) {
+                    $evaluation->start_date = !is_null($evaluation->start_date) ? convertDateTime($evaluation->start_date, 'd-m-Y', 'Y-m-d') : '';
+                    $evaluation->due_date = !is_null($evaluation->due_date) ? convertDateTime($evaluation->due_date, 'd-m-Y', 'Y-m-d') : '';
                     $selfAssessment = []; // Tự đánh giá của công chức
                     $deputyAssessment = []; // Đánh giá của lãnh đạo trực tiếp (dựa trên level)
                     $leadershipApproval = []; // Đánh giá của lãnh đạo cấp cao nhất

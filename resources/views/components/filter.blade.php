@@ -1,6 +1,6 @@
 @props(['config'])
 <form action="{{ route("{$config['route']}.index") }}">
-    <div class="filter-wrapper">
+    <div class="filter-wrapper filter-officer">
         <div class="uk-flex uk-flex-middle uk-flex-space-between">
             <div class="perpage">
                 @php
@@ -31,6 +31,9 @@
                                     @endforeach
                                 @endif
                             </select>
+                        @endif
+                        @if($config['route'] == 'evaluations')
+                            <input type="text" value="{{ request('start_date.eq') ?: old('start_date.eq') }}"  placeholder="Chọn ngày tạo" name="start_date[eq]" class="datepicker start_date mr10 form-control">
                         @endif
                         <div class="input-group">
                             <input 
