@@ -49,10 +49,10 @@
                                 <div class="form-row">
                                     <label for="" class="control-label text-left">Ngày giao việc</label>
                                     <input 
-                                        type="date"
+                                        type="text"
                                         name="start_date"
-                                        value="{{ old('start_date', (isset($model->start_date)) ? date('Y-m-d', strtotime($model->start_date)) : '') }}"
-                                        class="form-control"
+                                        value="{{ old('start_date', (isset($model->start_date)) ? date('d/m/Y', strtotime($model->start_date)) : '') }}"
+                                        class="form-control datepicker"
                                         placeholder=""
                                         autocomplete="off"
                                     >
@@ -62,10 +62,10 @@
                                 <div class="form-row">
                                     <label for="" class="control-label text-left">Thời gian hoàn thành</label>
                                     <input 
-                                        type="date"
+                                        type="text"
                                         name="due_date"
-                                        value="{{ old('due_date', (isset($model->due_date)) ? date('Y-m-d', strtotime($model->due_date)) : '') }}"
-                                        class="form-control"
+                                        value="{{ old('due_date', ($model->due_date ?? null) ? Carbon\Carbon::parse($model->due_date)->format('d/m/Y') : '') }}"
+                                        class="form-control datepicker"
                                         placeholder=""
                                         autocomplete="off"
                                     >

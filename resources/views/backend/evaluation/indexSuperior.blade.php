@@ -125,7 +125,7 @@
                                             {{ $record->tasks->name }}
                                         </td>
                                         <td>
-                                            {{ convertDateTime($record->start_date, 'd-m-y', 'Y-m-d') }}
+                                            {{ convertDateTime($record->start_date, 'd-m-Y', 'Y-m-d') }}
                                         </td>
                                         <td class="text-center">
                                             {{ $record->total_tasks }}

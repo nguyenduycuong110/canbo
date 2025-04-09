@@ -210,14 +210,25 @@
     }
 
     HT.setupDatepicker = () => {
-        if($('.datepicker').length){
-            $('.datepicker').datetimepicker({
-                timepicker:true,
-                format:'d/m/Y',
+        if ($('.datepicker').length) {
+            const today = new Date();
+            const currentDate = today.getDate().toString().padStart(2, '0') + '/' + 
+                (today.getMonth() + 1).toString().padStart(2, '0') + '/' + 
+                today.getFullYear(); // Ví dụ: "08/04/2025"
+    
+            const $input = $('.datepicker');
+    
+            // Chỉ gán ngày hiện tại nếu input không có giá trị ban đầu
+            if (!$input.val()) {
+                $input.val(currentDate);
+            }
+    
+            $input.datetimepicker({
+                timepicker: true,
+                format: 'd/m/Y',
             });
         }
-        
-    }
+    };
 
     HT.setupMonthPicker = () => {
         if ($('.monthPicker').length) {

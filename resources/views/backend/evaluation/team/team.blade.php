@@ -59,7 +59,11 @@
                                             {{ $record->id }}
                                         </td>
                                         <td class="text-left col-stt title">
-                                            <span>{{ $record->tasks->name }}</span>
+                                            <span>
+                                                {{ $record->tasks->name }}
+                                                <br>
+                                                <small class="text-success">Họ tên : {{ $record->users->name }}</small>
+                                            </span>
                                         </td>
                                         <td class="col-time">
                                             {{ !is_null($record->start_date) ? convertDateTime($record->start_date, 'd-m-Y', 'Y-m-d') : '' }}

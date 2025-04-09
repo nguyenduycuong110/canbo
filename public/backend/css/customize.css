@@ -1568,3 +1568,6 @@ table{
 .p-w-100 .select2-container{
     width:100% !important;
 }
+.datepicker{
+    padding-left: 10px;
+}

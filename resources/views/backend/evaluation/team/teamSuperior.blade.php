@@ -205,7 +205,11 @@
                                                 {{ $record->id }}
                                             </td>
                                             <td>
-                                                {{ $record->tasks->name }}
+                                                <span>
+                                                    {{ $record->tasks->name }}
+                                                    <br>
+                                                    <small class="text-success">Họ tên : {{ $record->users->name }}</small>
+                                                </span>
                                             </td>
                                             <td class="col-time">
                                                 {{ convertDateTime( $record->created_at, 'd-m-Y') }}

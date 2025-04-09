@@ -47,8 +47,16 @@ class EvaluationService extends BaseService implements EvaluationServiceInterfac
 
     private function initializeBasicData(Request $request): self {
         $fillable = $this->repository->getFillable();
+        $startDate = $request?->start_date;
+        $dueDate = $request?->due_date;
         $this->modelData = $request->only($fillable);
         $this->modelData['user_id'] = Auth::id();
+        $this->modelData['start_date'] = !is_null($startDate) 
+        ? Carbon::createFromFormat('d/m/Y', $startDate)->format('Y-m-d') 
+        : null;
+        $this->modelData['due_date'] = !is_null($dueDate) 
+            ? Carbon::createFromFormat('d/m/Y', $dueDate)->format('Y-m-d') 
+            : null;
         if($request->hasFile('file')){
             $file = $request->file('file');
             $fileName = time() . '_' . $file->getClientOriginalName();

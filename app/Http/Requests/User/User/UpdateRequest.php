@@ -30,9 +30,9 @@ class UpdateRequest extends FormRequest
                 'required',
                 'string',
                 'min:4',
-                Rule::unique('users')->ignore($this->user()->id)
+                Rule::unique('users')->ignore($this->id)
             ],
-            'email' => 'required|string|email|max:191',
+            'email' => 'nullable|string|email|max:191',
             'name' => 'required|string',
             'cid' => 'required',
             'user_catalogue_id'=> 'gt:0',

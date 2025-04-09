@@ -24,6 +24,7 @@ class UpdateProfileRequest extends FormRequest
     {
     $rules = [
         'email' => [
+            'nullable',
             'string',
             'email',
             'max:191',
