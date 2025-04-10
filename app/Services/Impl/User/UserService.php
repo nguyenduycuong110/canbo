@@ -68,6 +68,7 @@ class UserService extends BaseService implements UserServiceInterface{
     public function getUserInNode($currentUser){
         
         $userLevel1To4 = $this->repository->getUserInNodeLowerThanEqualLevel4($currentUser);
+
         $allUser = $userLevel1To4;
 
         $level4User = $userLevel1To4->filter(function ($user) {
@@ -75,6 +76,7 @@ class UserService extends BaseService implements UserServiceInterface{
         });
 
         $level5User = collect();
+
         if(!is_null($level4User)){
             foreach($level4User as $key => $val){
                 $val->load(['subordinates']);
@@ -84,6 +86,7 @@ class UserService extends BaseService implements UserServiceInterface{
         }
 
         $allUsers = $allUser->merge($level5User);
+
         return $allUsers;
 
     }

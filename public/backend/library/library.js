@@ -978,7 +978,7 @@
     }
 
     HT.filterEvaluationByField = () => {
-        $('.start_date, .perpage, .team_id, .user_id, .deputy_id, .vice_id').change(function() {
+        $('.start_date, .perpage, .team_id, .user_id, .deputy_id').change(function() {
             const $this = $(this);
             if(!$this.val()){
                 return;
@@ -998,7 +998,7 @@
             }
         });
         
-        $('.team_id, .user_id, .deputy_id, .vice_id').on('select2:select', function() {
+        $('.team_id, .user_id, .deputy_id').on('select2:select', function() {
             const $this = $(this);
             if(!$this.val()){
                 return;

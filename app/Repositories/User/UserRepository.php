@@ -22,7 +22,7 @@ class UserRepository extends  BaseRepository{
     }
 
     public function getUserInNodeLowerThanEqualLevel4($currentUser){
-        return $this->model->where('lft', '>=', $currentUser->lft)->where('rgt', '<=', $currentUser->rgt)->where('level', '<=', 4)->orderBy('lft', 'asc')->get();
+        return $this->model->where('lft', '>=', $currentUser->lft)->where('rgt', '<=', $currentUser->rgt)->where('level', '<=', 4)->orderBy('level', 'asc')->get();
     }
 
     public function findByField($field, $value){

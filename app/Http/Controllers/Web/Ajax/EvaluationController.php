@@ -157,6 +157,7 @@ class EvaluationController extends BaseController
 
             // Tính xếp loại cho từng người dùng
             $ratedUsers = [];
+
             foreach ($users as $user) {
                 $rating = $this->calculateUserRating($user, $month, $evaluations);
                 
@@ -384,8 +385,7 @@ class EvaluationController extends BaseController
         $subordinateRating = null;
         $completionPercentage = 0;
         $finalRating = 'D';
-
-        // $userLevel = Auth::user()->user_catalogues->level;
+        $isValidEvaluation = false; // Biến kiểm tra phiếu hợp lệ
 
         // Lấy statistic của user trong tháng
         $statistic = $user->statistics->where('month', $month->format('Y-m-d'))->first();
@@ -408,15 +408,39 @@ class EvaluationController extends BaseController
         $level3Tasks = 0;
         $level2Tasks = 0;
         $level1Tasks = 0;
-        $hasSelfEvaluation = false; // Biến để kiểm tra xem user đã tự đánh giá hay chưa
+        $hasSelfEvaluation = false;
+        $leaderEvaluation = false;
+
+        // Lấy level của user hiện tại
+        $user->load('user_catalogues');
+        $userLevel = $user->user_catalogues->level ?? 5;
 
         foreach ($userEvaluations as $evaluation) {
             $statuses = $evaluation->statuses;
             $finalStatus = null;
             $selfStatus = null;
+            $selfEvaluationId = null;
 
-            if($evaluation->user_id == Auth::user()->id){
+            if ($evaluation->user_id == $user->id) {
+                $selfEvaluationId = $evaluation->id;
                 $hasSelfEvaluation = true;
+            }
+
+            // Kiểm tra phê duyệt của lãnh đạo (phải trên 2 cấp)
+            foreach ($statuses as $status) {
+                $lock = $status->pivot->lock ?? 1;
+                if ($status->pivot->user_id != $user->id && $lock == 0) {
+                    $approver = $this->userRepository->findById($status->pivot->user_id);
+                    if ($approver) {
+                        $approver->load('user_catalogues');
+                        $approverLevel = $approver->user_catalogues->level ?? 5;
+                        if ($approverLevel <= ($userLevel - 2)) {
+                            $leaderEvaluation = true;
+                            $isValidEvaluation = true; // Phiếu hợp lệ
+                            break;
+                        }
+                    }
+                }
             }
 
             foreach ($statuses as $status) {
@@ -445,13 +469,25 @@ class EvaluationController extends BaseController
                 $level1Tasks += 1;
             }
         }
-        
+
         // Log thông tin kiểm tra tự đánh giá
         Log::info('Kiểm tra tự đánh giá của user', [
             'user_id' => $user->id,
             'total_tasks' => $totalTasks,
             'has_self_evaluation' => $hasSelfEvaluation,
+            'is_valid_evaluation' => $isValidEvaluation,
         ]);
+
+        // Nếu phiếu không hợp lệ, trả về ngay
+        if (!$isValidEvaluation && $userLevel < 5) {
+            return [
+                'self_rating' => $selfRating,
+                'subordinate_rating' => null,
+                'completion_percentage' => round($completionPercentage, 2),
+                'final_rating' => 'Không hợp lệ',
+                'totalTask' => $totalTasks,
+            ];
+        }
 
         $completionPercentage = $totalTasks > 0 ? ($level3And4Tasks / $totalTasks) * 100 : 0;
 
@@ -465,9 +501,6 @@ class EvaluationController extends BaseController
                 'totalTask' => $totalTasks,
             ];
         }
-
-        $user->load('user_catalogues');
-        $level = $user->user_catalogues->level ?? 5;
 
         // Bước 5: Tính tự đánh giá
         $level4Percentage = $totalTasks > 0 ? ($level4Tasks / $totalTasks) * 100 : 0;
@@ -485,21 +518,19 @@ class EvaluationController extends BaseController
             } else {
                 $selfRating = 'D';
             }
-        } elseif ($level < 5 && !$hasSelfEvaluation) {
+        } elseif ($userLevel < 5 && !$hasSelfEvaluation) {
             $selfRating = 'A';
-        } elseif ($level = 5 && !$hasSelfEvaluation) {
+        } elseif ($userLevel == 5 && !$hasSelfEvaluation) {
             $selfRating = 'Không đánh giá';
         }
 
         // Bước 6: Đánh giá dựa trên cấp dưới
-
-        // Chỉ xử lý nếu cấp < 5
-        if ($level < 5) {
+        if ($userLevel < 5) {
             // Lấy danh sách cấp dưới
             $subordinates = collect();
-            if ($level <= 3) {
+            if ($userLevel <= 3) {
                 $subordinates = $this->userRepository->findByField('parent_id', $user->id);
-            } elseif ($level == 4) {
+            } elseif ($userLevel == 4) {
                 $subordinateIds = DB::table('user_subordinate')
                     ->where('manager_id', $user->id)
                     ->pluck('subordinate_id')
@@ -518,7 +549,10 @@ class EvaluationController extends BaseController
             $subordinateRatings = [];
             foreach ($subordinates as $subordinate) {
                 $subordinateRating = $this->calculateUserRating($subordinate, $month, $evaluations);
-                $subordinateRatings[] = $subordinateRating['final_rating'];
+                // Chỉ thêm vào nếu phiếu của cấp dưới hợp lệ
+                if ($subordinateRating['final_rating'] !== 'Không hợp lệ') {
+                    $subordinateRatings[] = $subordinateRating['final_rating'];
+                }
             }
 
             Log::info('Subordinate Ratings for User', [
@@ -601,7 +635,7 @@ class EvaluationController extends BaseController
                 $finalRating = ($totalTasks > 0 || $selfRating === 'A') ? $selfRating : 'Không đánh giá';
             }
         } else {
-            $finalRating = ($totalTasks > 0) ? $selfRating : 'Không đánh giá';
+            $finalRating = ($leaderEvaluation == true) ? $selfRating : 'Không đánh giá';
         }
 
         return [
@@ -802,6 +836,5 @@ class EvaluationController extends BaseController
         $response['users'] = $users;
         return response()->json(['response' => $response]); 
     }
-
 
 }
