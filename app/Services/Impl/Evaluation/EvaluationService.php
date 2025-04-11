@@ -26,7 +26,7 @@ class EvaluationService extends BaseService implements EvaluationServiceInterfac
 
     protected $simpleFilter = ['user_id']; 
 
-    protected $dateFilter = ['created_at', 'start_date'];
+    protected $dateFilter = ['start_date'];
 
     public function __construct(
         EvaluationRepository $repository,

@@ -76,18 +76,16 @@ $fullMenu = [
             'class' => 'special'
         ],
         [
-            'title' => 'Kết xuất',
-            'icon' => 'fa fa-database',
-            'name' => ['statistics'],
-            'route' => 'team/export',
-            'class' => 'special'
-        ],
-        [
-            'title' => 'Xếp loại chất lượng',
+            'title' => 'QL Đánh giá',
             'icon' => 'fa fa-github',
-            'name' => ['statistics'],
-            'route' => 'team/rank',
-            'class' => 'special'
+            'name' => ['evaluations'],
+            'items' => [
+                [
+                    'title' => 'Tự Đánh Giá',
+                    'route' => 'evaluations'
+                ],
+                ...$item
+            ]
         ],
         [
             'title' => 'Lịch sử đánh giá',
@@ -134,6 +132,20 @@ $fullMenu = [
             ]
         ],
         [
+            'title' => 'Xếp loại chất lượng',
+            'icon' => 'fa fa-github',
+            'name' => ['statistics'],
+            'route' => 'team/rank',
+            'class' => 'special'
+        ],
+        [
+            'title' => 'Kết xuất',
+            'icon' => 'fa fa-database',
+            'name' => ['statistics'],
+            'route' => 'team/export',
+            'class' => 'special'
+        ],
+        [
             'title' => 'QL Trạng Thái',
             'icon' => 'fa fa-github',
             'name' => ['statuses'],
@@ -142,18 +154,6 @@ $fullMenu = [
                     'title' => 'QL Trạng Thái',
                     'route' => 'statuses'
                 ]
-            ]
-        ],
-        [
-            'title' => 'QL Đánh giá',
-            'icon' => 'fa fa-github',
-            'name' => ['evaluations'],
-            'items' => [
-                [
-                    'title' => 'Tự Đánh Giá',
-                    'route' => 'evaluations'
-                ],
-                ...$item
             ]
         ],
     ]

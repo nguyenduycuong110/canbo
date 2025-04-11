@@ -63,13 +63,20 @@ class EvaluationController extends BaseController{
             $monthCurrent = \Carbon\Carbon::createFromFormat('m/Y', $date);
             $startOfMonth = $monthCurrent->copy()->startOfMonth()->toDateTimeString();
             $endOfMonth = $monthCurrent->copy()->endOfMonth()->toDateTimeString();
-            $request->merge([
-                'user_id' => $user->id,
-                'start_date' => [
-                    'gte' => $startOfMonth,
-                    'lte' => $endOfMonth
-                ]
-            ]);
+            if(!$request->perpage){
+                $request->merge([
+                    'user_id' => $user->id,
+                    'start_date' => [
+                        'gte' => $startOfMonth,
+                        'lte' => $endOfMonth
+                    ]
+                ]);
+            }else{
+                $request->merge([
+                    'user_id' => $user->id,
+                    'start_date' => $request->start_date
+                ]);
+            }
             $records = $this->service->paginate($request);
             $config = $this->config();
             $data = $this->getData();
@@ -399,12 +406,6 @@ class EvaluationController extends BaseController{
             ];
         }
 
-        if($request->has('start_date') && $request->start_date != ''){
-            $evaluationRequest->merge([
-                'start_date' => $request->start_date,
-            ]);
-        }
-
 
         $evaluationRequest->merge([
             'start_date' => [
@@ -414,6 +415,12 @@ class EvaluationController extends BaseController{
             'sort' => 'start_date,desc',
             'relationFilter' => $relationFilter
         ]);
+        
+        if($request->has('start_date') && $request->start_date != ''){
+            $evaluationRequest->merge([
+                'start_date' => $request->start_date,
+            ]);
+        }
 
         $evaluations = $this->service->paginate($evaluationRequest);
 
@@ -474,12 +481,6 @@ class EvaluationController extends BaseController{
             ];
         }
 
-        if($request->has('start_date') && $request->start_date != ''){
-            $evaluationRequest->merge([
-                'start_date' => $request->start_date
-            ]);
-        }
-
         $evaluationRequest->merge([
             'start_date' => [
                 'gte' => $startOfMonth,
@@ -487,6 +488,12 @@ class EvaluationController extends BaseController{
             ],
             'relationFilter' => $relationFilter
         ]);
+
+        if($request->has('start_date') && $request->start_date != ''){
+            $evaluationRequest->merge([
+                'start_date' => $request->start_date
+            ]);
+        }
     
         $evaluations = $this->service->paginate($evaluationRequest);
         return $evaluations;

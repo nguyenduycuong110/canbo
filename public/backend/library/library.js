@@ -309,7 +309,7 @@
                             toastr.success("Cập nhật đánh giá thành công");
                             
                             // Nếu muốn cập nhật giao diện
-                            location.reload();
+                            // location.reload();
                         } else {
                             // Hiển thị thông báo lỗi
                             toastr.error("Có lỗi xảy ra, vui lòng thử lại");

@@ -8,12 +8,12 @@
     <div class="col-lg-12">
         <div class="ibox float-e-margins mb20">
             <div class="ibox-title">
-                <h5>Đánh giá công chức</h5>
+                <h5>{{ ($auth->user_catalogues->level == 5) ? 'Tự đánh giá' : 'Đánh giá công chức' }}</h5>
             </div>
             <div class="ibox-content">
                 <form action="">
                     <div class="action">
-                        <div class="active-name mb10">Chọn ngày và công chức để hoàn thành đánh giá</div>
+                        <div class="active-name mb10">{{ ($auth->user_catalogues->level == 5) ? 'Chọn tháng để hoàn thành đánh giá' : 'Chọn tháng và công chức để hoàn thành đánh giá' }}</div>
                         <div class="uk-flex uk-flex-middle uk-flex-space-between">
                             <div class="filter uk-flex uk-flex-middle">
                                 <input 
