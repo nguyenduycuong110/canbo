@@ -20,6 +20,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Request as FacadesRequest;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Lang;
+use App\Models\User;
+use App\Models\Team;
 
 class UserController extends BaseController{
 
@@ -61,7 +63,13 @@ class UserController extends BaseController{
     public function index(Request $request): View | RedirectResponse{
         try {
             $request = $this->userNode($request);
+            if(isset($request->team_id)){
+                $request->merge([
+                    'team_id' => $request->team_id
+                ]);
+            }
             $records = $this->service->paginate($request);
+            $teamsInNode = $this->getTeamNode();
             $config = $this->config();
             $config['model'] = Str::studly(Str::singular($this->route));
             $data = $this->getData();
@@ -69,6 +77,7 @@ class UserController extends BaseController{
             return view("backend.{$this->namespace}.index", compact(
                 'records',
                 'config',
+                'teamsInNode',
                 ...array_keys($data)
             ));
         } catch (\Throwable $th) {
@@ -156,6 +165,14 @@ class UserController extends BaseController{
             ],
         ]);
         return $request;
+    }
+
+    private function getTeamNode(){
+        $auth = Auth::user();
+        $allUserInNode = User::where('lft','>=', $auth->lft)->where('rgt','<=', $auth->rgt)->get();
+        $teamsId = array_unique($allUserInNode->pluck('team_id')->toArray());
+        $teams = Team::whereIn('id', $teamsId)->get();
+        return $teams;
     }
 
     public function profile(Request $request): View | RedirectResponse{

@@ -5,6 +5,7 @@
             <div class="perpage">
                 @php
                     $perpage = request('perpage') ?: old('perpage');
+                    $team_id = request('team_id.eq') ?: old('team_id.eq');
                 @endphp
                 <div class="uk-flex uk-flex-middle uk-flex-space-between">
                     <select name="perpage" class="form-control input-sm perpage filter mr10">
@@ -34,6 +35,16 @@
                         @endif
                         @if($config['route'] == 'evaluations')
                             <input type="text" value="{{ request('start_date.eq') ?: old('start_date.eq') }}"  placeholder="Chọn ngày giao việc" name="start_date[eq]" class="datepicker start_date mr10 form-control">
+                        @endif
+                        @if($config['route'] == 'users')
+                            <select name="team_id[eq]" class="form-control setupSelect2 ">
+                                <option value="0">Chọn đội</option>
+                                @if(isset($teamsInNode))
+                                    @foreach($teamsInNode as $team)
+                                        <option {{ ($team_id == $team->id)  ? 'selected' : '' }} value="{{ $team->id }}">{{ $team->name }}</option>
+                                    @endforeach
+                                @endif
+                            </select>
                         @endif
                         <div class="input-group">
                             <input 

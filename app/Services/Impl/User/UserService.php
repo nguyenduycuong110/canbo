@@ -15,11 +15,11 @@ class UserService extends BaseService implements UserServiceInterface{
     protected $route = 'users';
     protected $nestedset;
 
-    protected $fieldSearchs = ['name','account'];
+    protected $fieldSearchs = ['name','account','team_id'];
 
     protected $sort = ['lft', 'asc'];
 
-    protected $complexFilter = ['rgt' , 'lft', 'user_catalogue_id'];
+    protected $complexFilter = ['rgt' , 'lft', 'user_catalogue_id', 'team_id'];
 
     protected $simpleFilter = ['level'];
 

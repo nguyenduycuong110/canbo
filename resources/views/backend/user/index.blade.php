@@ -11,7 +11,7 @@
                 <h5>Quản lý cán bộ</h5>
             </div>
             <div class="ibox-content">
-                <x-filter :config="$config" />
+                @include('components.filter',['config' => $config, 'teams' => $teams])
                 <table class="table table-striped table-bordered">
                     <thead>
                     <tr>
