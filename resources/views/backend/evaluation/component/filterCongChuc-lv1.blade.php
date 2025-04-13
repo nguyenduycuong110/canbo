@@ -46,12 +46,23 @@
                         <select name="user_id" class="form-control setupSelect2 user_id">
                             <option value="0">Chọn công chức</option>
                             @foreach($config['usersOnBranch'] as $record)
-                                <option 
-                                    {{ ($user_id == $record->id)  ? 'selected' : '' }}
-                                    value="{{ $record->id }}"
-                                >
-                                    {{ $record->name }}
-                                </option>
+                                @if(!is_null($team_id) && $team_id != 0)
+                                    @if($record->team_id == $team_id)
+                                        <option 
+                                            {{ ($user_id == $record->id)  ? 'selected' : '' }}
+                                            value="{{ $record->id }}"
+                                        >
+                                            {{ $record->name }}
+                                        </option>
+                                    @endif                                    
+                                @else
+                                    <option 
+                                        {{ ($user_id == $record->id)  ? 'selected' : '' }}
+                                        value="{{ $record->id }}"
+                                    >
+                                        {{ $record->name }}
+                                    </option>
+                                @endif
                             @endforeach
                         </select>
                         <div class="input-group">

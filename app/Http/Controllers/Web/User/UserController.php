@@ -63,9 +63,11 @@ class UserController extends BaseController{
     public function index(Request $request): View | RedirectResponse{
         try {
             $request = $this->userNode($request);
-            if(isset($request->team_id)){
+            if(isset($request->team_id) && $request->team_id != 0){
                 $request->merge([
-                    'team_id' => $request->team_id
+                    'team_id' => [
+                        'eq' => $request->team_id
+                    ]
                 ]);
             }
             $records = $this->service->paginate($request);

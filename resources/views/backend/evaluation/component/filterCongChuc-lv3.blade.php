@@ -69,16 +69,34 @@
                                 </select>
                             @endif
                         @endforeach
+                        @php
+                            $subordinateIds = DB::table('user_subordinate')
+                            ->where('manager_id', $vice_id)
+                            ->pluck('subordinate_id')
+                            ->toArray();
+                            $users = DB::table('users')->whereIn('id', $subordinateIds)->get();
+                        @endphp
                         <select name="user_id" class="form-control setupSelect2 user_id">
                             <option value="0">Chọn công chức</option>
-                            @foreach($config['usersOnBranch'] as $record)
-                                <option 
-                                    {{ ($user_id == $record->id)  ? 'selected' : '' }}
-                                    value="{{ $record->id }}"
-                                >
-                                    {{ $record->name }}
-                                </option>
-                            @endforeach
+                            @if(isset($vice_id) && $vice_id != 0)
+                                @foreach($users as $record)
+                                    <option 
+                                        {{ ($user_id == $record->id)  ? 'selected' : '' }}
+                                        value="{{ $record->id }}"
+                                    >
+                                        {{ $record->name }}
+                                    </option>
+                                @endforeach
+                            @else
+                                @foreach($config['usersOnBranch'] as $record)
+                                    <option 
+                                        {{ ($user_id == $record->id)  ? 'selected' : '' }}
+                                        value="{{ $record->id }}"
+                                    >
+                                        {{ $record->name }}
+                                    </option>
+                                @endforeach
+                            @endif
                         </select>
                         <div class="input-group">
                             <input 

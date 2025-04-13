@@ -177,8 +177,6 @@ class EvaluationController extends BaseController{
                 5 => $this->getCongChucInsideNodeEvaluation($request, $level, $monthCurrent),
                 default => $this->getInsideNodeEvaluation($request, $level, $monthCurrent),
             };
-
-            $allParams = $request->query();
             
             $allPositionsData = [];
 
@@ -341,9 +339,6 @@ class EvaluationController extends BaseController{
                 'statuses',
                 'userByLevel',
                 'deputyDepartment',
-                'startOfMonth',
-                'endOfMonth',
-                'allParams',
                 ...array_keys($data),
             ));
         } catch (\Throwable $th) {
@@ -381,6 +376,7 @@ class EvaluationController extends BaseController{
         }
 
         $userId = [];
+        
         if($request->user_id){
             $userId = [$request->user_id];
         }else{
@@ -404,8 +400,36 @@ class EvaluationController extends BaseController{
                     'in' => 'id|' . $request->team_id
                 ]
             ];
+            $relationFilter['users.user_catalogues'] = [
+                'level' => [
+                    'eq' => 5
+                ]
+            ];
         }
 
+        if ($request->has('vice_id') && $request->vice_id != 0 && $request->user_id == 0) {
+            $subordinateIds = DB::table('user_subordinate')
+            ->where('manager_id', $request->vice_id)
+            ->pluck('subordinate_id')
+            ->toArray();
+            $relationFilter = [
+                'users' => [
+                    'user_id' => [
+                        'in' => 'user_id|' . implode(',', $subordinateIds)
+                    ]
+                ]
+            ];
+        }
+        
+        if($request->user != 0 && $request->vice_id != 0){
+            $relationFilter = [
+                'users' => [
+                    'user_id' => [
+                        'in' => 'user_id|' . implode(',', $userId)
+                    ]
+                ]
+            ];
+        }
 
         $evaluationRequest->merge([
             'start_date' => [
@@ -415,7 +439,7 @@ class EvaluationController extends BaseController{
             'sort' => 'start_date,desc',
             'relationFilter' => $relationFilter
         ]);
-        
+
         if($request->has('start_date') && $request->start_date != ''){
             $evaluationRequest->merge([
                 'start_date' => $request->start_date,
@@ -455,12 +479,12 @@ class EvaluationController extends BaseController{
         }
 
         $userId = [];
+
         if($request->user_id){
             $userId = [$request->user_id];
         }else{
             $userId = $userIds;
         }
-
 
         // Lấy danh sách đánh giá của các user này
         $evaluationRequest = new CustomRequest();
@@ -481,6 +505,7 @@ class EvaluationController extends BaseController{
             ];
         }
 
+
         $evaluationRequest->merge([
             'start_date' => [
                 'gte' => $startOfMonth,
@@ -494,8 +519,9 @@ class EvaluationController extends BaseController{
                 'start_date' => $request->start_date
             ]);
         }
-    
+
         $evaluations = $this->service->paginate($evaluationRequest);
+
         return $evaluations;
     }
    
