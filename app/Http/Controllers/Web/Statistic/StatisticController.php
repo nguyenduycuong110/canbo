@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Web\Statistic;
 use App\Services\Interfaces\Evaluation\EvaluationServiceInterface as EvaluationService;
 use App\Services\Interfaces\User\UserServiceInterface as UserService;
+use App\Services\Interfaces\Team\TeamServiceInterface as TeamService;
 use Illuminate\Http\Request;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use App\Models\User;
 use Illuminate\Http\Request as CustomRequest;
 
 use App\Http\Controllers\Web\BaseController;
@@ -17,14 +19,17 @@ class StatisticController extends BaseController{
     
     protected $service;
     protected $userService;
+    protected $teamService;
 
     public function __construct(
         EvaluationService $service,
         UserService $userService,
+        TeamService $teamService,
     )
     {
         $this->service = $service;
         $this->userService = $userService;
+        $this->teamService = $teamService;
         parent::__construct($service);
     }
 
@@ -63,7 +68,7 @@ class StatisticController extends BaseController{
             $isLeader = ($auth->rgt - $auth->lft > 1);
             $template =  "backend.{$this->namespace}.department.day";
             $users = $this->getUserInsideNode($request, $level);
-            $teams = $this->getTeamInsideNode($users);
+            $teams = $this->getTeamInsideNode($users, $auth);
             return view($template , compact(
                 'users',
                 'teams',
@@ -86,7 +91,7 @@ class StatisticController extends BaseController{
                 "backend.{$this->namespace}.department.officer";
 
             $users = $this->getUserInsideNode($request, $level);
-            $teams = $this->getTeamInsideNode($users);
+            $teams = $this->getTeamInsideNode($users, $auth);
             return view($template , compact(
                 'users',
                 'teams',
@@ -102,7 +107,7 @@ class StatisticController extends BaseController{
         try {
             $auth = Auth::user();
             $users = $this->getUser($request, $auth, $level);
-            $teams = $this->getTeamInsideNode($users);
+            $teams = ($auth->parent_id == 0) ? $this->teamService->all() : $this->getTeamInsideNode($users, $auth);
             return view("backend.{$this->namespace}.leader.day", compact(
                 'auth',
                 'users',
@@ -118,7 +123,8 @@ class StatisticController extends BaseController{
         try {
             $auth = Auth::user();
             $users = $this->getUser($request, $auth, $level);
-            $teams = $this->getTeamInsideNode($users);
+            // dd($users);
+            $teams = ($auth->parent_id == 0) ? $this->teamService->all() : $this->getTeamInsideNode($users, $auth);
             return view("backend.{$this->namespace}.leader.month", compact(
                 'auth',
                 'users',
@@ -140,25 +146,28 @@ class StatisticController extends BaseController{
 
     private function getUser($request, $auth, $level = null){
         $auth = Auth::user();
-        $request->merge([
-            'lft' => [
-                'gte' => $auth->lft
-            ],
-            'rgt' => [
-                'lte' => $auth->rgt
-            ],
-            'relationFilter' => [
-                'user_catalogues' => [
-                    'level' => ['eq' => $level]
-                ]
-            ]
-        ]);
-        return $this->userService->paginate($request);
+        $users = User::where('lft', '>', $auth->lft)
+        ->where('rgt', '<', $auth->rgt)
+        ->whereHas('user_catalogues', function ($query) use ($level) {
+            $query->where('level', $level);
+        })
+        ->with(['user_catalogues' => function ($query) use ($level) {
+            $query->where('level', $level);
+        }])
+        ->get();
+        return $users;
     }
     
-    private function getTeamInsideNode($users){
-        $teams = [];
-        $teamIds = [];
+    private function getTeamInsideNode($users, $auth){
+        $teams = [
+            0 => [
+                'id' => $auth->teams->id,
+                'name' => $auth->teams->name,
+            ]
+        ];
+        $teamIds = [
+            0 => $auth->teams->id
+        ];
         if(!$users){ 
             return $teams;
         }

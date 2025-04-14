@@ -505,6 +505,29 @@ class EvaluationController extends BaseController{
             ];
         }
 
+        if ($request->has('deputy_id') && $request->deputy_id != 0) {
+            $deputy_id = $request->deputy_id;
+            $user = User::where('id', $deputy_id)->first();
+            $vicers = User::where('parent_id', $user->id)->pluck('id')->toArray();
+            $relationFilter = [
+                'users' => [
+                    'user_id' => [
+                        'in' => 'user_id|' . implode(',', $vicers)
+                    ]
+                ]
+            ];
+        }
+
+        if($request->user_id != 0 && $request->deputy_id != 0){
+            $relationFilter = [
+                'users' => [
+                    'user_id' => [
+                        'in' => 'user_id|' . implode(',', $userId)
+                    ]
+                ]
+            ];
+        }
+
 
         $evaluationRequest->merge([
             'start_date' => [

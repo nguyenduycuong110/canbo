@@ -24,7 +24,7 @@ class Evaluation extends Model
         'total_tasks',
         'overachieved_tasks',
         'completed_tasks_ontime',
-        'failed_tasks_count'
+        'failed_tasks_count',
     ];
 
     protected $with = [

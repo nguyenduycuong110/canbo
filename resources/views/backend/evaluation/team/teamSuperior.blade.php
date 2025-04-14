@@ -96,6 +96,7 @@
                             <th>Số công việc / nhiệm vụ hoàn thành <br> vượt mức về thời gian hoặc chất lượng</th>
                             <th>Số công việc / nhiệm vụ hoàn thành <br> đúng hạn , đảm bảo chất lượng</th>
                             <th>Số công việc / nhiệm vụ không hoàn thành <br> đúng hạn hoặc không đảm bảo yêu cầu</th>
+                            <th class="note">Ghi chú</th>
                             <th>Cá nhân tự đánh giá</th>
                             @foreach($allPositionsData as $posKey => $posData)
                                 <th>
@@ -225,6 +226,9 @@
                                             </td>
                                             <td class="text-center" style="width:200px;">
                                                 {{ $record->failed_tasks_count }}
+                                            </td>
+                                            <td class="note" style="width:200px;">
+                                                <span>{{ $record->note }}</span>
                                             </td>
                                             <td>
                                                 @if($seftEvaluation)

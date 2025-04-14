@@ -1503,6 +1503,20 @@ table{
     width: 120px;
 }
 
+.table-responsive .table th.note, .table-responsive .table td.note{
+    min-width: 150px; /* Cột SP đầu ra vừa phải */
+    width: 150px;
+    
+}
+
+.table-responsive .table td.note span{
+    width: 200px;
+    display: inline-block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: wrap;
+}
+
 .table-responsive .table th.completion-time, .table-responsive .table td.completion-time {
     min-width: 70px; /* Cột Thời gian vừa phải */
     width: 70px;

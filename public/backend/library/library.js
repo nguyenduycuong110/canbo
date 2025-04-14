@@ -805,45 +805,45 @@
         });
     }
 
-    HT.filterCaptainDeputy = () => {
-        $(document).on('change', '.deputy_id', function(){
-            let _this = $(this)
-            let deputy_id = _this.val()
-            if(deputy_id == 0){
-                return;
-            }
-            let option = {
-                deputy_id : deputy_id,
-            }
-            $.ajax({
-                url: 'ajax/evaluation/filterCaptainDeputy', 
-                type: 'GET', 
-                data: option,
-                dataType: 'json', 
-                success: function(res) {
-                    HT.appendSelectBoxCaptain(res.response)
-                },
-                error: function(jqXHR, textStatus, errorThrown) {
+    // HT.filterCaptainDeputy = () => {
+    //     $(document).on('change', '.deputy_id', function(){
+    //         let _this = $(this)
+    //         let deputy_id = _this.val()
+    //         if(deputy_id == 0){
+    //             return;
+    //         }
+    //         let option = {
+    //             deputy_id : deputy_id,
+    //         }
+    //         $.ajax({
+    //             url: 'ajax/evaluation/filterCaptainDeputy', 
+    //             type: 'GET', 
+    //             data: option,
+    //             dataType: 'json', 
+    //             success: function(res) {
+    //                 HT.appendSelectBoxCaptain(res.response)
+    //             },
+    //             error: function(jqXHR, textStatus, errorThrown) {
                     
-                }
-            });
-        })
-    }
+    //             }
+    //         });
+    //     })
+    // }
 
-    HT.sendAjaxFilterCaptainDeputy = (option) => {
-        $.ajax({
-            url: 'ajax/evaluation/filterCaptainDeputy', 
-            type: 'GET', 
-            data: option,
-            dataType: 'json', 
-            success: function(res) {
-                HT.appendSelectBoxCaptain(res.response)
-            },
-            error: function(jqXHR, textStatus, errorThrown) {
+    // HT.sendAjaxFilterCaptainDeputy = (option) => {
+    //     $.ajax({
+    //         url: 'ajax/evaluation/filterCaptainDeputy', 
+    //         type: 'GET', 
+    //         data: option,
+    //         dataType: 'json', 
+    //         success: function(res) {
+    //             HT.appendSelectBoxCaptain(res.response)
+    //         },
+    //         error: function(jqXHR, textStatus, errorThrown) {
                 
-            }
-        });
-    }
+    //         }
+    //     });
+    // }
 
     HT.appendSelectBoxCaptain = (res) => {
         console.log(res.users)
@@ -968,14 +968,14 @@
         }
     }
 
-    HT.loadCaptain = () => {
-        if(typeof deputy_id !== 'undefined' && deputy_id != ''){
-            let option = {
-                deputy_id : deputy_id,
-            }
-            HT.sendAjaxFilterCaptainDeputy(option)
-        }
-    }
+    // HT.loadCaptain = () => {
+    //     if(typeof deputy_id !== 'undefined' && deputy_id != ''){
+    //         let option = {
+    //             deputy_id : deputy_id,
+    //         }
+    //         HT.sendAjaxFilterCaptainDeputy(option)
+    //     }
+    // }
 
     HT.filterEvaluationByField = () => {
         $('.start_date, .perpage, .team_id, .user_id, .deputy_id, .vice_id').change(function() {
@@ -1014,8 +1014,8 @@
         HT.loadUser()
         HT.filterEvaluationByField()
         HT.loadVice()
-        HT.loadCaptain()
-        HT.filterCaptainDeputy()
+        // HT.loadCaptain()
+        // HT.filterCaptainDeputy()
         HT.filterViceTeam()
         HT.filterOfficerByVice()
         HT.exportRankQuality()
