@@ -294,7 +294,7 @@
                         </tbody>
                     </table>
                 </div>
-                {{ (!is_null($records)) ? $records->links('pagination::bootstrap-4') : '' }}
+                {{ (!is_null($records)) ? $records->appends(request()->query())->links('pagination::bootstrap-4') : '' }}
             </div>
         </div>
     </div>

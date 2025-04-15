@@ -72,7 +72,7 @@
                         @endif
                     </tbody>
                 </table>
-                {{  $records->links('pagination::bootstrap-4') }}
+                {{ $records->appends(request()->query())->links('pagination::bootstrap-4') }}
             </div>
         </div>
     </div>
