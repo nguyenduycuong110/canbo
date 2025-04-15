@@ -27,8 +27,6 @@ class UpdateRequest extends FormRequest
     {
         return [
             'task_id' => 'gt:0',
-            'start_date' => 'date',
-            'due_date' => 'date',
             'status_id' => 'gt:0',
             'file' => [
                 'file',    

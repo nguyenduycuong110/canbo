@@ -24,8 +24,6 @@ class StoreRequest extends FormRequest
     {
         return [
             'task_id' => 'gt:0',
-            'start_date' => 'date_format:d/m/Y', 
-            'due_date' => 'date_format:d/m/Y',
             'status_id' => 'gt:0',
             'file' => [
                 'file',    

@@ -760,8 +760,7 @@
     }
 
     HT.appendSelectBoxUserStatitics = (res) => {
-        console.log(res.users)
-        let userSelect = $('select[name="user_id"]');
+        let userSelect = $('.statistic-form select[name="user_id"]');
         userSelect.empty();
         userSelect.append('<option value="0">Chọn cán bộ</option>');
         if(res.users && res.users.length > 0) {
@@ -769,7 +768,7 @@
                 userSelect.append(
                     $('<option></option>')
                     .val(user.id)
-                    .text(user.name)
+                    .text(user.name + ' - ' + user.account)
                 );
             });
         }
@@ -788,7 +787,6 @@
                 team_id : team_id,
                 level : level
             }
-            console.log(option)
             HT.sendAjaxFilterViceTeam(option)
         })
     }
@@ -848,22 +846,21 @@
     //     });
     // }
 
-    HT.appendSelectBoxCaptain = (res) => {
-        console.log(res.users)
-        let userSelect = $('select[name="user_id"]');
-        userSelect.empty();
-        userSelect.append('<option value="0">Chọn lãnh đạo</option>');
-        if(res.users && res.users.length > 0) {
-            $.each(res.users, function(index, user) {
-                userSelect.append(
-                    $('<option></option>')
-                    .val(user.id)
-                    .text(user.name)
-                );
-            });
-        }
-        $('.setupSelect2').select2();
-    }
+    // HT.appendSelectBoxCaptain = (res) => {
+    //     let userSelect = $('select[name="user_id"]');
+    //     userSelect.empty();
+    //     userSelect.append('<option value="0">Chọn lãnh đạo</option>');
+    //     if(res.users && res.users.length > 0) {
+    //         $.each(res.users, function(index, user) {
+    //             userSelect.append(
+    //                 $('<option></option>')
+    //                 .val(user.id)
+    //                 .text(user.name)
+    //             );
+    //         });
+    //     }
+    //     $('.setupSelect2').select2();
+    // }
 
     HT.exportRankQuality = () => {
         $(document).on('click', '.btn-export-rank', function(e){
@@ -944,7 +941,7 @@
                 userSelect.append(
                     $('<option></option>')
                     .val(user.id)
-                    .text(user.name)
+                    .text(user.name + ' - ' + user.account)
                 );
             });
         }
@@ -953,23 +950,23 @@
     };
     
 
-    HT.loadUser = () => {
-        if(typeof team_id !== 'undefined' && team_id != ''){
-            let option = {
-                team_id : team_id,
-            }
-            HT.sendAjaxFilterOfficerTeam(option)
-        }
-    }
+    // HT.loadUser = () => {
+    //     if(typeof team_id !== 'undefined' && team_id != ''){
+    //         let option = {
+    //             team_id : team_id,
+    //         }
+    //         HT.sendAjaxFilterOfficerTeam(option)
+    //     }
+    // }
 
-    HT.loadVice = () => {
-        if(typeof team_vice_id !== 'undefined' && team_vice_id != ''){
-            let option = {
-                team_id : team_vice_id,
-            }
-            HT.sendAjaxFilterViceTeam(option)
-        }
-    }
+    // HT.loadVice = () => {
+    //     if(typeof team_vice_id !== 'undefined' && team_vice_id != ''){
+    //         let option = {
+    //             team_id : team_vice_id,
+    //         }
+    //         HT.sendAjaxFilterViceTeam(option)
+    //     }
+    // }
 
     // HT.loadCaptain = () => {
     //     if(typeof deputy_id !== 'undefined' && deputy_id != ''){
@@ -1014,9 +1011,9 @@
 
 	$(document).ready(function(){
        
-        HT.loadUser()
+        // HT.loadUser()
         HT.filterEvaluationByField()
-        HT.loadVice()
+        // HT.loadVice()
         // HT.loadCaptain()
         // HT.filterCaptainDeputy()
         HT.filterViceTeam()
