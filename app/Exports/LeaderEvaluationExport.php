@@ -26,6 +26,7 @@ class LeaderEvaluationExport
     {
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
+        $user = $this->evaluationList;
 
         // Đặt font mặc định cho toàn bộ spreadsheet
         $spreadsheet->getDefaultStyle()->getFont()->setName('Times New Roman')->setSize(13);
@@ -37,7 +38,7 @@ class LeaderEvaluationExport
         $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         $sheet->mergeCells('A2:M2');
-        $sheet->setCellValue('A2', 'CHI CỤC HẢI QUAN CỬA KHẨU QUỐC TẾ CẦU TREO');
+        $sheet->setCellValue('A2', $user->teams->name);
         $sheet->getStyle('A2')->getFont()->setBold(true);
         $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
@@ -60,7 +61,7 @@ class LeaderEvaluationExport
         $sheet->getStyle('A6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         // Nội dung thông tin
-        $user = $this->evaluationList;
+        
         $userName = $user->name ?? 'Không xác định';
         $department = ($user->teams && $user->units) ? $user->teams->name . ' - ' . $user->units->name : 'Không xác định';
 

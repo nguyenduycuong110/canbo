@@ -652,7 +652,7 @@ class EvaluationController extends BaseController
         $request->merge([
             'lft' => ['gt' => $auth->lft],
             'rgt' => ['lt' => $auth->rgt],
-            'relationFilter' => ['user_catalogues' => ['level' => ['eq' => 4]]], // Lấy user ở cấp $level (ví dụ: 4 cho Đội phó)
+            'relationFilter' => ['user_catalogues' => ['level' => ['eq' => $request->level]]], // Lấy user ở cấp $level (ví dụ: 4 cho Đội phó)
             'type' => 'all'
         ]);
         $vicers = $this->userService->paginate($request);

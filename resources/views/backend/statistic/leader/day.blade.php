@@ -33,7 +33,7 @@
                                         @endforeach
                                     </select>
                                 @endif
-                                @if($auth->rgt - $auth->lft > 1 && $auth->level !== $level)
+                                @if($auth->rgt - $auth->lft > 1 && $auth->user_catalogues->level !== $level)
                                     <select name="user_id" class="setupSelect2 user_day_id">
                                         <option value="">[Chọn cán bộ]</option>
                                         @foreach($users as $user)
@@ -56,7 +56,7 @@
                             <p><span class="label-text">2. Vị trí, đơn vị công tác</span><span class="value cat_name"> {{ $auth->teams->name }}, {{ $auth->units->name }} </span></p>
                             
                         </div>
-                        
+                        <input type="text" class="hidden level" value="{{ $level }}">
                     </div>
                 </form>
             </div>

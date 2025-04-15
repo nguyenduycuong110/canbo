@@ -780,12 +780,15 @@
         $(document).on('change', '.team_vice_id', function(){
             let _this = $(this)
             let team_id = _this.val()
+            let level = $('.level').val()
             if(team_id == 0){
                 return;
             }
             let option = {
                 team_id : team_id,
+                level : level
             }
+            console.log(option)
             HT.sendAjaxFilterViceTeam(option)
         })
     }

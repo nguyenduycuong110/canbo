@@ -33,7 +33,7 @@
                                         @endforeach
                                     </select>
                                 @endif
-                                @if($auth->rgt - $auth->lft > 1 && $auth->level !== $level)
+                                @if($auth->rgt - $auth->lft > 1 && $auth->user_catalogues->level !== $level)
                                     <select name="user_id" class="setupSelect2 user_id">
                                         <option value="">[Chọn cán bộ]</option>
                                         @foreach($users as $user)
@@ -115,7 +115,7 @@
                                 </span>
                             </p>
                         </div>
-                        
+                        <input type="text" class="hidden level" value="{{ $level }}">
                     </div>
                 </form>
             </div>

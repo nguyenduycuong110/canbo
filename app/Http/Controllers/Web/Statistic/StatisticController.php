@@ -123,7 +123,6 @@ class StatisticController extends BaseController{
         try {
             $auth = Auth::user();
             $users = $this->getUser($request, $auth, $level);
-            // dd($users);
             $teams = ($auth->parent_id == 0) ? $this->teamService->all() : $this->getTeamInsideNode($users, $auth);
             return view("backend.{$this->namespace}.leader.month", compact(
                 'auth',

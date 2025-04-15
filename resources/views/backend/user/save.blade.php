@@ -174,61 +174,32 @@
                                 <div class="form-row">
                                     <label for="" class="control-label text-left">Người quản lý<span class="text-danger">(*)</span></label>
                                     <select name="parent_id" class="form-control setupSelect2" id="">
-                                        {{-- @if(isset($dropdown))
-                                            @php
-                                                function getChildren($id, $dropdown) {
-                                                    $children = [];
-                                                    foreach ($dropdown as $val) {
-                                                        if ($val->parent_id == $id) {
-                                                            $children[] = $val->id;
-                                                            $children = array_merge($children, getChildren($val->id, $dropdown));
-                                                        }
-                                                    }
-                                                    return $children;
-                                                }
-                                                $selectedId = old('parent_id', isset($model->parent_id) ? $model->parent_id : '');
-                                                $disabledOptions = getChildren($selectedId, $dropdown);
-                                            @endphp
-                                            @foreach($dropdown as $key => $val)
-                                                @php
-                                                    $isSelected = $val->id == $selectedId;
-                                                    $isDisabled = in_array($val->id, $disabledOptions);
-                                                @endphp
-                                                <option 
-                                                    {{ $isSelected ? 'selected' : '' }}
-                                                    {{ $isDisabled ? 'disabled' : '' }}
-                                                    value="{{ $val->id }}">
-                                                    {{ str_repeat('|----', (($val->level > 0) ? ($val->level - 1) : 0)) . $val->name }}
-                                                </option>
-                                            @endforeach
-                                        @endif --}}
                                         @if(isset($dropdown))
                                             @php
                                                 function getChildren($id, $dropdown) {
                                                     $children = [];
                                                     foreach ($dropdown as $val) {
-                                                        if ($val->parent_id == $id) {
+                                                        if($val->parent_id == $id) {
                                                             $children[] = $val->id;
                                                             $children = array_merge($children, getChildren($val->id, $dropdown));
                                                         }
                                                     }
                                                     return $children;
                                                 }
-
                                                 $selectedId = old('parent_id', isset($model->parent_id) ? $model->parent_id : '');
                                                 $disabledOptions = getChildren($selectedId, $dropdown);
-                                                $modelLevel = isset($model->level) ? $model->level : null; 
+                                                $modelLevel = isset($model->user_catalogues->level) ? $model->user_catalogues->level : null; 
                                             @endphp
                                             @foreach($dropdown as $key => $val)
                                                 @php
                                                     $isSelected = $val->id == $selectedId;
-                                                    $isDisabled = in_array($val->id, $disabledOptions) || $val->level == $modelLevel;
+                                                    $isDisabled = in_array($val->id, $disabledOptions) && $val->user_catalogues->level == $modelLevel || $val->user_catalogues->level == $modelLevel;
                                                 @endphp
                                                 <option 
                                                     {{ $isSelected ? 'selected' : '' }}
                                                     {{ $isDisabled ? 'disabled' : '' }}
                                                     value="{{ $val->id }}">
-                                                    {{ str_repeat('|----', (($val->level > 0) ? ($val->level - 1) : 0)) . $val->name }}
+                                                    {{ str_repeat('|----', (($val->user_catalogues->level > 0) ? ($val->user_catalogues->level - 1) : 0)) . $val->name }}
                                                 </option>
                                             @endforeach
                                         @endif
