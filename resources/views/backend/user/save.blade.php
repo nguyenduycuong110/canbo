@@ -191,20 +191,29 @@
                                                 $disabledOptions = getChildren($selectedId, $dropdown);
                                                 $modelLevel = isset($model->user_catalogues->level) ? $model->user_catalogues->level : null; 
                                             @endphp
-                                            @foreach($dropdown as $key => $val)
-                                                @if($val->user_catalogues->level != 5 && $val->user_catalogues->level < $modelLevel && $val->lft >= $auth->lft && $val->rgt <= $auth->rgt || $val->user_catalogues->level < $auth->user_catalogues->level)
-                                                    @php
-                                                        $isSelected = $val->id == $selectedId;
-                                                        $isDisabled = in_array($val->id, $disabledOptions) ;
-                                                    @endphp
+                                            @if($auth->user_catalogues->level != 1)
+                                                @foreach($dropdown as $key => $val)
+                                                    @if($val->user_catalogues->level != 5 && $val->user_catalogues->level < $modelLevel || $val->user_catalogues->level < $auth->user_catalogues->level)
+                                                        @php
+                                                            $isSelected = $val->id == $selectedId;
+                                                            $isDisabled = in_array($val->id, $disabledOptions) ;
+                                                        @endphp
+                                                        <option 
+                                                            {{ $isSelected ? 'selected' : '' }}
+                                                            {{ $isDisabled ? 'disabled' : '' }}
+                                                            value="{{ $val->id }}">
+                                                            {{ str_repeat('|----', (($val->user_catalogues->level > 0) ? ($val->user_catalogues->level - 1) : 0)) . $val->name }}
+                                                        </option>
+                                                    @endif
+                                                @endforeach
+                                            @else
+                                                @foreach($dropdown as $key => $val)
                                                     <option 
-                                                        {{ $isSelected ? 'selected' : '' }}
-                                                        {{ $isDisabled ? 'disabled' : '' }}
                                                         value="{{ $val->id }}">
                                                         {{ str_repeat('|----', (($val->user_catalogues->level > 0) ? ($val->user_catalogues->level - 1) : 0)) . $val->name }}
                                                     </option>
-                                                @endif
-                                            @endforeach
+                                                @endforeach
+                                            @endif
                                         @endif
                                     </select>
                                 </div>
