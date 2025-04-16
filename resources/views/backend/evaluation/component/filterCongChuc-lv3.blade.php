@@ -80,12 +80,14 @@
                             <option value="0">Chọn công chức</option>
                             @if(isset($vice_id) && $vice_id != 0)
                                 @foreach($users as $record)
-                                    <option 
-                                        {{ ($user_id == $record->id)  ? 'selected' : '' }}
-                                        value="{{ $record->id }}"
-                                    >
-                                        {{ $record->name }}
-                                    </option>
+                                    @if($record->parent_id == $vice_id)
+                                        <option 
+                                            {{ ($user_id == $record->id)  ? 'selected' : '' }}
+                                            value="{{ $record->id }}"
+                                        >
+                                            {{ $record->name }}
+                                        </option>
+                                    @endif
                                 @endforeach
                             @else
                                 @foreach($config['usersOnBranch'] as $record)

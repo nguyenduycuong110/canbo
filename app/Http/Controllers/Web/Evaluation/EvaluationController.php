@@ -359,7 +359,6 @@ class EvaluationController extends BaseController{
         $auth = Auth::user();
         $auth->load(['subordinates']);
 
-
         $subordinateIds = [];
         $startOfMonth = $monthCurrent->copy()->startOfMonth()->toDateTimeString();
         $endOfMonth = $monthCurrent->copy()->endOfMonth()->toDateTimeString();
@@ -497,6 +496,7 @@ class EvaluationController extends BaseController{
 
         // Lấy danh sách đánh giá của các user này
         $evaluationRequest = new CustomRequest();
+
         $relationFilter = [
             'users' => [
                 'user_id' => [
@@ -603,7 +603,7 @@ class EvaluationController extends BaseController{
             'type' => 'all'
         ]);
         $users = $this->userService->paginate($request)->pluck('id')->toArray();
-        $tasks = Task::whereIn('user_id', $users)->get();
+        $tasks = Task::whereIn('user_id', $users)->where('publish', 2)->get();
         return $tasks;
     }
 

@@ -63,7 +63,6 @@ class UserController extends BaseController{
 
     public function index(Request $request): View | RedirectResponse{
         try {
-            $this->service->nested();
             $request = $this->userNode($request);
             if(isset($request->team_id) && $request->team_id != 0){
                 $request->merge([
@@ -175,24 +174,6 @@ class UserController extends BaseController{
         return $request;
     }
 
-    // private function getTeamNode(){
-
-    //     try {
-    //         $auth = Auth::user();
-    //         $allUserInNode = User::where('lft','>=', $auth->lft)->where('rgt','<=', $auth->rgt)->offset(15)->limit(5)->get();
-
-    //         $teamsId = array_unique($allUserInNode->pluck('team_id')->toArray());
-    //         $teams = Team::whereIn('id', $teamsId)->get();
-    //         return $teams;
-    //     } catch (\Throwable $th) {
-    //         Log::error('Error Get Teamnode', [
-    //             'message' => $th->getMessage(),
-    //             'trace' => $th->getTraceAsString()
-    //         ]);
-    //         return collect([]);
-    //     }
-
-    // }
 
     private function getTeamNode(){
         $auth = Auth::user();

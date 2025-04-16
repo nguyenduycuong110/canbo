@@ -174,7 +174,9 @@
                                 <div class="form-row">
                                     <label for="" class="control-label text-left">Người quản lý<span class="text-danger">(*)</span></label>
                                     <select name="parent_id" class="form-control setupSelect2" id="">
-                                        <option value="0">[Root]</option>
+                                        @if($auth->user_catalogues->level == 1)
+                                            <option value="0">[Root]</option>
+                                        @endif
                                         @if(isset($dropdown))
                                             @php
                                                 function getChildren($id, $dropdown) {
@@ -191,28 +193,66 @@
                                                 $disabledOptions = getChildren($selectedId, $dropdown);
                                                 $modelLevel = isset($model->user_catalogues->level) ? $model->user_catalogues->level : null; 
                                             @endphp
-                                            @if($auth->user_catalogues->level != 1)
-                                                @foreach($dropdown as $key => $val)
-                                                    @if($val->user_catalogues->level != 5 && $val->user_catalogues->level < $modelLevel || $val->user_catalogues->level < $auth->user_catalogues->level)
-                                                        @php
-                                                            $isSelected = $val->id == $selectedId;
-                                                            $isDisabled = in_array($val->id, $disabledOptions) ;
-                                                        @endphp
-                                                        <option 
+                                            @if($config['method'] != 'create')
+                                                @if($auth->user_catalogues->level != 1)
+                                                    @foreach($dropdown as $key => $val)
+                                                        @if($val->user_catalogues->level != 5 && $val->user_catalogues->level < $modelLevel && $val->lft >= $auth->lft && $val->rgt <= $auth->rgt || isset($model) && $val->id == $model->parent_id)
+                                                            @php
+                                                                $isSelected = $val->id == $selectedId;
+                                                                $isDisabled = in_array($val->id, $disabledOptions);
+                                                            @endphp
+                                                            <option 
+                                                                {{ $isSelected ? 'selected' : '' }}
+                                                                {{ $isDisabled ? 'disabled' : '' }}
+                                                                value="{{ $val->id }}">
+                                                                {{ str_repeat('|----', (($val->user_catalogues->level > 0) ? ($val->user_catalogues->level - 1) : 0)) . $val->name }}
+                                                            </option>
+                                                        @endif
+                                                    @endforeach
+                                                @else
+                                                    @foreach($dropdown as $key => $val)
+                                                        @if($val->user_catalogues->level != 5)
+                                                            @php
+                                                                $isSelected = $val->id == $selectedId;
+                                                            @endphp
+                                                            <option 
                                                             {{ $isSelected ? 'selected' : '' }}
-                                                            {{ $isDisabled ? 'disabled' : '' }}
-                                                            value="{{ $val->id }}">
-                                                            {{ str_repeat('|----', (($val->user_catalogues->level > 0) ? ($val->user_catalogues->level - 1) : 0)) . $val->name }}
-                                                        </option>
-                                                    @endif
-                                                @endforeach
+                                                                value="{{ $val->id }}">
+                                                                {{ str_repeat('|----', (($val->user_catalogues->level > 0) ? ($val->user_catalogues->level - 1) : 0)) . $val->name }}
+                                                            </option>
+                                                        @endif
+                                                    @endforeach
+                                                @endif
                                             @else
-                                                @foreach($dropdown as $key => $val)
-                                                    <option 
-                                                        value="{{ $val->id }}">
-                                                        {{ str_repeat('|----', (($val->user_catalogues->level > 0) ? ($val->user_catalogues->level - 1) : 0)) . $val->name }}
-                                                    </option>
-                                                @endforeach
+                                                @if($auth->user_catalogues->level != 1)
+                                                    @foreach($dropdown as $key => $val)
+                                                        @if($val->user_catalogues->level != 5 &&  $val->lft >= $auth->lft && $val->rgt <= $auth->rgt)
+                                                            @php
+                                                                $isSelected = $val->id == $selectedId;
+                                                                $isDisabled = in_array($val->id, $disabledOptions);
+                                                            @endphp
+                                                            <option 
+                                                                {{ $isSelected ? 'selected' : '' }}
+                                                                {{ $isDisabled ? 'disabled' : '' }}
+                                                                value="{{ $val->id }}">
+                                                                {{ str_repeat('|----', (($val->user_catalogues->level > 0) ? ($val->user_catalogues->level - 1) : 0)) . $val->name }}
+                                                            </option>
+                                                        @endif
+                                                    @endforeach
+                                                @else
+                                                    @foreach($dropdown as $key => $val)
+                                                        @if($val->user_catalogues->level != 5)
+                                                            @php
+                                                                $isSelected = $val->id == $selectedId;
+                                                            @endphp
+                                                            <option 
+                                                            {{ $isSelected ? 'selected' : '' }}
+                                                                value="{{ $val->id }}">
+                                                                {{ str_repeat('|----', (($val->user_catalogues->level > 0) ? ($val->user_catalogues->level - 1) : 0)) . $val->name }}
+                                                            </option>
+                                                        @endif
+                                                    @endforeach
+                                                @endif
                                             @endif
                                         @endif
                                     </select>

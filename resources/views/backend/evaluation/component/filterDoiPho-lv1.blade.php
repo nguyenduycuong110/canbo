@@ -45,14 +45,27 @@
                         </select>
                         <select name="user_id" class="form-control setupSelect2 user_id">
                             <option value="0">Chọn lãnh đạo</option>
-                            @foreach($userByLevel as $record)
-                                <option 
-                                    {{ ($user_id == $record->id)  ? 'selected' : '' }}
-                                    value="{{ $record->id }}"
-                                >
-                                    {{ $record->name }}
-                                </option>
-                            @endforeach
+                            @if(!is_null($team_id) && $team_id != 0 )
+                                @foreach($userByLevel as $record)
+                                    @if($record->teams->id == $team_id)
+                                        <option 
+                                            {{ ($user_id == $record->id)  ? 'selected' : '' }}
+                                            value="{{ $record->id }}"
+                                        >
+                                            {{ $record->name }}
+                                        </option>
+                                    @endif
+                                @endforeach
+                            @else
+                                @foreach($userByLevel as $record)
+                                    <option 
+                                        {{ ($user_id == $record->id)  ? 'selected' : '' }}
+                                        value="{{ $record->id }}"
+                                    >
+                                        {{ $record->name }}
+                                    </option>
+                                @endforeach
+                            @endif
                         </select>
                         <div class="input-group">
                             <input 
