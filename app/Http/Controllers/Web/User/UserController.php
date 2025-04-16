@@ -62,6 +62,7 @@ class UserController extends BaseController{
 
     public function index(Request $request): View | RedirectResponse{
         try {
+            $this->service->nested();
             $request = $this->userNode($request);
             if(isset($request->team_id) && $request->team_id != 0){
                 $request->merge([

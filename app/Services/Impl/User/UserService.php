@@ -50,7 +50,7 @@ class UserService extends BaseService implements UserServiceInterface{
         return $this;
     }
 
-    private function nested(){
+    public function nested(){
         $this->nestedset = new Nestedsetbie([
             'table' => $this->route,
         ]);

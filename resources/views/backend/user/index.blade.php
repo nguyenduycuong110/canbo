@@ -11,7 +11,7 @@
                 <h5>Quản lý cán bộ</h5>
             </div>
             <div class="ibox-content">
-                @include('components.filter',['config' => $config, 'teams' => $teams])
+                @include('components.filter',['config' => $config, 'teams' => $teamsInNode])
                 <table class="table table-striped table-bordered">
                     <thead>
                     <tr>

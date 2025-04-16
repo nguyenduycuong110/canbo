@@ -36,7 +36,7 @@
                         @if($config['route'] == 'evaluations')
                             <input type="text" value="{{ request('start_date.eq') ?: old('start_date.eq') }}"  placeholder="Chọn ngày giao việc" name="start_date[eq]" class="datepicker start_date mr10 form-control">
                         @endif
-                        @if($config['route'] == 'users')
+                        {{-- @if($config['route'] == 'users')
                             <select name="team_id" class="form-control setupSelect2 team_id">
                                 <option value="0">Chọn đội</option>
                                 @if(isset($teamsInNode))
@@ -45,7 +45,7 @@
                                     @endforeach
                                 @endif
                             </select>
-                        @endif
+                        @endif --}}
                         <div class="input-group">
                             <input 
                                 type="text" 

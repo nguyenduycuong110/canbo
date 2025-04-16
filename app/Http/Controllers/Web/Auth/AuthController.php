@@ -15,7 +15,7 @@ class AuthController extends Controller{
     use Loggable;
 
     private $authService;
-
+    
     public function __construct(
         AuthService $authService,
     ){

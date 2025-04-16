@@ -174,6 +174,7 @@
                                 <div class="form-row">
                                     <label for="" class="control-label text-left">Người quản lý<span class="text-danger">(*)</span></label>
                                     <select name="parent_id" class="form-control setupSelect2" id="">
+                                        <option value="0">[Root]</option>
                                         @if(isset($dropdown))
                                             @php
                                                 function getChildren($id, $dropdown) {
@@ -193,7 +194,7 @@
                                             @foreach($dropdown as $key => $val)
                                                 @php
                                                     $isSelected = $val->id == $selectedId;
-                                                    $isDisabled = in_array($val->id, $disabledOptions) && $val->user_catalogues->level == $modelLevel || $val->user_catalogues->level == $modelLevel;
+                                                    $isDisabled = in_array($val->id, $disabledOptions) && $val->user_catalogues->level == $modelLevel && $modelLevel != 1  || $val->user_catalogues->level == $modelLevel && $modelLevel != 1 ;
                                                 @endphp
                                                 <option 
                                                     {{ $isSelected ? 'selected' : '' }}

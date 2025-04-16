@@ -59,8 +59,8 @@ class User extends Authenticatable
         'teams',
         'user_catalogues',
         // 'managers',
-        'subordinates',
-        'statistics'
+        // 'subordinates',
+        // 'statistics'
     ];
 
     /**

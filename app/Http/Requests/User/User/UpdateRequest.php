@@ -58,20 +58,23 @@ class UpdateRequest extends FormRequest
     protected function prepareForValidation()
     {
         $managers = $this->input('managers', []);
+        
         if(!is_array($managers)){
             $managers = [];
         }
 
         $parentId = $this->input('parent_id');
-        if(!is_null($parentId) && !in_array($parentId, $managers)){
+        if(!is_null($parentId) && !in_array($parentId, $managers) && $parentId != 0){
             $managers[] = (int) $parentId;
         }
 
-
-        $this->merge([
-            'id' => $this->route('user'),
-            'managers' => $managers
-        ]);
+        if($parentId != 0){
+            $this->merge([
+                'id' => $this->route('user'),
+                'managers' => $managers
+            ]);
+        }
+        
     }
 
     public function messages(): array{
