@@ -194,7 +194,7 @@
                                             @foreach($dropdown as $key => $val)
                                                 @php
                                                     $isSelected = $val->id == $selectedId;
-                                                    $isDisabled = in_array($val->id, $disabledOptions) && $val->user_catalogues->level == $modelLevel && $modelLevel != 1  || $val->user_catalogues->level == $modelLevel && $modelLevel != 1 ;
+                                                    $isDisabled = in_array($val->id, $disabledOptions) && $val->user_catalogues->level == $modelLevel && $modelLevel != 1"  || $val->user_catalogues->level == $modelLevel && $modelLevel != 1 ;
                                                 @endphp
                                                 <option 
                                                     {{ $isSelected ? 'selected' : '' }}

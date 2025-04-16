@@ -70,6 +70,7 @@ abstract class BaseService implements BaseServiceInterface{
                 'relation' => $request->relationFilter ?? [],
             ],
             'with' => $this->with,
+            'path' => 'users'
         ];  
     }
 

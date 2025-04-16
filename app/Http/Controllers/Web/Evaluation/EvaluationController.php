@@ -167,16 +167,23 @@ class EvaluationController extends BaseController{
             $startOfMonth = $monthCurrent->copy()->startOfMonth()->toDateTimeString();
             $endOfMonth = $monthCurrent->copy()->endOfMonth()->toDateTimeString();
             $auth = Auth::user();
+
             $currentUserCatalogue = $auth->user_catalogues;
+
             $listSubordinate = $this->userCatalogueService->listSubordinate($auth,$currentUserCatalogue);
+            // dd(1);
+
             $currentUserPosition = $currentUserCatalogue->name;
             $currentUserLevel = $currentUserCatalogue->level;
             $isDeputyTeamLeader = $currentUserLevel == 4;
+
+          
 
             $records = match ($level) {
                 5 => $this->getCongChucInsideNodeEvaluation($request, $level, $monthCurrent),
                 default => $this->getInsideNodeEvaluation($request, $level, $monthCurrent),
             };
+
             
             $allPositionsData = [];
 
@@ -348,9 +355,12 @@ class EvaluationController extends BaseController{
 
    
     public function getCongChucInsideNodeEvaluation($request, $level, $monthCurrent = null){
+
         /** @var \App\Models\User $auth */
         $auth = Auth::user();
         $auth->load(['subordinates']);
+
+
         $subordinateIds = [];
         $startOfMonth = $monthCurrent->copy()->startOfMonth()->toDateTimeString();
         $endOfMonth = $monthCurrent->copy()->endOfMonth()->toDateTimeString();

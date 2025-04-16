@@ -54,6 +54,7 @@ trait HasQuery {
                             if(count($whereIn)){
                                 $query->whereIn($field, $whereIn);
                             }
+                            break;
                         default:
                             # code...
                             break;

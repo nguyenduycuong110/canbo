@@ -22,6 +22,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Lang;
 use App\Models\User;
 use App\Models\Team;
+use Illuminate\Support\Facades\Log;
 
 class UserController extends BaseController{
 
@@ -127,16 +128,20 @@ class UserController extends BaseController{
         $fakeRequest = $this->userNode($fakeRequest);
         $fakeRequest->merge([
             'type' => 'all',
-            'user_catalogues' => [
-                'level' => [ 'lte' => 4 ]
-            ]
+            // 'user_catalogues' => [
+            //     'level' => [ 'lte' => 4 ]
+            // ]
         ]);
         return [
             'user_catalogues' => isset($this->userCatalogueService) ? $this->userCatalogueService?->all() : null,
             'provinces' => isset($this->provinceService) ?  $this->provinceService->all() : null,
             'teams' => isset($this->teamService) ? $this->teamService->teamPublish() : null,
             'units' => isset($this->unitService) ? $this->unitService->unitPublish() : null,
-            'dropdown'  => $this->service->paginate($fakeRequest),
+            'dropdown'  => User::select(['id', 'name', 'account', 'user_catalogue_id', 'parent_id'])  // Chỉ chọn cột cần thiết
+                ->without(['units', 'teams', 'subordinates', 'statistics'])  // Tắt eager loading
+                ->whereHas('user_catalogues', function($query){
+                    $query->where('level', '<=', 4);
+                })->get()
         ];
     }
 
@@ -170,10 +175,45 @@ class UserController extends BaseController{
         return $request;
     }
 
+    // private function getTeamNode(){
+
+    //     try {
+    //         $auth = Auth::user();
+    //         $allUserInNode = User::where('lft','>=', $auth->lft)->where('rgt','<=', $auth->rgt)->offset(15)->limit(5)->get();
+
+    //         $teamsId = array_unique($allUserInNode->pluck('team_id')->toArray());
+    //         $teams = Team::whereIn('id', $teamsId)->get();
+    //         return $teams;
+    //     } catch (\Throwable $th) {
+    //         Log::error('Error Get Teamnode', [
+    //             'message' => $th->getMessage(),
+    //             'trace' => $th->getTraceAsString()
+    //         ]);
+    //         return collect([]);
+    //     }
+
+    // }
+
     private function getTeamNode(){
         $auth = Auth::user();
-        $allUserInNode = User::where('lft','>=', $auth->lft)->where('rgt','<=', $auth->rgt)->get();
-        $teamsId = array_unique($allUserInNode->pluck('team_id')->toArray());
+        
+        // Tối ưu hóa truy vấn chỉ lấy team_id
+        $teamsId = User::where('lft','>=', $auth->lft)
+            ->where('rgt','<=', $auth->rgt)
+            ->select('team_id')
+            ->distinct()
+            ->pluck('team_id')
+            ->toArray();
+        
+        // Lọc giá trị null nếu có
+        $teamsId = array_filter($teamsId, function($id) {
+            return $id !== null && $id !== 0;
+        });
+        
+        if (empty($teamsId)) {
+            return collect([]);
+        }
+        
         $teams = Team::whereIn('id', $teamsId)->get();
         return $teams;
     }
