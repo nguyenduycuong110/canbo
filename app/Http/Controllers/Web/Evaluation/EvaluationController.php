@@ -171,7 +171,6 @@ class EvaluationController extends BaseController{
             $currentUserCatalogue = $auth->user_catalogues;
 
             $listSubordinate = $this->userCatalogueService->listSubordinate($auth,$currentUserCatalogue);
-            // dd(1);
 
             $currentUserPosition = $currentUserCatalogue->name;
             $currentUserLevel = $currentUserCatalogue->level;
