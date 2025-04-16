@@ -192,7 +192,7 @@
                                                 $modelLevel = isset($model->user_catalogues->level) ? $model->user_catalogues->level : null; 
                                             @endphp
                                             @foreach($dropdown as $key => $val)
-                                                @if($val->user_catalogues->level != 5 && $val->user_catalogues->level < $modelLevel && $val->lft >= $auth->lft && $val->rgt <= $auth->rgt)
+                                                @if($val->user_catalogues->level != 5 && $val->user_catalogues->level < $modelLevel && $val->lft >= $auth->lft && $val->rgt <= $auth->rgt || $val->user_catalogues->level < $auth->user_catalogues->level)
                                                     @php
                                                         $isSelected = $val->id == $selectedId;
                                                         $isDisabled = in_array($val->id, $disabledOptions) ;
