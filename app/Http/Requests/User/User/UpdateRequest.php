@@ -30,6 +30,7 @@ class UpdateRequest extends FormRequest
                 'required',
                 'string',
                 'min:4',
+                Rule::unique('users')->ignore($this->route('user'))
             ],
             'email' => 'nullable|string|email|max:191',
             'name' => 'required|string',

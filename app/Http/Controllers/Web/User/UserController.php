@@ -137,7 +137,7 @@ class UserController extends BaseController{
             'provinces' => isset($this->provinceService) ?  $this->provinceService->all() : null,
             'teams' => isset($this->teamService) ? $this->teamService->teamPublish() : null,
             'units' => isset($this->unitService) ? $this->unitService->unitPublish() : null,
-            'dropdown'  => User::select(['id', 'name', 'account', 'user_catalogue_id', 'parent_id'])  // Chỉ chọn cột cần thiết
+            'dropdown'  => User::select(['id', 'name', 'account', 'user_catalogue_id', 'parent_id','lft','rgt'])  // Chỉ chọn cột cần thiết
                 ->without(['units', 'teams', 'subordinates', 'statistics'])  // Tắt eager loading
                 ->whereHas('user_catalogues', function($query){
                     $query->where('level', '<=', 4);
