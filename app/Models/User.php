@@ -55,12 +55,12 @@ class User extends Authenticatable
     ];
 
     protected $with = [
-        'units',
-        'teams',
-        'user_catalogues',
+        // 'units',
+        // 'teams',
+        // 'user_catalogues',
         // 'managers',
-        'subordinates',
-        'statistics'
+        // 'subordinates',
+        // 'statistics'
     ];
 
     /**
