@@ -10,6 +10,7 @@ use App\Services\Interfaces\Task\TaskServiceInterface as TaskService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use App\Models\User;
 
 class TaskController extends BaseController{
 
@@ -17,7 +18,8 @@ class TaskController extends BaseController{
     protected $route = 'tasks';
 
     protected $service;
-
+    
+    private const LEVEL_CAPTAIN = 3;
 
     public function __construct(
         TaskService $service
@@ -30,9 +32,21 @@ class TaskController extends BaseController{
     public function index(Request $request): View | RedirectResponse{
         try {
             $auth = Auth::user();
-            $request->merge([
-               'user_id' => ['eq' => $auth->id]
-            ]);
+            if($auth->user_catalogues->level == self::LEVEL_CAPTAIN){
+                $userIds = array_merge(
+                    [$auth->id],
+                    User::where('parent_id', $auth->id)->pluck('id')->toArray()
+                );
+                $request->merge([
+                    'user_id' => [
+                        'in' => 'user_id|' . implode(',', $userIds)
+                    ]
+                ]);
+            }else{
+                $request->merge([
+                    'user_id' => ['eq' => $auth->id]
+                ]);
+            }
             $records = $this->service->paginate($request);
             $config = $this->config();
             $config['model'] = Str::studly(Str::singular($this->route));

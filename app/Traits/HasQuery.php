@@ -13,21 +13,38 @@ trait HasQuery {
         return $query;
     }
 
-    public function scopeSimpleFilter($query, array $simpleFilter = []){
-        if(count($simpleFilter)){
-            foreach($simpleFilter as $key => $val){
-                if($val !== 0 && !empty($val) && !is_null($val)){
-                    $query->where($key, $val);
+    public function scopeSimpleFilter($query, array $simpleFilter = [])
+    {
+        if (count($simpleFilter)) {
+            foreach ($simpleFilter as $key => $val) {
+                if ($val !== 0 && !empty($val) && !is_null($val)) {
+                    if (is_array($val) && isset($val['in'])) {
+                        $idsString = $val['in'];
+
+                        if (strpos($idsString, '|') !== false) {
+                            $idsString = explode('|', $idsString)[1] ?? '';
+                        }
+
+                        $ids = array_filter(explode(',', $idsString), fn($id) => !empty(trim($id)));
+
+                        if (!empty($ids)) {
+                            $query->whereIn($key, $ids);
+                        }
+                    } else {
+                        $query->where($key, $val);
+                    }
                 }
             }
         }
+
+        return $query;
     }
+
 
     public function scopeComplexFilter($query, array $complexFilter = []){
         if(count($complexFilter)){
             foreach($complexFilter as $field => $condition){
                 foreach($condition as $operator => $val){
-                   
                     switch ($operator) {
                         case 'gt':
                             $query->where($field, '>', $val);
