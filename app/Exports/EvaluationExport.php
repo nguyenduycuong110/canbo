@@ -134,6 +134,7 @@ class EvaluationExport
                 ? $evaluation->deputyAssessment['point']
                 : '';
             }
+            
             $leaderAssessmentDisplay = $leaderRating ;
 
             // Lãnh đạo phê duyệt và tên lãnh đạo phê duyệt

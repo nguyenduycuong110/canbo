@@ -275,19 +275,6 @@
         }
     }
 
-    // HT.triggerDate = () => {
-    //     $(document).ready(function() {
-    //         var today = new Date();
-    //         var day = String(today.getDate()).padStart(2, '0');
-    //         var month = String(today.getMonth() + 1).padStart(2, '0'); // Tháng bắt đầu từ 0
-    //         var year = today.getFullYear();
-    //         var currentDate = day + '/' + month + '/' + year;
-    //         if ($('#date').val() === '') {
-    //             $('#date').val(currentDate);
-    //         }
-    //     });
-    // };
-
     HT.changeStatusEvaluate = () => {
         $(document).ready(function(){
             $('.evaluations select[name=status_id]').on('change', function(){
@@ -306,8 +293,8 @@
                     success: function(response) {
                         if (response.flag) {
                             // Sử dụng flasher để hiển thị thông báo thành công
+                            _this.closest('tr').find('input[name="point"]').val(response.flag);
                             toastr.success("Cập nhật đánh giá thành công");
-                            
                             // Nếu muốn cập nhật giao diện
                             // location.reload();
                         } else {
@@ -806,61 +793,6 @@
         });
     }
 
-    // HT.filterCaptainDeputy = () => {
-    //     $(document).on('change', '.deputy_id', function(){
-    //         let _this = $(this)
-    //         let deputy_id = _this.val()
-    //         if(deputy_id == 0){
-    //             return;
-    //         }
-    //         let option = {
-    //             deputy_id : deputy_id,
-    //         }
-    //         $.ajax({
-    //             url: 'ajax/evaluation/filterCaptainDeputy', 
-    //             type: 'GET', 
-    //             data: option,
-    //             dataType: 'json', 
-    //             success: function(res) {
-    //                 HT.appendSelectBoxCaptain(res.response)
-    //             },
-    //             error: function(jqXHR, textStatus, errorThrown) {
-                    
-    //             }
-    //         });
-    //     })
-    // }
-
-    // HT.sendAjaxFilterCaptainDeputy = (option) => {
-    //     $.ajax({
-    //         url: 'ajax/evaluation/filterCaptainDeputy', 
-    //         type: 'GET', 
-    //         data: option,
-    //         dataType: 'json', 
-    //         success: function(res) {
-    //             HT.appendSelectBoxCaptain(res.response)
-    //         },
-    //         error: function(jqXHR, textStatus, errorThrown) {
-                
-    //         }
-    //     });
-    // }
-
-    // HT.appendSelectBoxCaptain = (res) => {
-    //     let userSelect = $('select[name="user_id"]');
-    //     userSelect.empty();
-    //     userSelect.append('<option value="0">Chọn lãnh đạo</option>');
-    //     if(res.users && res.users.length > 0) {
-    //         $.each(res.users, function(index, user) {
-    //             userSelect.append(
-    //                 $('<option></option>')
-    //                 .val(user.id)
-    //                 .text(user.name)
-    //             );
-    //         });
-    //     }
-    //     $('.setupSelect2').select2();
-    // }
 
     HT.exportRankQuality = () => {
         $(document).on('click', '.btn-export-rank', function(e){
@@ -950,33 +882,6 @@
     };
     
 
-    // HT.loadUser = () => {
-    //     if(typeof team_id !== 'undefined' && team_id != ''){
-    //         let option = {
-    //             team_id : team_id,
-    //         }
-    //         HT.sendAjaxFilterOfficerTeam(option)
-    //     }
-    // }
-
-    // HT.loadVice = () => {
-    //     if(typeof team_vice_id !== 'undefined' && team_vice_id != ''){
-    //         let option = {
-    //             team_id : team_vice_id,
-    //         }
-    //         HT.sendAjaxFilterViceTeam(option)
-    //     }
-    // }
-
-    // HT.loadCaptain = () => {
-    //     if(typeof deputy_id !== 'undefined' && deputy_id != ''){
-    //         let option = {
-    //             deputy_id : deputy_id,
-    //         }
-    //         HT.sendAjaxFilterCaptainDeputy(option)
-    //     }
-    // }
-
     HT.filterEvaluationByField = () => {
         $('.start_date, .perpage, .team_id, .user_id, .deputy_id, .vice_id').change(function() {
             const $this = $(this);
@@ -1011,11 +916,7 @@
 
 	$(document).ready(function(){
        
-        // HT.loadUser()
         HT.filterEvaluationByField()
-        // HT.loadVice()
-        // HT.loadCaptain()
-        // HT.filterCaptainDeputy()
         HT.filterViceTeam()
         HT.filterOfficerByVice()
         HT.exportRankQuality()
@@ -1034,8 +935,6 @@
         HT.intCid()
         HT.setupDatepicker()
         HT.setupDateRangePicker()
-        // HT.setupMonthPicker()
-        // HT.StatisticEvaluation()
         HT.setupMonthPicker()
         HT.triggerEvaluationList()
         HT.MonthChangeStatisticEvaluation()

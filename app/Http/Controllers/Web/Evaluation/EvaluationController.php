@@ -401,7 +401,6 @@ class EvaluationController extends BaseController{
             ]
         ];
 
-        // Thêm điều kiện team_id nếu có
         if ($request->has('team_id') && $request->team_id != 0) {
             $relationFilter['users.teams'] = [
                 'id' => [

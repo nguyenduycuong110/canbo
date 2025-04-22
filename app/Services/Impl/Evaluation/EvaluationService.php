@@ -78,8 +78,6 @@ class EvaluationService extends BaseService implements EvaluationServiceInterfac
     public function evaluate(Request $request, int $id){
         try {
             DB::beginTransaction();
-
-
             $now = now();
             DB::table('evaluation_status')
             ->where('evaluation_id', $id)
@@ -97,7 +95,26 @@ class EvaluationService extends BaseService implements EvaluationServiceInterfac
                 ]
             );
             DB::commit();
-            return true;
+            $record = DB::table('evaluation_status')
+                ->where('evaluation_id', $id)
+                ->where('user_id', Auth::id())
+                ->first();
+            $status = DB::table('statuses')
+                ->where('id', $record->status_id)
+                ->first();
+            $range = $status->point;
+            list($min, $max) = explode('-', $range);
+            $max = (int) $max; 
+            DB::table('evaluation_status')->updateOrInsert(
+                [
+                    'evaluation_id' => $id,
+                    'user_id' => Auth::id()
+                ],
+                [
+                    'point' => $max
+                ]
+            );
+            return $max;
         } catch (\Throwable $th) {
            return false;
         }
