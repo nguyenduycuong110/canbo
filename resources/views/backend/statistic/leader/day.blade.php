@@ -78,6 +78,7 @@
                                 <th>Số công việc / nhiệm vụ hoàn thành <br> vượt mức về thời gian hoặc chất lượng</th>
                                 <th>Số công việc / nhiệm vụ hoàn thành <br> đúng hạn , đảm bảo chất lượng</th>
                                 <th>Số công việc / nhiệm vụ không hoàn thành <br> đúng hạn hoặc không đảm bảo yêu cầu</th>
+                                <th>Ghi chú</th>
                                 <th>Cá nhân tự đánh giá</th>
                                 <th>Lãnh đạo trực tiếp đánh giá</th>
                                 <th class="text-center">Lãnh đạo đánh giá</th>

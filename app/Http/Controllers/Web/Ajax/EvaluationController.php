@@ -139,7 +139,6 @@ class EvaluationController extends BaseController
     
     public function exportHistory(Request $request){
         try {
-            
             $currentUser = Auth::user();
             if (!$currentUser) {
                 return response()->json(['status' => 'error', 'message' => 'User not authenticated'], 401);
@@ -272,6 +271,7 @@ class EvaluationController extends BaseController
             }
 
             $effectiveStatus = $finalStatus ?? $selfStatus;
+
             $statusLevel = $effectiveStatus ? ($effectiveStatus->level ?? 1) : 1;
 
             if ($statusLevel == 4) {

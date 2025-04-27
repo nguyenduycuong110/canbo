@@ -426,6 +426,8 @@
             });
 
             let file = (item.file == null) ? '' : 'Click để dowload'
+
+            let note = (item.note == null) ? '' : item.note
     
             if (resOriginal.response.user_catalogues.level == 5) {
                 html += `
@@ -466,6 +468,9 @@
                         <td>${item.overachieved_tasks}</td>
                         <td>${item.completed_tasks_ontime}</td>
                         <td>${item.failed_tasks_count}</td>
+                        <td class="note">
+                            <span>${note}</span>
+                        </td>
                         <td>
                             ${selfAssessmentStatus || 'Chưa tự đánh giá'}
                             <br>
@@ -637,7 +642,6 @@
                 data: option,
                 dataType: 'json', 
                 success: function(res) {
-                    console.log(res)
                     let displayText = '';
                     if (res.response?.user_catalogues?.name) {
                         displayText = res.response.user_catalogues.name;

@@ -155,7 +155,13 @@
                                                 @endif
                                             </select>
                                         @else
-                                            {{ $statuses->where('id', 4)->first()->name }}
+                                            @php
+                                                $record_id = $record->id;
+                                                $user_id = $record->user_id;
+                                                $evaluation_status = DB::table('evaluation_status')
+                                                ->where('evaluation_id', $record_id)->where('user_id', $user_id)->first();
+                                            @endphp
+                                            {{ $statuses->where('id', $evaluation_status->status_id)->first()->name }}
                                         @endif
                                     </td>
                                     <!-- Hiển thị đánh giá theo từng vị trí -->

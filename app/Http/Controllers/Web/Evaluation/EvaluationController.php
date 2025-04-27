@@ -606,6 +606,4 @@ class EvaluationController extends BaseController{
         return $tasks;
     }
 
-    
-
 }   

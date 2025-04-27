@@ -254,7 +254,7 @@ class MonthRateExport
             }
         }
         
-        return ($count > 0) ? ($totalPoint / $count) : 0;
+        return ($count > 0) ? round($totalPoint / $count, 2) : 0;
     }
 
     private function calculateApproverPoint($user, $month){
@@ -281,6 +281,6 @@ class MonthRateExport
                 }
             }
         }
-        return ($count > 0) ? ($totalPoint / $count) : 0;
+        return ($count > 0) ? round($totalPoint / $count, 2) : 0;
     }
 }

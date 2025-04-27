@@ -132,6 +132,7 @@
                                 <th>Ngày hoàn thành</th>
                                 <th class="completion-time text-center">Thời gian thực tế</th>
                                 <th>Sản phẩm đầu ra</th>
+                                <th>Ghi chú</th>
                                 <th style="width:220px;">Cá nhân tự đánh giá</th>
                                 <th>Lãnh đạo trực tiếp đánh giá</th>
                                 <th>Lãnh đạo phê duyệt</th>

@@ -175,7 +175,7 @@ class LeaderEvaluationExport
                 $approvalRating,
                 $approverPoint ?? '',
                 $approverName,
-                '', // Cột "Ghi chú" để trống nếu không có dữ liệu
+                $evaluation->note ?? '', // Cột "Ghi chú" để trống nếu không có dữ liệu
             ];
 
             $sheet->fromArray($dataRow, null, 'A' . $currentRow);
