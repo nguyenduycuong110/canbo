@@ -158,6 +158,9 @@ class EvaluationController extends BaseController
             $ratedUsers = [];
 
             foreach ($users as $user) {
+                
+                if($user->id == 78) { continue; }
+
                 $rating = $this->calculateUserRating($user, $month, $evaluations);
                 
                 $statistic = $user->statistics->where('month', $month->format('Y-m-d'))->first();
@@ -279,7 +282,6 @@ class EvaluationController extends BaseController
                 $level3And4Tasks += 1;
             } elseif ($statusLevel == 3) {
                 $level3Tasks += 1;
-                $level3And4Tasks += 1;
             } elseif ($statusLevel == 2) {
                 $level2Tasks += 1;
             } elseif ($statusLevel == 1) {

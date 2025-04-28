@@ -428,7 +428,9 @@
             let file = (item.file == null) ? '' : 'Click để dowload'
 
             let note = (item.note == null) ? '' : item.note
-    
+
+            let completion_date= (item.completion_date == null) ? '' : item.completion_date
+
             if (resOriginal.response.user_catalogues.level == 5) {
                 html += `
                     <tr>
@@ -436,7 +438,7 @@
                         <td>${item.tasks.name}</td>
                         <td>${item.start_date}</td>
                         <td>${item.due_date}</td>
-                        <td class="completion-time text-center"><span>${item.completion_date}</span></td>
+                        <td class="completion-time text-center"><span>${completion_date}</span></td>
                         <td class="output"><span>${item.output}</span></td>
                         <td>
                             ${selfAssessmentStatus || 'Chưa tự đánh giá'}
@@ -451,7 +453,9 @@
                         <td>
                             ${leadershipApprovalStatus || 'Chưa phê duyệt'}
                             <br>
-                            <span class="text-success">Họ Tên: ${leadershipApprovalName}<span class="text-danger">(${leadershipApprovalPoint}đ)</span></span>
+                            <span class="text-success">
+                                Họ Tên: ${leadershipApprovalName}<span class="text-danger">(${leadershipApprovalPoint}đ)</span>
+                            </span>
                         </td>
                         <td>
                            <a href="${item.file}" target="_blank" dowload>${file}</a>

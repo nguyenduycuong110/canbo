@@ -89,7 +89,7 @@ class StatisticController extends BaseController{
             $template = $isLeader ? 
                 "backend.{$this->namespace}.department.leader" : 
                 "backend.{$this->namespace}.department.officer";
-
+            
             $users = $this->getUserInsideNode($request, $level);
             $teams = $this->getTeamInsideNode($users, $auth);
             return view($template , compact(
