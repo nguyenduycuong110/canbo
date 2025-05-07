@@ -61,7 +61,7 @@ class UserService extends BaseService implements UserServiceInterface{
         return $this->repository->getUsersOnBranch($user, $userCatalogueId);
     }
 
-    public function findByIds($ids, $relations){
+    public function findByIds($ids, $relations = []){
         return $this->repository->findByIds($ids, $relations);
     }
 

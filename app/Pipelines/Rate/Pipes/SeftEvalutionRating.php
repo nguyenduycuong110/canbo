@@ -114,7 +114,7 @@ class SeftEvalutionRating {
                             } elseif ($statusLevel == 2) {
                                 $rating = 'C';
                             }
-                            $superiorLeaderRatings[] = $rating; // Nó rỗng bởi vì đang dd trong vòng lặp, và
+                            $superiorLeaderRatings[] = $rating;
                         }
                     }
                 }
@@ -127,12 +127,6 @@ class SeftEvalutionRating {
                 }
             }
 
-
-            // $effectiveStatus = $finalStatus ?? $selfStatus;
-
-
-            // $statusLevel = $effectiveStatus ? $effectiveStatus->level : 3;
-
             if ($statusLevel == 4) {
                 $level4Tasks += 1;
             } elseif ($statusLevel == 3) {
@@ -142,7 +136,6 @@ class SeftEvalutionRating {
             } elseif ($statusLevel == 1) {
                 $level1Tasks += 1;
             } 
-            
         }
         
         $hasSelfEvaluation = $totalTasks > 0 ? true : false;
