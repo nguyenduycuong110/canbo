@@ -84,6 +84,7 @@ Route::middleware(['auth'])->group(function(){
     Route::put('evaluations/evaluate/{evaluate}', [AjaxEvaluationController::class, 'evaluate'])->name('evaluations.evaluate');
     /*Ajax*/
     
+    Route::post('ajax/statistics/prepareData', [AjaxEvaluationController::class, 'prepareData'])->name('statistics.prepareData');
     Route::post('ajax/statistics/export', [AjaxEvaluationController::class, 'export'])->name('statistics.export');
     Route::post('ajax/statistics/exportHistory', [AjaxEvaluationController::class, 'exportHistory'])->name('statistics.exportHistory');
     Route::post('ajax/statistics/exportRank', [AjaxEvaluationController::class, 'exportRank'])->name('statistics.exportRank');

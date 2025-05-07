@@ -23,7 +23,7 @@ class UserService extends BaseService implements UserServiceInterface{
 
     protected $simpleFilter = ['level','team_id'];
 
-    protected $with = ['evaluations'];
+    protected $with = ['evaluations', 'user_catalogues'];
 
     public function __construct(
         UserRepository $repository
@@ -61,13 +61,39 @@ class UserService extends BaseService implements UserServiceInterface{
         return $this->repository->getUsersOnBranch($user, $userCatalogueId);
     }
 
-    public function findByIds($ids){
-        return $this->repository->findByIds($ids);
+    public function findByIds($ids, $relations){
+        return $this->repository->findByIds($ids, $relations);
     }
 
     public function getUserInNode($currentUser){
         
         $userLevel1To4 = $this->repository->getUserInNodeLowerThanEqualLevel4($currentUser);
+
+        $allUser = $userLevel1To4;
+
+        $level4User = $userLevel1To4->filter(function ($user) {
+            return $user->user_catalogues->level == 4;
+        });
+
+        $level5User = collect();
+
+        if(!is_null($level4User)){
+            foreach($level4User as $key => $val){
+                $val->load(['subordinates']);
+                $subordinates = $val->subordinates()->get();
+                $level5User = $level5User->merge($subordinates);
+            }
+        }
+
+        $allUsers = $level5User->merge($allUser);
+
+        return $allUsers;
+
+    }
+
+    public function getUserInNodeSortByLevel($currentUser){
+        
+        $userLevel1To4 = $this->repository->getUserInNodeLowerThanEqualLevel4SortByLevel($currentUser);
 
         $allUser = $userLevel1To4;
 
@@ -111,6 +137,18 @@ class UserService extends BaseService implements UserServiceInterface{
 
     public function reNested(){
         $this->nested();
+    }
+
+    public function getManager($auth, $level){
+        return $this->repository->getManager($auth, $level);
+    }
+
+    public function findByField($field , $value){
+        return $this->repository->findByField($field, $value);
+    }
+
+    public function findWhereIn($field , $in){
+        return $this->repository->findWhereIn($field, $in);
     }
 
 }

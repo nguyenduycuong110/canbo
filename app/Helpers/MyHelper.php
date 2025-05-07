@@ -7,3 +7,14 @@ if(!function_exists('convertDateTime')){
        return $carbonDate->format($format);
     }
 }
+
+// Define the helper function
+if (!function_exists('array_map_with_keys')) {
+    function array_map_with_keys(callable $callback, array $array) {
+        $result = [];
+        foreach ($array as $key => $value) {
+            $result += $callback($value, $key);
+        }
+        return $result;
+    }
+}

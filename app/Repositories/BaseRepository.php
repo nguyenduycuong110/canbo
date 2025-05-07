@@ -22,8 +22,8 @@ class BaseRepository {
         return $this->model->with($relation)->where('code', $code)->first();
     }
 
-    public function findByIds(array $ids = []){
-        return $this->model->whereIn('id', $ids)->get();
+    public function findByIds(array $ids = [], $relations = []){
+        return $this->model->whereIn('id', $ids)->with($relations)->get();
     }
 
     public function create(array $payload = []): Model{

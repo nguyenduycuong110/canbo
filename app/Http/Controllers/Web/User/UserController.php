@@ -15,14 +15,11 @@ use App\Services\Interfaces\Unit\UnitServiceInterface as UnitService;
 use App\Classes\Nestedsetbie;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Contracts\View\View;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Request as FacadesRequest;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Lang;
 use App\Models\User;
 use App\Models\Team;
-use Illuminate\Support\Facades\Log;
 
 class UserController extends BaseController{
 
@@ -35,8 +32,6 @@ class UserController extends BaseController{
     protected $provinceService;
     protected $teamService;
     protected $unitService;
-
-    private const ACTIVE_STATUS = 2;
 
     public function __construct(
         UserService $service,

@@ -33,12 +33,11 @@ class LeaderEvaluationExport
 
         // Tiêu đề
         $sheet->mergeCells('A1:M1'); // Cập nhật mergeCells để phù hợp với số cột mới (13 cột: A đến M)
-        $sheet->setCellValue('A1', 'CỤC HẢI QUAN TỈNH HÀ TĨNH');
+        $sheet->setCellValue('A1', 'HẢI QUAN KHU VỰC XI');
         $sheet->getStyle('A1')->getFont()->setBold(true);
         $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
         $sheet->mergeCells('A2:M2');
-        $sheet->setCellValue('A2', $user->teams->name);
+        $sheet->setCellValue('A2', mb_strtoupper($user->teams->name, 'UTF-8') );
         $sheet->getStyle('A2')->getFont()->setBold(true);
         $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 

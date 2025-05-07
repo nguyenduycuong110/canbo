@@ -567,7 +567,47 @@
                     console.error('Error:', res.message);
                 }
     
-                // Ẩn trạng thái loading
+                loadingOverlay.remove();
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                console.error('AJAX Error:', textStatus, errorThrown);
+                loadingOverlay.remove();
+            }
+        })
+    }
+
+    HT.prepareData = () => {
+        $(document).on('click','.btn-prepare', function(e){
+            e.preventDefault()
+            let _this = $(this)
+            let month = $('.evaluation-time').val()
+            let option = {month : month}
+            HT.setupPrepareData(option);
+        })
+    }
+
+    HT.setupPrepareData = (option) => {
+        const loadingOverlay = $('<div class="loading-overlay">Đang chuẩn bị...</div>');
+        $('body').append(loadingOverlay);
+        $.ajax({
+            url: 'ajax/statistics/prepareData', 
+            type: 'POST', 
+            data: {
+                ...option,
+                _token: $('meta[name="csrf-token"]').attr('content') // Thêm CSRF token
+            },
+            dataType: 'json', 
+            success: function(res) {
+                if (res.status === 'success') {
+                    const link = document.createElement('a');
+                    link.href = res.file_url;
+                    link.download = res.filename; // Sử dụng tên file từ response
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                } else {
+                    console.error('Error:', res.message);
+                }
                 loadingOverlay.remove();
             },
             error: function(jqXHR, textStatus, errorThrown) {
@@ -870,7 +910,6 @@
         });
     }
 
-
     HT.appendSelectBoxOfficer = (res) => {
         let userSelect = $('.filter-officer select[name="user_id"]');
         userSelect.empty();
@@ -889,7 +928,6 @@
         $('.setupSelect2').select2();
     };
     
-
     HT.filterEvaluationByField = () => {
         $('.start_date, .perpage, .team_id, .user_id, .deputy_id, .vice_id').change(function() {
             const $this = $(this);
@@ -924,6 +962,7 @@
 
 	$(document).ready(function(){
        
+        HT.prepareData()
         HT.filterEvaluationByField()
         HT.filterViceTeam()
         HT.filterOfficerByVice()

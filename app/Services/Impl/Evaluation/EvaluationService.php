@@ -321,10 +321,10 @@ class EvaluationService extends BaseService implements EvaluationServiceInterfac
         }
     }
     
-    public function getEvaluationsByUserIdsAndMonth($usersId, $month){
-        return $this->repository->getEvaluationsByUserIdsAndMonth($usersId, $month);
+    public function getEvaluationsByUserIdsAndMonth($usersId, $month, $chunkSize = 500, callable $callback){
+        return $this->repository->getEvaluationsByUserIdsAndMonth($usersId, $month, $chunkSize, $callback);
     }
-    
+
     public function setPoint($request){
         try {
             $evaluationUserId = $request->currentUserId;

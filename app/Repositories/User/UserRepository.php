@@ -22,7 +22,15 @@ class UserRepository extends  BaseRepository{
     }
 
     public function getUserInNodeLowerThanEqualLevel4($currentUser){
-        return $this->model->where('lft', '>=', $currentUser->lft)->where('rgt', '<=', $currentUser->rgt)->where('level', '<=', 4)->orderBy('level', 'asc')->get();
+        return $this->model->where('lft', '>=', $currentUser->lft)->with('user_catalogues')->where('rgt', '<=', $currentUser->rgt)->where('level', '<=', 4)->orderBy('level', 'asc')->get()->sortByDesc(function($user){
+            return $user->user_catalogues->level ?? 0;
+        });
+    }
+
+    public function getUserInNodeLowerThanEqualLevel4SortByLevel($currentUser){
+        return $this->model->where('lft', '>=', $currentUser->lft)->with('user_catalogues')->where('rgt', '<=', $currentUser->rgt)->where('level', '<=', 4)->orderBy('lft', 'asc')->get()->sortByDesc(function($user){
+            return $user->user_catalogues->level ?? 0;
+        });
     }
 
     public function findByField($field, $value){
@@ -42,6 +50,17 @@ class UserRepository extends  BaseRepository{
     public function updatePassword($payload = [], $id){
         return $this->model->where('id', $id)->update($payload);
     }
+
+    public function getManager($auth, $level){
+        return $this->model
+            ->where('lft', '>' , $auth->lft)
+            ->where('rgt', '<' , $auth->rgt)
+            ->whereHas('user_catalogues', function($subQuery) use($level){
+                $subQuery->where('level', $level -  1 )->orWhere('level', $level-2);
+            })
+            ->get();
+    }
     
+
 
 }

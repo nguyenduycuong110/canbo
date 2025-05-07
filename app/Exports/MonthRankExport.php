@@ -36,7 +36,7 @@ class MonthRankExport
         $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         $sheet->mergeCells('A2:D2');
-        $sheet->setCellValue('A2', 'CHI CỤC HẢI QUAN KHU VỰC XI');
+        $sheet->setCellValue('A2', 'HẢI QUAN KHU VỰC XI');
         $sheet->getStyle('A2')->getFont()->setBold(true);
         $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 

@@ -60,7 +60,7 @@ class User extends Authenticatable
         // 'user_catalogues',
         // 'managers',
         // 'subordinates',
-        // 'statistics'
+        'statistics'
     ];
 
     /**

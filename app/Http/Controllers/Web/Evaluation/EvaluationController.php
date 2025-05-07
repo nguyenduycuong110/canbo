@@ -81,7 +81,7 @@ class EvaluationController extends BaseController{
             $config = $this->config();
             $data = $this->getData();
             extract($data);
-            $template = ($user->rgt - $user->lft > 1) ? "backend.{$this->namespace}.indexSuperior" : "backend.{$this->namespace}.index";
+            $template = ($user->user_catalogues->level < 5) ? "backend.{$this->namespace}.indexSuperior" : "backend.{$this->namespace}.index";
             return view($template, compact(
                 'records',
                 'config',
@@ -183,7 +183,6 @@ class EvaluationController extends BaseController{
                 default => $this->getInsideNodeEvaluation($request, $level, $monthCurrent),
             };
 
-            
             $allPositionsData = [];
 
             $hasCurrentUserEvaluated = false;
@@ -562,13 +561,9 @@ class EvaluationController extends BaseController{
         $auth->load(['subordinates']);
         $subordinateIds = [];
         if($auth->user_catalogues->level < 4){
-            $request->merge([
-                'lft' => ['gt' => $auth->lft],
-                'rgt' => ['lt' => $auth->rgt],
-                'relationFilter' => ['user_catalogues' => ['level' => ['eq' => $level - 1]]], // Lấy user ở cấp $level (ví dụ: 4 cho Đội phó)
-                'type' => 'all'
-            ]);
-            $users = $this->userService->paginate($request);
+
+            $users = $this->userService->getManager($auth, $level);
+
             if(!is_null($users) && count($users)){
                 foreach($users as $key => $deputy){ 
                     $subordinates = $deputy->subordinates()->get()->pluck('id')->toArray();

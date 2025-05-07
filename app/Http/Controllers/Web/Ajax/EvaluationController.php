@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Web\Ajax;
 use App\Traits\Loggable;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use App\Http\Controllers\Web\BaseController;
 use Illuminate\Http\Request;
 use App\Services\Interfaces\Evaluation\EvaluationServiceInterface as EvaluationService;
@@ -18,9 +17,9 @@ use App\Exports\MonthRateExport;
 use App\Exports\MonthRankExport;
 use App\Repositories\User\UserRepository;
 use Illuminate\Support\Facades\Log;
-use App\Models\Evaluation;
-use App\Models\User;
-use Illuminate\Http\RedirectResponse;
+use App\Pipelines\Rate\RatingPipeManager;
+use App\Pipelines\CacheRate\CacheRatingPipeManager;
+use Illuminate\Support\Facades\Cache;
 
 class EvaluationController extends BaseController
 {
@@ -31,17 +30,23 @@ class EvaluationController extends BaseController
     protected $userService;
     protected $userRepository;
 
+    private $ratingPipeManager;
+    private $cacheRatingPipeManager;
+
     public function __construct(
         EvaluationService $evaluationService,
         StatisticService $statisticService,
         UserService $userService,
         UserRepository $userRepository,
-
+        RatingPipeManager $ratingPipeManager,
+        CacheRatingPipeManager $cacheRatingPipeManager
     ){
         $this->evaluationService = $evaluationService;
         $this->statisticService = $statisticService;
         $this->userService = $userService;
         $this->userRepository = $userRepository;
+        $this->ratingPipeManager = $ratingPipeManager;
+        $this->cacheRatingPipeManager = $cacheRatingPipeManager;
     }
 
 
@@ -137,47 +142,44 @@ class EvaluationController extends BaseController
         }
     }
     
-    public function exportHistory(Request $request){
+    public function exportHistory(Request $request){    
         try {
             $currentUser = Auth::user();
             if (!$currentUser) {
                 return response()->json(['status' => 'error', 'message' => 'User not authenticated'], 401);
             }
-
             $monthInput = $request->month ?? now()->format('m/Y');
-
             $month = Carbon::createFromFormat('m/Y', $monthInput)->startOfMonth();
-
-            $users = $this->userService->getUserInNode($currentUser);
-            
+            $users = $this->userService->getUserInNodeSortByLevel($currentUser);
             $userIds = $users->pluck('id')->toArray();
+            
+            $userEvaluations = [];
+            // Evaluation này là tất cả evaluation của tất cả userIds được lấy ra 
+            $evaluations = $this->evaluationService->getEvaluationsByUserIdsAndMonth($userIds, $month, 500, function($evaluations) use (&$userEvaluations){
+                foreach($evaluations as $evaluation){
+                    $userId = $evaluation->user_id;
+                    if(!isset($userEvaluations[$userId])){
+                        $userEvaluations[$userId] = [];
+                    }
+                    $userEvaluations[$userId][] = $evaluation;
+                }
+            });
 
-            $evaluations = $this->evaluationService->getEvaluationsByUserIdsAndMonth($userIds, $month);
+            foreach($users as $user){
+                $user->evaluations = $userEvaluations[$user->id] ?? [];
+            }
 
-            // Tính xếp loại cho từng người dùng
             $ratedUsers = [];
 
-            foreach ($users as $user) {
-                
-                if($user->id == 78) { continue; }
+            $pipeResult = null;
 
-                $rating = $this->calculateUserRating($user, $month, $evaluations);
-                
-                $statistic = $user->statistics->where('month', $month->format('Y-m-d'))->first();
+            foreach ($users as $item) {
 
-                $ratedUsers[] = [
-                    'user' => $user,
-                    'working_days' => $statistic ? $statistic->working_days_in_month : 0,
-                    'leave_days' => $statistic ? $statistic->leave_days_with_permission : 0,
-                    'violation_count' => $statistic ? $statistic->violation_count : 0,
-                    'disciplinary_action' => $statistic ? $statistic->disciplinary_action : '',
-                    'self_rating' => $rating['self_rating'],
-                    'completion_percentage' => $rating['completion_percentage'],
-                    'final_rating' => $rating['final_rating'],
-                    'totalTask' => $rating['totalTask']
-                ];
+                $pipeResult = $this->ratingPipeManager->send(['user' => $item, 'month' => $month]);
+
+                $ratedUsers[] = $pipeResult;
             }
-            
+
             $export = new MonthRateExport($ratedUsers, $monthInput);
             $temp_file = $export->export();
             $filename = "excel_rating_report_{$monthInput}.xlsx";
@@ -194,9 +196,42 @@ class EvaluationController extends BaseController
         }
     }
 
+    public function prepareData(Request $request){
+        try {
+            $currentUser = Auth::user();
+            if (!$currentUser) {
+                return response()->json(['status' => 'error', 'message' => 'User not authenticated'], 401);
+            }
+            $monthInput = $request->month ?? now()->format('m/Y');
+            $month = Carbon::createFromFormat('m/Y', $monthInput)->startOfMonth();
+            $users = $this->userService->getUserInNode($currentUser);
+            $userIds = $users->pluck('id')->toArray();
+            $userEvaluations = [];
+            $evaluations = $this->evaluationService->getEvaluationsByUserIdsAndMonth($userIds, $month, 500, function($evaluations) use (&$userEvaluations){
+                foreach($evaluations as $evaluation){
+                    $userId = $evaluation->user_id;
+                    if(!isset($userEvaluations[$userId])){
+                        $userEvaluations[$userId] = [];
+                    }
+                    $userEvaluations[$userId][] = $evaluation;
+                }
+            });
+            foreach($users as $user){
+                $user->evaluations = $userEvaluations[$user->id] ?? [];
+            }
+            $ratedUsers = [];
+            $pipeResult = null;
+            foreach ($users as $item) {
+                $pipeResult = $this->cacheRatingPipeManager->send(['user' => $item, 'month' => $month]);
+            }
+        } catch (\Throwable $th) {
+            dd($th);
+        }
+    }
+
     private function calculateUserRating($user, $month, $evaluations)
     {
-        // Khởi tạo biến kết quả
+        
         $leaderSelfRating = null;    
         $civilServantSelfRating = null;    
         $subordinateRating = null;
@@ -210,16 +245,19 @@ class EvaluationController extends BaseController
 
         // Sử dụng $month cố định
         $evaluationMonth = $month;
-
+ 
         // Lấy level của user hiện tại
         $user->load('user_catalogues');
+
         $userLevel = $user->user_catalogues->level ?? 5;
 
         // Bước 1: Lấy evaluations của user trong tháng
-        $userEvaluations = $evaluations->filter(function ($evaluation) use ($user, $evaluationMonth) {
-            return $evaluation->user_id == $user->id &&
-                Carbon::parse($evaluation->created_at)->format('m/Y') == $evaluationMonth->format('m/Y');
-        });
+        // $userEvaluations = $evaluations->filter(function ($evaluation) use ($user, $evaluationMonth) {
+        //     return $evaluation->user_id == $user->id &&
+        //         $evaluation->created_at->format('m/Y') == $evaluationMonth->format('m/Y');
+        // });
+
+        $userEvaluations = $evaluations->where('user_id', $user->id);
 
         // Bước 2: Tính totalTasks
         $totalTasks = $userEvaluations->count();
@@ -231,20 +269,16 @@ class EvaluationController extends BaseController
         $level2Tasks = 0;
         $level1Tasks = 0;
         $hasSelfEvaluation = false;
-        $leaderEvaluation = false;
+        $superiorLeaderRatings = [];  // Định nghĩa ở đây để sử dụng sau
 
-        foreach ($userEvaluations as $evaluation) {
-            $statuses = $evaluation->statuses;
+        foreach ($userEvaluations as $item) {
+            $statuses = $item->statuses;
             $finalStatus = null;
             $selfStatus = null;
-            $selfEvaluationId = null;
-
-            if ($evaluation->user_id == $user->id) {
-                $selfEvaluationId = $evaluation->id;
+            if ($item->user_id == $user->id) {
                 $hasSelfEvaluation = true;
             }
 
-            // Kiểm tra phê duyệt của lãnh đạo (phải trên 2 cấp)
             foreach ($statuses as $status) {
                 $lock = $status->pivot->lock ?? 1;
                 if ($status->pivot->user_id != $user->id && $lock == 0) {
@@ -252,16 +286,29 @@ class EvaluationController extends BaseController
                     if ($approver) {
                         $approver->load('user_catalogues');
                         $approverLevel = $approver->user_catalogues->level ?? 5;
-                        if ($approverLevel <= ($userLevel - 2)) {
-                            $leaderEvaluation = true;
+                        
+                        if (($userLevel == 2 && $approverLevel <= ($userLevel - 1)) || 
+                            ($userLevel != 2 && $approverLevel <= ($userLevel - 2)) || 
+                            $approverLevel == 1) {
                             $isValidEvaluation = true; // Phiếu hợp lệ
                             $hasLeaderApproval = true; // Có phê duyệt từ lãnh đạo cấp trên
-                            break;
+                            
+                            $statusLevel = $status->level ?? 1;
+                            
+                            $rating = 'D';
+                            if ($statusLevel == 4) {
+                                $rating = 'A';
+                            } elseif ($statusLevel == 3) {
+                                $rating = 'B';
+                            } elseif ($statusLevel == 2) {
+                                $rating = 'C';
+                            }
+                            $superiorLeaderRatings[] = $rating;
                         }
                     }
                 }
             }
-
+            
             foreach ($statuses as $status) {
                 $lock = $status->pivot->lock ?? 1;
                 if ($lock == 0) {
@@ -292,6 +339,7 @@ class EvaluationController extends BaseController
         // Log thông tin kiểm tra tự đánh giá
         Log::info('Kiểm tra tự đánh giá của user', [
             'user_id' => $user->id,
+            'user_level' => $userLevel,
             'total_tasks' => $totalTasks,
             'has_self_evaluation' => $hasSelfEvaluation,
             'is_valid_evaluation' => $isValidEvaluation,
@@ -318,7 +366,6 @@ class EvaluationController extends BaseController
         $level2Percentage = $totalTasks > 0 ? ($level2Tasks / $totalTasks) * 100 : 0;
         $level1Percentage = $totalTasks > 0 ? ($level1Tasks / $totalTasks) * 100 : 0;
 
-        // Tính xếp loại dựa trên dữ liệu
         $selfRating = null;
         if ($totalTasks > 0) {
             if ($level3Percentage == 100 && $level4Percentage >= 50) {
@@ -334,9 +381,10 @@ class EvaluationController extends BaseController
             $selfRating = 'A';
         } elseif ($userLevel == 5 && !$hasSelfEvaluation) {
             $selfRating = 'Không đánh giá';
+        } elseif ($userLevel < 5 && $totalTasks == 0){
+            $selfRating = 'A';
         }
 
-        // Gán xếp loại phù hợp dựa vào level
         if ($userLevel < 5) {
             $leaderSelfRating = $selfRating;
         } else {
@@ -344,50 +392,148 @@ class EvaluationController extends BaseController
         }
 
         if ($userLevel < 5) { // Nếu là lãnh đạo
-            // Kiểm tra xem có phê duyệt từ lãnh đạo cấp trên hợp lệ không (level nhỏ hơn ít nhất 2 cấp)
-            $hasValidLeaderApproval = false;
-            
-            $superiorLeaderRatings = []; // Mảng lưu đánh giá của lãnh đạo cấp trên
-            
-            // Kiểm tra từng phiếu đánh giá
-            foreach ($userEvaluations as $evaluation) {
-                foreach ($evaluation->statuses as $status) {
-                    $lock = $status->pivot->lock ?? 1;
-                    if ($status->pivot->user_id != $user->id && $lock == 0) {
-                        $approver = $this->userRepository->findById($status->pivot->user_id);
-                        if ($approver) {
-                            $approver->load('user_catalogues');
-                            $approverLevel = $approver->user_catalogues->level ?? 5;
-                            if ($approverLevel <= ($userLevel - 2)) {
-                                $hasValidLeaderApproval = true;
-                                $hasLeaderApproval = true;
-                                $isValidEvaluation = true;
-                                
-                                // Lấy đánh giá cụ thể của lãnh đạo cấp trên
-                                $statusLevel = $status->level ?? 1;
-                                
-                                // Chuyển đổi status level thành xếp loại A, B, C, D
-                                $rating = 'D';
-                                if ($statusLevel == 4) {
-                                    $rating = 'A';
-                                } elseif ($statusLevel == 3) {
-                                    $rating = 'B';
-                                } elseif ($statusLevel == 2) {
-                                    $rating = 'C';
-                                }
-                                
-                                $superiorLeaderRatings[] = $rating;
+            if (!$hasSelfEvaluation) {
+                $hasSubordinateWithRatingD = false;
+                
+                $percentageOfSubordinateWithRatingD = 0;
+                
+                $allSubordinates = collect();
+                
+                if ($userLevel <= 3) {
+                    $allSubordinates = $this->userRepository->findByField('parent_id', $user->id);
+                } elseif ($userLevel == 4) {
+                    $subordinateIds = DB::table('user_subordinate')
+                        ->where('manager_id', $user->id)
+                        ->pluck('subordinate_id')
+                        ->toArray();
+                        
+                    if (!empty($subordinateIds)) {
+                        $allSubordinates = $this->userRepository->findWhereIn('id', $subordinateIds);
+                    }
+                }
+                
+                if ($allSubordinates->count() > 0) {
+                    $subordinateRatings = [];
+                    foreach ($allSubordinates as $subordinate) {
+                        $result = $this->calculateUserRating($subordinate, $month, $evaluations);
+                        if (in_array($result['final_rating'], ['A', 'B', 'C', 'D'])) {
+                            $subordinateRatings[] = $result['final_rating'];
+                        }
+                    }
+                    
+                    Log::info('Đánh giá từ cấp dưới cho lãnh đạo không có tự đánh giá', [
+                        'user_id' => $user->id,
+                        'subordinate_ratings' => $subordinateRatings,
+                    ]);
+                    
+                    $totalSubordinates = count($subordinateRatings);
+                    
+                    if ($totalSubordinates > 0) {
+                        $typeACount = count(array_filter($subordinateRatings, fn($rating) => $rating == 'A'));
+                        $typeDCount = count(array_filter($subordinateRatings, fn($rating) => $rating == 'D'));
+                        
+                        $typeAPercentage = ($typeACount / $totalSubordinates) * 100;
+
+                        $typeDPercentage = ($typeDCount / $totalSubordinates) * 100;
+                        
+                        $hasSubordinateWithRatingD = $typeDCount > 0;
+                        $percentageOfSubordinateWithRatingD = $typeDPercentage;
+                        
+                        if ($typeAPercentage > 70 && !$hasSubordinateWithRatingD) {
+                            $finalRating = 'A';
+                        } elseif ($typeAPercentage <= 70 && !$hasSubordinateWithRatingD) {
+                            $finalRating = 'B';
+                        } elseif ($hasSubordinateWithRatingD) {
+                            if ($percentageOfSubordinateWithRatingD > 30) {
+                                $finalRating = 'D';
+                            } else {
+                                $finalRating = 'C';
+                            }
+                        } else {
+                            $finalRating = 'A'; 
+                        }
+                    } else {
+                        $finalRating = 'A'; 
+                    }
+                } else {
+                    $finalRating = 'A'; 
+                }
+            } 
+            else {
+                $allSubordinates = collect();
+                if ($userLevel <= 3) {
+                    $allSubordinates = $this->userRepository->findByField('parent_id', $user->id);
+                } elseif ($userLevel == 4) {
+                    $subordinateIds = DB::table('user_subordinate')
+                        ->where('manager_id', $user->id)
+                        ->pluck('subordinate_id')
+                        ->toArray();
+                    if (!empty($subordinateIds)) {
+                        $allSubordinates = $this->userRepository->findWhereIn('id', $subordinateIds);
+                    }
+                }
+                
+                $tempRating = null;
+                
+                if ($allSubordinates->count() > 0) {
+                    $subordinateRatings = [];
+                    foreach ($allSubordinates as $subordinate) {
+                        $result = $this->calculateUserRating($subordinate, $month, $evaluations);
+                        if (in_array($result['final_rating'], ['A', 'B', 'C', 'D'])) {
+                            $subordinateRatings[] = $result['final_rating'];
+                        }
+                    }
+
+                    // dd($subordinateRatings);
+                    
+                    Log::info('Đánh giá từ cấp dưới cho lãnh đạo có tự đánh giá', [
+                        'user_id' => $user->id,
+                        'subordinate_ratings' => $subordinateRatings,
+                    ]);
+                    
+                    $totalSubordinates = count($subordinateRatings);
+                    
+                    if ($totalSubordinates > 0) {
+                        $typeACount = count(array_filter($subordinateRatings, fn($rating) => $rating == 'A'));
+                        $typeDCount = count(array_filter($subordinateRatings, fn($rating) => $rating == 'D'));
+                        
+                        $typeAPercentage = ($typeACount / $totalSubordinates) * 100;
+                        $typeDPercentage = ($typeDCount / $totalSubordinates) * 100;
+                        $hasSubordinateWithRatingD = $typeDCount > 0;
+                        
+                        // B2.1 Tính % A của cấp dưới
+                        if ($typeAPercentage > 70 && !$hasSubordinateWithRatingD) {
+                            $tempRating = 'A';
+                        } elseif ($typeAPercentage <= 70 && !$hasSubordinateWithRatingD) {
+                            $tempRating = 'B';
+                        } elseif ($hasSubordinateWithRatingD) {
+                            if ($typeDPercentage > 30) {
+                                $tempRating = 'D';
+                            } else {
+                                $tempRating = 'C';
                             }
                         }
                     }
                 }
-            }
-            
-            // Ưu tiên 1: Xử lý nếu có phê duyệt từ lãnh đạo cấp trên hợp lệ
-            if ($hasValidLeaderApproval) {
-                // Nếu có đánh giá từ lãnh đạo cấp trên, sử dụng đánh giá đó
+                
+                if ($tempRating !== null) {
+                    $ratingValues = ['A' => 4, 'B' => 3, 'C' => 2, 'D' => 1];
+                    $selfRatingValue = $ratingValues[$leaderSelfRating] ?? 1;
+                    $tempRatingValue = $ratingValues[$tempRating] ?? 1;
+                    
+                    if ($selfRatingValue < $tempRatingValue) {
+                        $finalRating = $leaderSelfRating;
+                    } 
+                    else {
+                        $newRatingValue = max(1, $selfRatingValue - 1);
+                        $reverseRatingValues = [4 => 'A', 3 => 'B', 2 => 'C', 1 => 'D'];
+                        $finalRating = $reverseRatingValues[$newRatingValue];
+                    }
+                } else {
+                    $finalRating = $leaderSelfRating;
+                }
+                
                 if (!empty($superiorLeaderRatings)) {
-                    // Nếu có nhiều lãnh đạo cấp trên, lấy đánh giá thấp nhất
                     $ratingValues = ['A' => 4, 'B' => 3, 'C' => 2, 'D' => 1];
                     $minRating = min(array_map(function($r) use ($ratingValues) {
                         return $ratingValues[$r] ?? 1;
@@ -396,170 +542,11 @@ class EvaluationController extends BaseController
                     $reverseRatingValues = [4 => 'A', 3 => 'B', 2 => 'C', 1 => 'D'];
                     $finalRating = $reverseRatingValues[$minRating];
                     
-                    Log::info('Lãnh đạo cấp trên đánh giá', [
+                    Log::info('Lãnh đạo cấp trên đánh giá ghi đè', [
                         'user_id' => $user->id,
                         'ratings' => $superiorLeaderRatings,
                         'final_rating' => $finalRating
                     ]);
-                } else {
-                    // Nếu không tìm thấy đánh giá cụ thể từ lãnh đạo cấp trên (hiếm gặp)
-                    $finalRating = 'A';
-                }
-            } else {
-                // Ưu tiên 2: Lấy danh sách lãnh đạo cấp dưới (không cần điều kiện thêm)
-                $subordinateLeaders = collect();
-                
-                if ($userLevel <= 3) {
-                    // Lấy cấp dưới trực tiếp
-                    $allSubordinates = $this->userRepository->findByField('parent_id', $user->id);
-                    // Lọc chỉ lấy lãnh đạo (level < 5)
-                    $subordinateLeaders = $allSubordinates->filter(function ($subordinate) {
-                        $subordinate->load('user_catalogues');
-                        $level = $subordinate->user_catalogues->level ?? 5;
-                        return $level < 5;
-                    });
-                } elseif ($userLevel == 4) {
-                    $subordinateIds = DB::table('user_subordinate')
-                        ->where('manager_id', $user->id)
-                        ->pluck('subordinate_id')
-                        ->toArray();
-                        
-                    Log::info('Subordinate IDs for User', [
-                        'user_id' => $user->id,
-                        'subordinate_ids' => $subordinateIds,
-                    ]);
-                    
-                    if (!empty($subordinateIds)) {
-                        $allSubordinates = $this->userRepository->findWhereIn('id', $subordinateIds);
-                        // Lọc chỉ lấy lãnh đạo (level < 5)
-                        $subordinateLeaders = $allSubordinates->filter(function ($subordinate) {
-                            $subordinate->load('user_catalogues');
-                            $level = $subordinate->user_catalogues->level ?? 5;
-                            return $level < 5;
-                        });
-                    }
-                }
-                
-                if ($subordinateLeaders->count() > 0) {
-                    $subordinateRatings = [];
-                    
-                    foreach ($subordinateLeaders as $subordinate) {
-                        $result = $this->calculateUserRating($subordinate, $month, $evaluations);
-                        
-                        // Chỉ lấy những xếp loại hợp lệ
-                        if ($result['final_rating'] !== 'Không hợp lệ' && $result['final_rating'] !== 'Không xếp loại') {
-                            $subordinateRatings[] = $result['final_rating'];
-                        }
-                    }
-                    
-                    Log::info('Đánh giá từ lãnh đạo cấp dưới', [
-                        'user_id' => $user->id,
-                        'subordinate_leader_ratings' => $subordinateRatings,
-                    ]);
-                    
-                    $totalSubordinateLeaders = count($subordinateRatings);
-                    
-                    if ($totalSubordinateLeaders > 0) {
-                        $typeACount = count(array_filter($subordinateRatings, fn($rating) => $rating == 'A'));
-                        $typeDCount = count(array_filter($subordinateRatings, fn($rating) => $rating == 'D'));
-                        
-                        $typeAPercentage = ($typeACount / $totalSubordinateLeaders) * 100;
-                        $typeDPercentage = ($typeDCount / $totalSubordinateLeaders) * 100;
-                        $hasDRating = $typeDCount > 0;
-                        
-                        // Xác định đánh giá dựa trên lãnh đạo cấp dưới
-                        if ($typeAPercentage > 70 && !$hasDRating) {
-                            $finalRating = 'A';
-                        } elseif ($typeAPercentage <= 70 && !$hasDRating) {
-                            $finalRating = 'B';
-                        } elseif ($hasDRating) {
-                            if ($typeDPercentage > 30) {
-                                $finalRating = 'D';
-                            } else {
-                                $finalRating = 'C';
-                            }
-                        } else {
-                            // Fallback nếu không đủ điều kiện
-                            $finalRating = $hasSelfEvaluation ? $leaderSelfRating : 'B';
-                        }
-                    } else {
-                        // Không có đánh giá từ lãnh đạo cấp dưới
-                        $finalRating = $hasSelfEvaluation ? $leaderSelfRating : 'A';
-                    }
-                } else {
-                    $civilServants = collect();
-                    
-                    if ($userLevel <= 3) {
-                        // Lấy công chức dưới quyền
-                        $allSubordinates = $this->userRepository->findByField('parent_id', $user->id);
-                        // Lọc chỉ lấy công chức (level = 5)
-                        $civilServants = $allSubordinates->filter(function ($subordinate) {
-                            $subordinate->load('user_catalogues');
-                            $level = $subordinate->user_catalogues->level ?? 5;
-                            return $level == 5;
-                        });
-                    } elseif ($userLevel == 4) {
-                        $subordinateIds = DB::table('user_subordinate')
-                            ->where('manager_id', $user->id)
-                            ->pluck('subordinate_id')
-                            ->toArray();
-                            
-                        if (!empty($subordinateIds)) {
-                            $allSubordinates = $this->userRepository->findWhereIn('id', $subordinateIds);
-                            // Lọc chỉ lấy công chức (level = 5)
-                            $civilServants = $allSubordinates->filter(function ($subordinate) {
-                                $subordinate->load('user_catalogues');
-                                $level = $subordinate->user_catalogues->level ?? 5;
-                                return $level == 5;
-                            });
-                        }
-                    }
-                    
-                    $civilServantRatings = [];
-                    
-                    foreach ($civilServants as $civilServant) {
-                        $result = $this->calculateUserRating($civilServant, $month, $evaluations);
-                        
-                        // Chỉ lấy những xếp loại hợp lệ
-                        if ($result['final_rating'] !== 'Không hợp lệ' && $result['final_rating'] !== 'Không xếp loại') {
-                            $civilServantRatings[] = $result['final_rating'];
-                        }
-                    }
-                    
-                    Log::info('Đánh giá từ công chức cho lãnh đạo', [
-                        'user_id' => $user->id,
-                        'civil_servant_ratings' => $civilServantRatings,
-                    ]);
-                    
-                    $totalCivilServants = count($civilServantRatings);
-                    
-                    if ($totalCivilServants > 0) {
-                        $typeACount = count(array_filter($civilServantRatings, fn($rating) => $rating == 'A'));
-                        $typeDCount = count(array_filter($civilServantRatings, fn($rating) => $rating == 'D'));
-                        
-                        $typeAPercentage = ($typeACount / $totalCivilServants) * 100;
-                        $typeDPercentage = ($typeDCount / $totalCivilServants) * 100;
-                        $hasDRating = $typeDCount > 0;
-                        
-                        // Xác định đánh giá dựa trên công chức
-                        if ($typeAPercentage > 70 && !$hasDRating) {
-                            $finalRating = 'A';
-                        } elseif ($typeAPercentage <= 70 && !$hasDRating) {
-                            $finalRating = 'B';
-                        } elseif ($hasDRating) {
-                            if ($typeDPercentage > 30) {
-                                $finalRating = 'D';
-                            } else {
-                                $finalRating = 'C';
-                            }
-                        } else {
-                            // Fallback nếu không đủ điều kiện
-                            $finalRating = $hasSelfEvaluation ? $leaderSelfRating : 'A';
-                        }
-                    } else {
-                        // Không có đánh giá từ công chức
-                        $finalRating = $hasSelfEvaluation ? $leaderSelfRating : 'A';
-                    }
                 }
             }
         } else { 
@@ -569,9 +556,8 @@ class EvaluationController extends BaseController
                 $finalRating = 'Không xếp loại';
             }
         }
-
         $selfRating = ($userLevel < 5) ? $leaderSelfRating : $civilServantSelfRating;
-        
+
         return [
             'self_rating' => $selfRating,
             'subordinate_rating' => $subordinateRating,

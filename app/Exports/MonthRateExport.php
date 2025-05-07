@@ -98,7 +98,14 @@ class MonthRateExport
         // Sắp xếp evaluations theo team để merge các team giống nhau
         $evaluationsArray = collect($this->evaluations)->sortBy(function ($item) use ($getTeamName) {
             return $getTeamName($item['user']);
-        })->values()->all();
+        })
+        ->unique(function ($item) {
+            return $item['user']->id;
+        })
+        // ->sortBy(function ($item) {
+        //     return $item['user']->user_catalogues->level; 
+        // })
+        ->values()->all();
 
         // Dữ liệu bảng
         $currentRow = 5;
@@ -127,7 +134,7 @@ class MonthRateExport
             if (isset($evaluation['user']->user_catalogues)) {
                 $position = $evaluation['user']->user_catalogues->name ?? '';
             }
-            
+
             $dataRow = [
                 $index++,
                 $evaluation['user']->name ?? 'Không xác định',
@@ -137,12 +144,12 @@ class MonthRateExport
                 $evaluation['leave_days'] ?? 0,
                 $evaluation['violation_count'] ?? 0,
                 $evaluation['disciplinary_action'] ?? '',
-                $evaluation['self_rating'] ?? '',
-                $leaderPoint, // điểm tbc của lãnh đạo đánh giá
-                $approverPoint, // điểm tbc của lãnh đạo phê duyệt
+                $evaluation['rateInfo']['selfRating'] ?? '',
+                $evaluation['rateInfo']['selfRating'] == 'Không đánh giá' ? '' :  $leaderPoint, 
+                $evaluation['rateInfo']['selfRating'] == 'Không đánh giá' ? '' :  $approverPoint, 
                 $evaluation['completion_percentage'] ?? 0,
-                $evaluation['final_rating'] ?? '',
-                $evaluation['totalTask'] ?? 0,
+                $evaluation['rateInfo']['final_rating'] ?? '',
+                $evaluation['totalTasks'] ?? 0,
             ];
             
             $sheet->fromArray($dataRow, null, 'A' . $currentRow);
@@ -223,13 +230,16 @@ class MonthRateExport
     }
 
     private function calculateLeaderPoint($user, $month) {
+
         list($monthNumber, $year) = explode('/', $month);
+
         $totalPoint = 0;
+
         $count = 0;
         
         $evaluations = Evaluation::where('user_id', $user->id)
-            ->whereMonth('created_at', $monthNumber)
-            ->whereYear('created_at', $year)
+            ->whereMonth('start_date', $monthNumber)
+            ->whereYear('start_date', $year)
             ->get()->toArray();
         
         if (empty($evaluations)) {
@@ -237,19 +247,25 @@ class MonthRateExport
         }
         
         foreach ($evaluations as $evaluation) {
+
             foreach ($evaluation['statuses'] as $status) {
+
                 $userEvaluation = $status['pivot']['user_id'];
+
                 $infoUser = User::where('id', $userEvaluation)->first();
                 
-                if ($userEvaluation == $user->id || $infoUser->parent_id == 0) {
+                if ($userEvaluation == $user->id || $infoUser->parent_id == 0 ||  $user->user_catalogues->level - $infoUser->user_catalogues->level > 1) {
                     continue;
                 }
                 
                 $pointValue = $status['pivot']['point'];
+
                 $totalPoint += $pointValue;
                 
                 if ($pointValue != 0) {
+
                     $count++;
+
                 }
             }
         }
@@ -263,8 +279,8 @@ class MonthRateExport
         $totalPoint = 0;
         $count = 0;
         $evaluations = Evaluation::where('user_id', $user->id)
-            ->whereMonth('created_at', $monthNumber) 
-            ->whereYear('created_at', $year) 
+            ->whereMonth('start_date', $monthNumber) 
+            ->whereYear('start_date', $year) 
             ->get()->toArray();
         if(!$evaluations){
             return $average;
@@ -272,7 +288,8 @@ class MonthRateExport
         foreach ($evaluations as $evaluation) {
             foreach ($evaluation['statuses'] as $status) {
                 $userEvaluation = $status['pivot']['user_id'];
-                if ($userEvaluation == $user->id) {
+                $infoUser = User::where('id', $userEvaluation)->first();
+                if ($userEvaluation == $user->id || $user->user_catalogues->level - $infoUser->user_catalogues->level < 2) {
                     continue;
                 }
                 if ($status['pivot']['point'] > 0) {
