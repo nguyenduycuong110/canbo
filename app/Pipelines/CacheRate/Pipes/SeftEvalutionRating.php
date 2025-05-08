@@ -1,6 +1,8 @@
 <?php 
 namespace App\Pipelines\CacheRate\Pipes;
 use App\Services\Interfaces\User\UserServiceInterface as UserService;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Carbon;
 
 class SeftEvalutionRating {
 
@@ -13,163 +15,75 @@ class SeftEvalutionRating {
         $this->userService = $userService;
     }
 
+
+    /**
+     * 
+     * Nguyễn Ngọc Anh: 3 đúng tiến độ,25 vượt tiến độ
+     */
     public function handle($data, \Closure $next){
-
         $user = $data['user'];
-
-        $userLevel = $user->user_catalogues->level ?? 5;
-
-        $userEvaluations = $user->evaluations;
-
+        $userLevel = $user->user_catalogues->level;
+        $evaluations = $user->evaluations;
+        $levelProcess = generateEvalationProcessArray();
         $totalTasks = 0;
+        $auth = $data['auth'];
+        $monthExport = Carbon::createFromFormat('Y-m-d H:i:s', $data['month'])->format('Y_m_d');
+        $data['monthExport'] = $monthExport;
 
-        $level3And4Tasks = 0;
+        /** Tiến hành phân tích từng đánh giá của user */
+        foreach($evaluations as $evaluation){
+            /** Lấy ra toàn bộ trạng thái của của những người tham gia vào evaluation */
+            $statuses = $evaluation->statuses;
+            if($statuses->isEmpty()) continue; // Bỏ qua đánh giá nếu như ko có trạng thái nào
+            $totalTasks++; //Vì là tự đánh giá nên nếu cứ có phiếu đánh giá sẽ tăng tổng số Task lên xem là bao nhiêu
+            /** Tìm ra đánh giá của người dùng trong số statuses đó */
+            $selfEvaluation = $statuses->first(function($status) use ($user){
+                return $status->pivot->user_id === $user->id;
+            });
+            /** Lấy Level tự đánh giá */
+            $statusLevel = $selfEvaluation->level;
+            if($statusLevel === 4){
+                $levelProcess[$statusLevel]++;
+                $levelProcess[$statusLevel - 1]++;
+            }else{
+                $levelProcess[$statusLevel]++;
+            }
+        }
 
-        $level4Tasks = 0;
-
-        $level3Tasks = 0;
-
-        $level2Tasks = 0;
-
-        $level1Tasks = 0;
-
-        $approverIds = [];
         
-        $superiorLeaderRatings = [];
-
-        $hasLeaderApprover = false;
-
-        foreach($userEvaluations as $item){
-            foreach($item->statuses as $status){
-                $lock = $status->pivot->lock ?? 1;
-                if ($status->pivot->user_id != $user->id && $lock == 0) {
-                    $approverIds[] = $status->pivot->user_id;
-                }
-            }
-        }
-
-        $approverIds = array_unique($approverIds);
-
-        $approvers = empty($approverIds) ? collect([]) : $this->userService->findByIds($approverIds, ['user_catalogues']);
-
-        foreach ($userEvaluations as $item) {
-
-            $listUserEvaluations = [];
-            
-            $statuses = $item->statuses;
-
-            foreach($statuses as $status){
-                if( $status->pivot->user_id != $user->id){
-                    $listUserEvaluations[] = $status->pivot->user_id;
-                }
-            }
-
-            foreach($listUserEvaluations as $item){
-                foreach($approvers as $approver){
-                    if($approver->id == $item && $userLevel - $approver->user_catalogues->level >= 2){
-                        $hasLeaderApprover = true;
-                        break;
-                    }
-                }
-            }
-            
-            if(count($statuses) <= 2 && $hasLeaderApprover == false){ 
-                continue; 
-            }
-
-            $totalTasks++;
-
-            $finalStatus = null;
-
-            $selfStatus = null;
-
-            //loop qua mỗi trạng thái
-            foreach ($statuses as $status) {
-                $lock = $status->pivot->lock ?? 1;
-                if ($status->pivot->user_id != $user->id && $lock == 0) {
-                    $approver = $approvers->firstWhere('id', $status->pivot->user_id);
-                    if ($approver) {
-                        $approverLevel = $approver->user_catalogues->level ?? 5;
-                        $isValidApprover = ($userLevel == 2 && $approverLevel <= ($userLevel - 1)) || 
-                        ($userLevel != 2 && $approverLevel <= ($userLevel - 2)) || 
-                        $approverLevel == 1;
-                        if ($isValidApprover) {
-                            $statusLevel = $status->level ?? 1;
-                            $rating = 'D';
-                            if ($statusLevel == 4) {
-                                $rating = 'A';
-                            } elseif ($statusLevel == 3) {
-                                $rating = 'B';
-                            } elseif ($statusLevel == 2) {
-                                $rating = 'C';
-                            }
-                            $superiorLeaderRatings[] = $rating; 
-                        }
-                    }
-                }
-            }
-
-            foreach ($statuses as $status) {
-                $lock = $status->pivot->lock ?? 1;
-                if ($lock == 0) {
-                    $finalStatus = $status;
-                    break;
-                }
-                if ($status->pivot->user_id == $user->id) {
-                    $selfStatus = $status;
-                }
-            }
-
-            $effectiveStatus = $finalStatus ?? $selfStatus;
-
-            $statusLevel = $effectiveStatus ? ($effectiveStatus->level ?? 1) : 1;
-
-            if ($statusLevel == 4) {
-                $level4Tasks += 1;
-                $level3And4Tasks += 1;
-            } elseif ($statusLevel == 3) {
-                $level3Tasks += 1;
-            } elseif ($statusLevel == 2) {
-                $level2Tasks += 1;
-            } elseif ($statusLevel == 1) {
-                $level1Tasks += 1;
-            }
-            
-        }
-
-        $hasSelfEvaluation = $totalTasks > 0 ? true : false;
-
-        $level4Percentage = $totalTasks > 0 ? ($level4Tasks / $totalTasks) * 100 : 0;
-
-        $level3Percentage = $totalTasks > 0 ? (($level3Tasks + $level4Tasks) / $totalTasks) * 100 : 0;
-
-        $level2Percentage = $totalTasks > 0 ? ($level2Tasks / $totalTasks) * 100 : 0;
-
-        $level1Percentage = $totalTasks > 0 ? ($level1Tasks / $totalTasks) * 100 : 0;
-
+        $hasSelfEvaluation = $totalTasks > 0;
+        $percentage = caculateTaskPercentage($levelProcess, $totalTasks);
         $selfRating = null;
 
-        if ($totalTasks > 0) {
-            if ($level3Percentage == 100 && $level4Percentage >= 50) {
+        if($totalTasks > 0){
+            if($percentage[3] === 100 && $percentage[4] >= 50){
                 $selfRating = 'A';
-            } elseif ($level3Percentage == 100) {
+            }else if($percentage[3] === 100 && $percentage[4] < 50){
                 $selfRating = 'B';
-            } elseif ($level2Percentage <= 20) {
+            } else if($percentage[2] >= 80){
                 $selfRating = 'C';
-            } elseif ($level1Percentage > 20) {
+            }else{
                 $selfRating = 'D';
             }
-        } elseif ($userLevel < 5 && !$hasSelfEvaluation) { 
+        }else  if($userLevel === 5 && !$hasSelfEvaluation){
+            $selfRating = 'Không Đánh Giá';
+        }else if($userLevel < 5 && !$hasSelfEvaluation){
             $selfRating = 'A';
-        } elseif ($userLevel == 5 && !$hasSelfEvaluation) { 
-            $selfRating = 'Không đánh giá';
-        } 
+        }
 
-        $data['rateInfo']['selfRating'] = $selfRating;
-
-        $data['rateInfo']['superiorLeaderRatings'] = $superiorLeaderRatings;
-
-        return $next($data); 
+        $cacheKey = "seft:month_{$monthExport}:user_{$auth->id}";
+        $cacheData = Cache::get($cacheKey, []);
+        $cacheData[$user->id] = [
+            'name' => $user->name,
+            'selfRating' => $selfRating,
+            'totalTasks' => $totalTasks,
+            'completion_percentage' => round($percentage[4], 2)
+        ];
+        Cache::put($cacheKey, $cacheData);
+        
+        return $next($data);
     }   
+
+    
 
 }

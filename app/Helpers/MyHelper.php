@@ -18,3 +18,34 @@ if (!function_exists('array_map_with_keys')) {
         return $result;
     }
 }
+
+
+// Define the helper function
+if (!function_exists('generateEvalationProcessArray')) {
+    function generateEvalationProcessArray() {
+        return $levelCount = [
+            4 => 0,
+            3 => 0,
+            2 => 0,
+            1 => 0
+        ];
+    }
+}
+
+// Define the helper function
+if (!function_exists('caculateTaskPercentage')) {
+    function caculateTaskPercentage(array $levelProcessCount = [], int $totalTasks = 0) {
+        $percentage = [
+            4 => 0,
+            3 => 0,
+            2 => 0,
+            1 => 0
+        ];
+        foreach($levelProcessCount as $key => $val){
+            $percentage[$key] = $totalTasks > 0 ? $val / $totalTasks * 100 : 0;
+        }
+        return $percentage;
+    }
+}
+
+

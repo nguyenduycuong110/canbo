@@ -1,5 +1,5 @@
 <?php 
-namespace App\Pipelines\Rate\Pipes;
+namespace App\Pipelines\CacheRate\Pipes;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Auth;
 use App\Services\Interfaces\Statistic\StatisticServiceInterface as StatisticService;
@@ -27,12 +27,11 @@ class SubordinateRating {
     public function handle($data, \Closure $next){
 
         $user = $data['user'];
-        // dd($user);
         $userLevel = $user->user_catalogues->level;
         $evaluations = $user->evaluations;
         $levelProcess = generateEvalationProcessArray();
         $totalTasks = 0;
-        $auth = Auth::user();
+        $auth = $data['auth'];
         $monthExport = $data['monthExport'];
 
         $cacheKey =  "seft:month_{$monthExport}:user_{$auth->id}";
@@ -46,101 +45,43 @@ class SubordinateRating {
             $disciplinaryCount = (int)$statistic->disciplinary_action;
         }
         $currentFinalRating = $cacheData[$user->id]['finalRating'];
-        // dd($currentFinalRating);
 
         if($disciplinaryCount > 0){
             $newRating = $this->applyDisciplinaryRules($currentFinalRating, $disciplinaryCount);
             $cacheData[$user->id]['finalRating'] = $newRating;
         }else if($userLevel < 5){
-            $subordinateRatings = $this->getSubordinateRatingFromCache($userLevel, $cacheData);
-            // dd($subordinateRatings);
-            if($subordinateRatings > 0){
-                $newRating = $this->applySubordinateRatingRule($currentFinalRating, $subordinateRatings);
-                $cacheData[$user->id]['finalRating'] = $newRating;
-                $data['rateInfo']['final_rating'] = $newRating;
-            }
+           $subordinateRatings = $this->getSubordinateRatingFromCache($user, $userLevel, $cacheData);
+           dd($subordinateRatings);
         }
-        
-        // $data['completion_percentage'] = $completionPercentage;
-        $data['working_days'] = $statistic ? $statistic->working_days_in_month : 0;
-        $data['leave_days'] = $statistic ? $statistic->leave_days_with_permission : 0;
-        $data['violation_count'] = $statistic ? $statistic->violation_count : 0;
-        $data['disciplinary_action'] = $statistic ? $statistic->disciplinary_action : 0;
-        $data['completion_percentage'] = $cacheData[$user->id]['completion_percentage'];
 
-        // dd($data);
-
-        return $next($data);
 
     }   
 
-    private function applySubordinateRatingRule($currentFinalRating, $subordinateRatings){
-        $percentA = ($subordinateRatings['A'] / $subordinateRatings['total']) * 100;
-        $percentB = ($subordinateRatings['B'] / $subordinateRatings['total']) * 100;
-        $percentC = ($subordinateRatings['C'] / $subordinateRatings['total']) * 100;
-        $percentD = ($subordinateRatings['D'] / $subordinateRatings['total']) * 100;
-
-        if($currentFinalRating === 'A' && $percentA > 70 && $subordinateRatings['D'] === 0){
-            return 'A';
-        }
-
-        if($percentB >= 70 && $subordinateRatings['D'] === 0){
-            return 'B';
-        }
-
-        if($percentC >= 70){
-            return 'C';
-        }
-
-        if($percentD > 30){
-            return 'D';
-        }
-        return $currentFinalRating;
-
-    }
-
-    private function getSubordinateRatingFromCache($userLevel, $cacheData){
+    private function getSubordinateRatingFromCache($user, $userLevel, $cacheData){
         $ratings = [
             'A' => 0,
             'B' => 0,
             'C' => 0,
             'D' => 0,
             'total' => 0,
-            'details' => [           // Thêm mảng chi tiết để lưu thông tin
-                'A' => [],
-                'B' => [],
-                'C' => [],
-                'D' => [],
-            ]
         ];
 
         foreach($cacheData as $userId => $userData){
+            dd($userData);
             if(!isset($userData) || !isset($userData['level']) || !isset($userData['finalRating'])) continue;
             
             $subordinateLevel = $userData['level'];
-            $temp = [];
-
             $isDirect = false;
             if($userLevel === 1 || $userLevel === 2 || $userLevel === 4){
                 $isDirect = $subordinateLevel === $userLevel + 1;
             }else if($userLevel === 3){ 
-                $isDirect = ($subordinateLevel === $userLevel + 1) || ($subordinateLevel === $userLevel + 2); // Đội trưởng có thể quản lý trực tiếp user mà k cần đội phó
+                $isDirect = ($subordinateLevel === $userLevel + 1 || $subordinateLevel === $userLevel + 2); // Đội trưởng có thể quản lý trực tiếp user mà k cần đội phó
             }
-
-            
             if($isDirect){
                 $rating = $userData['finalRating'];
                 if(in_array($rating, ['A', 'B', 'C', 'D'])){
                     $ratings[$rating]++;
                     $ratings['total']++;
-
-                    // Lưu vào detail để debug dữ liệu
-                    $ratings['details'][$rating][] = [
-                        'id' => $userId,
-                        'name' => $userData['name'] ?? 'Unknown',
-                        'level' => $subordinateLevel,
-                        'rating' => $rating
-                    ];
                 }
             }
         }

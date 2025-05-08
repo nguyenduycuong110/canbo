@@ -151,4 +151,6 @@ class UserService extends BaseService implements UserServiceInterface{
         return $this->repository->findWhereIn($field, $in);
     }
 
+  
+
 }

@@ -8,5 +8,5 @@ interface EvaluationServiceInterface extends BaseServiceInterface {
     public function evaluate(Request $request, int $id);
     public function getDepartment($request);
     public function getEvaluationsByUserIdsAndMonth($userIds, $month, $chunkSize = 500, callable $callback);
-
+    public function setPoint($request);
 }
