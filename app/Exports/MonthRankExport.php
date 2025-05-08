@@ -156,9 +156,9 @@ class MonthRankExport
         
         // Sắp xếp các phòng ban còn lại theo thứ tự bảng chữ cái
         ksort($departmentUsers);
+
         $sortedDepartments = array_merge($sortedDepartments, $departmentUsers);
 
-        // Tạo bảng với cấu trúc phòng ban
         $currentRow = 8;
         $globalIndex = 1;
         $romanNumerals = [
@@ -198,12 +198,12 @@ class MonthRankExport
                 $sheet->setCellValue('B' . $currentRow, $localIndex);
                 $sheet->setCellValue('C' . $currentRow, $user->name ?? 'Không xác định');
                 $sheet->setCellValue('D' . $currentRow, $position);
-                $sheet->setCellValue('E' . $currentRow, $evaluation['working_days_in_month'] ?? '0');
+                $sheet->setCellValue('E' . $currentRow, $evaluation['working_days'] ?? '0');
                 $sheet->setCellValue('F' . $currentRow, $evaluation['working_actual_days_in_month'] ?? '0');
-                $sheet->setCellValue('G' . $currentRow, $evaluation['leave_days_with_permission'] ?? '0');
+                $sheet->setCellValue('G' . $currentRow, $evaluation['leave_days'] ?? '0');
                 $sheet->setCellValue('H' . $currentRow, $evaluation['violation_count'] ?? '0');
                 $sheet->setCellValue('I' . $currentRow, $evaluation['disciplinary_action'] ?? '');
-                $sheet->setCellValue('J' . $currentRow, $evaluation['final_rating'] ?? '');
+                $sheet->setCellValue('J' . $currentRow, $evaluation['rateInfo']['final_rating'] ?? '');
                 
                 // Log thông tin debug
                 Log::info("Adding user to Excel", [
@@ -222,7 +222,6 @@ class MonthRankExport
             $deptIndex++;
         }
         
-        // Thêm border cho bảng
         $lastRow = $currentRow - 1;
         $styleArray = [
             'borders' => [

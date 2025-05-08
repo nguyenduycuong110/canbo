@@ -74,8 +74,22 @@ class MonthRateExport
         $sheet->getStyle('A4:N4')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
         $sheet->getStyle('A4:N4')->getAlignment()->setWrapText(true);
 
+        $leadershipPositions = ['Chi cục trưởng',  'Chi cục phó'];
+
         // Tạo hàm lấy team an toàn
-        $getTeamName = function ($user) {
+        $getTeamName = function ($user)  use ($leadershipPositions){
+
+            $position = '';
+            if (isset($user->user_catalogues)) {
+                $position = $user->user_catalogues->name ?? '';
+            }
+            
+            // Kiểm tra nếu là lãnh đạo Chi cục (cố định)
+            foreach ($leadershipPositions as $leaderPos) {
+                if (stripos($position, $leaderPos) !== false) {
+                    return 'Lãnh đạo Chi cục';
+                }
+            }
             // Kiểm tra nếu teams là một collection
             if (isset($user->teams) && method_exists($user->teams, 'first')) {
                 $firstTeam = $user->teams->first();
@@ -97,17 +111,17 @@ class MonthRateExport
 
         // Sắp xếp evaluations theo team để merge các team giống nhau
         $evaluationsArray = collect($this->evaluations)->sortBy(function ($item) use ($getTeamName) {
-            return $getTeamName($item['user']);
+            $teamName = $getTeamName($item['user']);
+            if ($teamName === 'Lãnh đạo Chi cục') {
+                return '0' . $teamName; 
+            }
+            return '1' . $teamName;
         })
         ->unique(function ($item) {
             return $item['user']->id;
         })
-        // ->sortBy(function ($item) {
-        //     return $item['user']->user_catalogues->level; 
-        // })
         ->values()->all();
 
-        // Dữ liệu bảng
         $currentRow = 5;
         $index = 1;
         $mergeStartRow = 5; // Dòng bắt đầu merge

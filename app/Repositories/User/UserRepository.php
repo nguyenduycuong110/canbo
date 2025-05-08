@@ -28,7 +28,7 @@ class UserRepository extends  BaseRepository{
     }
 
     public function getUserInNodeLowerThanEqualLevel4SortByLevel($currentUser){
-        return $this->model->where('lft', '>=', $currentUser->lft)->with('user_catalogues')->where('rgt', '<=', $currentUser->rgt)->where('level', '<=', 4)->orderBy('lft', 'asc')->get()->sortByDesc(function($user){
+        return $this->model->where('lft', '>=', $currentUser->lft)->with('user_catalogues')->where('rgt', '<=', $currentUser->rgt)->where('level', '<=', 4)->orderBy('lft', 'asc')->get()->sortBy(function($user){
             return $user->user_catalogues->level ?? 0;
         });
     }

@@ -27,11 +27,10 @@ class SubordinateRating {
     public function handle($data, \Closure $next){
 
         $user = $data['user'];
-        // dd($user);
         $userLevel = $user->user_catalogues->level;
-        $evaluations = $user->evaluations;
-        $levelProcess = generateEvalationProcessArray();
-        $totalTasks = 0;
+        // $evaluations = $user->evaluations;
+        // $levelProcess = generateEvalationProcessArray();
+        // $totalTasks = 0;
         $auth = Auth::user();
         $monthExport = $data['monthExport'];
 
@@ -61,14 +60,15 @@ class SubordinateRating {
             }
         }
         
-        // $data['completion_percentage'] = $completionPercentage;
         $data['working_days'] = $statistic ? $statistic->working_days_in_month : 0;
-        $data['leave_days'] = $statistic ? $statistic->leave_days_with_permission : 0;
-        $data['violation_count'] = $statistic ? $statistic->violation_count : 0;
-        $data['disciplinary_action'] = $statistic ? $statistic->disciplinary_action : 0;
-        $data['completion_percentage'] = $cacheData[$user->id]['completion_percentage'];
 
-        // dd($data);
+        $data['leave_days'] = $statistic ? $statistic->leave_days_with_permission : 0;
+
+        $data['violation_count'] = $statistic ? $statistic->violation_count : 0;
+
+        $data['disciplinary_action'] = $statistic ? $statistic->disciplinary_action : 0;
+
+        $data['completion_percentage'] = $cacheData[$user->id]['completion_percentage'];
 
         return $next($data);
 

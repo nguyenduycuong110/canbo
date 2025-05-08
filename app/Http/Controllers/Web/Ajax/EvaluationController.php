@@ -77,7 +77,6 @@ class EvaluationController extends BaseController
         }
     }
     
-    
     public function export(Request $request){
         try {
             $formData = [
@@ -174,9 +173,7 @@ class EvaluationController extends BaseController
             $pipeResult = null;
 
             foreach ($users as $item) {
-                // if($item->id !== 147) continue;
                 $pipeResult = $this->ratingPipeManager->send(['user' => $item, 'month' => $month]);
-
                 $ratedUsers[] = $pipeResult;
             }
 
@@ -239,7 +236,6 @@ class EvaluationController extends BaseController
             dd($th);
         }
     }
-
   
     private function getUser($request, $auth, $level = null){
         $auth = Auth::user();
@@ -334,53 +330,52 @@ class EvaluationController extends BaseController
     }
 
     public function exportRank(Request $request){
-        // try {
-        //     $currentUser = Auth::user();
-        //     if (!$currentUser) {
-        //         return response()->json(['status' => 'error', 'message' => 'User not authenticated'], 401);
-        //     }
-        //     $monthInput = $request->month ?? now()->format('m/Y');
-        //     $month = Carbon::createFromFormat('m/Y', $monthInput)->startOfMonth();
-        //     $users = $this->userService->getUserInNode($currentUser);
-        //     $userIds = $users->pluck('id')->toArray();
-        //     $userEvaluations = [];
-        //     $evaluations = $this->evaluationService->getEvaluationsByUserIdsAndMonth($userIds, $month, 500, function($evaluations) use (&$userEvaluations){
-        //         foreach($evaluations as $evaluation){
-        //             $userId = $evaluation->user_id;
-        //             if(!isset($userEvaluations[$userId])){
-        //                 $userEvaluations[$userId] = [];
-        //             }
-        //             $userEvaluations[$userId][] = $evaluation;
-        //         }
-        //     });
-        //     $ratedUsers = [];
-        //     foreach ($users as $user) { 
-        //         $rating = $this->calculateUserRating($user, $month, $evaluations);
-        //         $statistic = $user->statistics->where('month', $month->format('Y-m-d'))->first();
-        //         $ratedUsers[] = [
-        //             'user' => $user,
-        //             'working_days_in_month' => $statistic ? $statistic->working_days_in_month : 0,
-        //             'working_actual_days_in_month' => $statistic ? ($statistic->working_days_in_month - $statistic->leave_days_with_permission) : 0,
-        //             'leave_days_with_permission' => $statistic ? $statistic->leave_days_with_permission : 0,
-        //             'violation_count' => $statistic ? $statistic->violation_count : 0,
-        //             'disciplinary_action' => $statistic ? $statistic->disciplinary_action : '',
-        //             'final_rating' => $rating['final_rating'],
-        //         ];
-        //     }
-        //     $export = new MonthRankExport($ratedUsers, $monthInput);
-        //     $temp_file = $export->export();
-        //     $temp_file = $export->export();
-        //     $filename = "Bảng tổng hợp xếp loại tháng {$monthInput}.xlsx";
+        try {
+            $currentUser = Auth::user();
+            if (!$currentUser) {
+                return response()->json(['status' => 'error', 'message' => 'User not authenticated'], 401);
+            }
+            $monthInput = $request->month ?? now()->format('m/Y');
+            $month = Carbon::createFromFormat('m/Y', $monthInput)->startOfMonth();
+            $users = $this->userService->getUserInNodeSortByLevel($currentUser);
+            $userIds = $users->pluck('id')->toArray();
+            $userEvaluations = [];
+            $evaluations = $this->evaluationService->getEvaluationsByUserIdsAndMonth($userIds, $month, 500, function($evaluations) use (&$userEvaluations){
+                foreach($evaluations as $evaluation){
+                    $userId = $evaluation->user_id;
+                    if(!isset($userEvaluations[$userId])){
+                        $userEvaluations[$userId] = [];
+                    }
+                    $userEvaluations[$userId][] = $evaluation;
+                }
+            });
 
-        //     return response()->json([
-        //         'status' => 'success',
-        //         'file_url' => url('temp/' . basename($temp_file)), // URL của file tạm thời
-        //         'filename' => $filename,
-        //     ]);
-        //     return response()->download($filePath)->deleteFileAfterSend(true);
-        // } catch (\Throwable $th) {
-        //     dd($th);
-        // }
+            foreach($users as $user){
+                $user->evaluations = $userEvaluations[$user->id] ?? [];
+            }
+
+            $ratedUsers = [];
+
+            $pipeResult = null;
+
+            foreach ($users as $item) { 
+                $pipeResult = $this->ratingPipeManager->send(['user' => $item, 'month' => $month]);
+                $ratedUsers[] = $pipeResult;
+            }
+            $export = new MonthRankExport($ratedUsers, $monthInput);
+            $temp_file = $export->export();
+            $temp_file = $export->export();
+            $filename = "Bảng tổng hợp xếp loại tháng {$monthInput}.xlsx";
+
+            return response()->json([
+                'status' => 'success',
+                'file_url' => url('temp/' . basename($temp_file)), // URL của file tạm thời
+                'filename' => $filename,
+            ]);
+            return response()->download($filePath)->deleteFileAfterSend(true);
+        } catch (\Throwable $th) {
+            dd($th);
+        }
     }
 
     public function getOfficer(Request $request){

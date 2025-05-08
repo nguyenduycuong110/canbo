@@ -17,8 +17,6 @@ class SeftEvalutionRating {
 
         $user = $data['user'];
 
-        
-
         $userLevel = $user->user_catalogues->level ?? 5;
 
         $userEvaluations = $user->evaluations;
