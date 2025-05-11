@@ -252,8 +252,8 @@ class MonthRateExport
         $count = 0;
         
         $evaluations = Evaluation::where('user_id', $user->id)
-            ->whereMonth('start_date', $monthNumber)
-            ->whereYear('start_date', $year)
+            ->whereMonth('due_date', $monthNumber)
+            ->whereYear('due_date', $year)
             ->get()->toArray();
         
         if (empty($evaluations)) {
@@ -293,8 +293,8 @@ class MonthRateExport
         $totalPoint = 0;
         $count = 0;
         $evaluations = Evaluation::where('user_id', $user->id)
-            ->whereMonth('start_date', $monthNumber) 
-            ->whereYear('start_date', $year) 
+            ->whereMonth('due_date', $monthNumber) 
+            ->whereYear('due_date', $year) 
             ->get()->toArray();
         if(!$evaluations){
             return $average;

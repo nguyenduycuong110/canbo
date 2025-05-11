@@ -21,7 +21,6 @@ class EvaluationRepository extends  BaseRepository{
         DB::table('evaluation_status')->where('evaluation_id', $id)->update(['lock' => 1]);
     }
 
-    
     public function findByCondition($user_id, $date){
         return $this->model->where('user_id', $user_id)->whereDate('start_date', $date)->get();
     }
@@ -30,7 +29,7 @@ class EvaluationRepository extends  BaseRepository{
     {
         return $this->model
             ->whereIn('user_id', $usersId)
-            ->whereBetween('start_date', [
+            ->whereBetween('due_date', [
                 $month->copy()->startOfMonth()->toDateTimeString(),
                 $month->copy()->endOfMonth()->toDateTimeString()
             ])
