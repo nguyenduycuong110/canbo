@@ -134,7 +134,7 @@ class EvaluationService extends BaseService implements EvaluationServiceInterfac
 
                 $request->merge([
                     'user_id' => $user_id,
-                    'start_date' => [
+                    'due_date' => [
                         'gte' => $startOfMonth,
                         'lte' => $endOfMonth
                     ],
@@ -146,7 +146,7 @@ class EvaluationService extends BaseService implements EvaluationServiceInterfac
                 $endOfDate = $inputDate->copy()->endOfDay()->toDateTimeString();
                 $request->merge([
                     'user_id' => $user_id,
-                    'start_date' => [
+                    'due_date' => [
                         'gte' => $startOfDate,
                         'lte' => $endOfDate
                     ],

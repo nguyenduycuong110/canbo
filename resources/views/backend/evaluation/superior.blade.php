@@ -51,6 +51,21 @@
                             </div>
                             <div class="col-lg-6">
                                 <div class="form-row">
+                                    <label for="" class="control-label text-left">Ngày kết thúc</label>
+                                    <input 
+                                        type=""
+                                        name="due_date"
+                                        value="{{ old('due_date', (isset($model->due_date)) ? date('d/m/Y', strtotime($model->due_date)) : '') }}"
+                                        class="form-control datepicker"
+                                        placeholder=""
+                                        autocomplete="off"
+                                    >
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb15">
+                            <div class="col-lg-6">
+                                <div class="form-row">
                                     <label for="" class="control-label text-left">Tổng công việc / nhiệm vụ được giao<span class="text-danger">(*)</span></label>
                                     <input 
                                         type="number"
@@ -65,8 +80,6 @@
                                     >
                                 </div>
                             </div>
-                        </div>
-                        <div class="row mb15">
                             <div class="col-lg-6">
                                 <div class="form-row">
                                     <label for="" class="control-label text-left">Số công việc / nhiệm vụ hoàn thành vượt mức về thời gian hoặc chất lượng<span class="text-danger">(*)</span></label>
@@ -83,6 +96,8 @@
                                     >
                                 </div>
                             </div>
+                        </div>
+                        <div class="row mb15">
                             <div class="col-lg-6">
                                 <div class="form-row">
                                     <label for="" class="control-label text-left">Số công việc / nhiệm vụ hoàn thành đúng hạn, đảm bảo chất lượng<span class="text-danger">(*)</span></label>
@@ -99,8 +114,6 @@
                                     >
                                 </div>
                             </div>
-                        </div>
-                        <div class="row mb15">
                             <div class="col-lg-6">
                                 <div class="form-row">
                                     <label for="" class="control-label text-left">Số công việc / nhiệm vụ không hoàn thành đúng hạn hoặc không đảm bảo yêu cầu<span class="text-danger">(*)</span></label>
@@ -117,6 +130,8 @@
                                     >
                                 </div>
                             </div>
+                        </div>
+                        <div class="row">
                             <div class="col-lg-6">
                                 <div class="form-row">
                                     @php
@@ -138,9 +153,7 @@
                                     </select>
                                 </div>
                             </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-lg-12">
+                            <div class="col-lg-6">
                                 <div class="form-row">
                                     <label for="" class="control-label text-left">Ghi chú</label>
                                     <input 
