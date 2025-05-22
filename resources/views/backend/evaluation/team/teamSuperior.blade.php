@@ -91,7 +91,7 @@
                         <tr>
                             <th class="text-center col-stt">STT</th>
                             <th>Nội dung công việc</th>
-                            <th class="col-time">Ngày</th>
+                            <th class="col-time">Ngày </th>
                             <th>Tổng số công việc / nhiệm vụ được giao</th>
                             <th>Số công việc / nhiệm vụ hoàn thành <br> vượt mức về thời gian hoặc chất lượng</th>
                             <th>Số công việc / nhiệm vụ hoàn thành <br> đúng hạn , đảm bảo chất lượng</th>

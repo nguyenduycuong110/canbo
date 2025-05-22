@@ -66,7 +66,7 @@ class EvaluationController extends BaseController{
             if(!$request->perpage){
                 $request->merge([
                     'user_id' => $user->id,
-                    'start_date' => [
+                    'due_date' => [
                         'gte' => $startOfMonth,
                         'lte' => $endOfMonth
                     ]
@@ -74,7 +74,7 @@ class EvaluationController extends BaseController{
             }else{
                 $request->merge([
                     'user_id' => $user->id,
-                    'start_date' => $request->start_date
+                    'due_date' => $request->due_date
                 ]);
             }
             $records = $this->service->paginate($request);
@@ -167,7 +167,6 @@ class EvaluationController extends BaseController{
             $startOfMonth = $monthCurrent->copy()->startOfMonth()->toDateTimeString();
             $endOfMonth = $monthCurrent->copy()->endOfMonth()->toDateTimeString();
             $auth = Auth::user();
-
 
             $currentUserCatalogue = $auth->user_catalogues;
 

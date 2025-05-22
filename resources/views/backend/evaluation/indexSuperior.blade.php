@@ -13,7 +13,6 @@
             <div class="ibox-content">
                 <x-filter :config="$config" />
                 @php
-                    // Lấy danh sách các vị trí từ dữ liệu
                     $positions = [];
                     $positionLevels = []; // Thêm mảng để lưu trữ level của từng vị trí
                     $currentUserPosition = null;
@@ -72,7 +71,7 @@
                         <tr>
                             <th  class="col-stt">STT</th>
                             <th>Nội dung công việc</th>
-                            <th>Ngày giao việc</th>
+                            <th>Ngày hoàn thành</th>
                             <th>Tổng số công việc / nhiệm vụ được giao</th>
                             <th>Số công việc / nhiệm vụ hoàn thành <br> vượt mức về thời gian hoặc chất lượng</th>
                             <th>Số công việc / nhiệm vụ hoàn thành <br> đúng hạn , đảm bảo chất lượng</th>
@@ -126,7 +125,7 @@
                                             {{ $record->tasks->name }}
                                         </td>
                                         <td>
-                                            {{ convertDateTime($record->start_date, 'd-m-Y', 'Y-m-d') }}
+                                            {{ convertDateTime($record->due_date, 'd-m-Y', 'Y-m-d') }}
                                         </td>
                                         <td class="text-center">
                                             {{ $record->total_tasks }}
