@@ -162,10 +162,15 @@ class EvaluationController extends BaseController{
     public function teams(Request $request, int $level)
     {
         try {
+
             $date = now()->format('m/Y');
+
             $monthCurrent = \Carbon\Carbon::createFromFormat('m/Y', $date);
+
             $startOfMonth = $monthCurrent->copy()->startOfMonth()->toDateTimeString();
+
             $endOfMonth = $monthCurrent->copy()->endOfMonth()->toDateTimeString();
+
             $auth = Auth::user();
 
             $currentUserCatalogue = $auth->user_catalogues;
@@ -436,17 +441,19 @@ class EvaluationController extends BaseController{
         }
 
         $evaluationRequest->merge([
-            'start_date' => [
+            'due_date' => [
                 'gte' => $startOfMonth,
                 'lte' => $endOfMonth
             ],
-            'sort' => 'start_date,desc',
+            'sort' => 'due_date,desc',
             'relationFilter' => $relationFilter
         ]);
 
-        if($request->has('start_date') && $request->start_date != '' && $request->start_date['eq'] != null){
+        
+
+        if($request->has('due_date') && $request->due_date != '' && $request->due_date['eq'] != null){
             $evaluationRequest->merge([
-                'start_date' => $request->start_date,
+                'due_date' => $request->due_date,
             ]);
         }
 
@@ -490,7 +497,6 @@ class EvaluationController extends BaseController{
             $userId = $userIds;
         }
 
-        // Lấy danh sách đánh giá của các user này
         $evaluationRequest = new CustomRequest();
 
         $relationFilter = [
@@ -535,16 +541,16 @@ class EvaluationController extends BaseController{
 
 
         $evaluationRequest->merge([
-            'start_date' => [
+            'due_date' => [
                 'gte' => $startOfMonth,
                 'lte' => $endOfMonth
             ],
             'relationFilter' => $relationFilter
         ]);
 
-        if($request->has('start_date') && $request->start_date != ''){
+        if($request->has('due_date') && $request->due_date != ''){
             $evaluationRequest->merge([
-                'start_date' => $request->start_date
+                'due_date' => $request->due_date
             ]);
         }
 

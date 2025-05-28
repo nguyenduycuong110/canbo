@@ -31,7 +31,7 @@
             <div class="action">
                 <div class="uk-flex uk-flex-middle">
                     <div class="uk-search uk-flex uk-flex-middle mr10">
-                        <input type="text" value="{{ request('start_date.eq') ?: old('start_date.eq') }}"  placeholder="Chọn ngày giao việc" name="start_date[eq]" class="datepicker start_date mr10 form-control">
+                        <input type="text" value="{{ request('due_date.eq') ?: old('due_date.eq') }}"  placeholder="Chọn ngày hoàn thành" name="due_date[eq]" class="datepicker start_date mr10 form-control">
                         @php
                             $usersByLevel = [];
                             
