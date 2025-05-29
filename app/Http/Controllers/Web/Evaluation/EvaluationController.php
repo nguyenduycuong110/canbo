@@ -449,8 +449,6 @@ class EvaluationController extends BaseController{
             'relationFilter' => $relationFilter
         ]);
 
-        
-
         if($request->has('due_date') && $request->due_date != '' && $request->due_date['eq'] != null){
             $evaluationRequest->merge([
                 'due_date' => $request->due_date,
@@ -539,7 +537,6 @@ class EvaluationController extends BaseController{
             ];
         }
 
-
         $evaluationRequest->merge([
             'due_date' => [
                 'gte' => $startOfMonth,
@@ -548,7 +545,7 @@ class EvaluationController extends BaseController{
             'relationFilter' => $relationFilter
         ]);
 
-        if($request->has('due_date') && $request->due_date != ''){
+        if($request->has('due_date') && $request->due_date['eq'] != null){
             $evaluationRequest->merge([
                 'due_date' => $request->due_date
             ]);
