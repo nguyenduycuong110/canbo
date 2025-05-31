@@ -9,5 +9,6 @@ return [
     'tasks' => "Task",
     'statuses' => "Status",
     'evaluations' => "Evaluation",
-    'statistics' => "Statistic"
+    'statistics' => "Statistic",
+    'delegations' => "Delegation"
 ];

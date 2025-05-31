@@ -13,6 +13,7 @@ use App\Http\Controllers\Web\Task\TaskController;
 use App\Http\Controllers\Web\Evaluation\EvaluationController;
 use App\Http\Controllers\Web\Status\StatusController;
 use App\Http\Controllers\Web\Statistic\StatisticController;
+use App\Http\Controllers\Web\Delegation\DelegationController;
 use App\Http\Controllers\Web\Ajax\DashboardController as AjaxDashboardController;
 use App\Http\Controllers\Web\Ajax\LocationController as AjaxLocationController;
 use App\Http\Controllers\Web\Ajax\EvaluationController as AjaxEvaluationController;
@@ -61,14 +62,23 @@ Route::middleware(['auth'])->group(function(){
         Route::get('statuses/{id}/delete', [StatusController::class, 'delete'])->name('statuses.delete');
         Route::resource('statuses', StatusController::class);
 
-
         Route::get('statistics/departmentMonth/{level}', [StatisticController::class, 'evaluationStatisticMonth'])->name('statistics.department.month');
+
         Route::get('statistics/departmentDay/{level}', [StatisticController::class, 'leaderEvaluationStatisticDay'])->name('statistics.department.day');
+
         Route::get('team/export', [StatisticController::class, 'exportHistory'])->name('statistics.exportHistory');
+
         Route::get('team/rank', [StatisticController::class, 'rankQuality'])->name('statistics.rankQuality');
 
         Route::get('statistics/departmentMonth/leader/{level}', [StatisticController::class, 'leaderStatisticMonth'])->name('statistics.leader.month');
+
         Route::get('statistics/departmentDay/leader/{level}', [StatisticController::class, 'leaderStatisticDay'])->name('statistics.leader.day');
+
+        Route::get('delegations/evaluations/teams/{level}', [DelegationController::class, 'teams'])->name('delegations.evaluations.teams');
+
+        Route::get('delegations/{id}/delete', [DelegationController::class, 'delete'])->name('delegations.delete');
+        
+        Route::resource('delegations', DelegationController::class);
 
         
     });

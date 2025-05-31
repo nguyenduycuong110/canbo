@@ -41,7 +41,7 @@ class CheckWebPermission
             [$controller, $method] = explode('@', $action);
             $baseControllerName = str_replace('_controller', '', Str::snake(class_basename($controller)));
             $controllerName = $baseControllerName . (substr($baseControllerName, -1) === 's' ? 'es' : 's');
-            $methodNoCheck = ['store','update', 'destroy','updatePassword'];
+            $methodNoCheck = ['store','update', 'destroy','updatePassword', 'teams'];
             if(in_array($method, $methodNoCheck)){
                 return $next($request);
             }

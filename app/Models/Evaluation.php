@@ -46,6 +46,7 @@ class Evaluation extends Model
                 'user_id',
                 'lock',
                 'point',
+                'delegate_id'
             ])->withTimestamps();
     }
 

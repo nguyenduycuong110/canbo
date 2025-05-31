@@ -1,113 +1,67 @@
 <?php 
-namespace App\Http\Controllers\Web\Evaluation;
+namespace App\Http\Controllers\Web\Delegation;
 
 use App\Http\Controllers\Web\BaseController;
-use App\Http\Requests\Evaluation\Evaluation\StoreRequest;
-use App\Http\Requests\Evaluation\Evaluation\UpdateRequest;
-use Illuminate\Http\RedirectResponse;
-use App\Services\Interfaces\Evaluation\EvaluationServiceInterface as EvaluationService;
-use App\Services\Interfaces\Task\TaskServiceInterface as TaskService;
-use App\Services\Interfaces\Status\StatusServiceInterface as StatusService;
+use App\Http\Requests\Delegation\Delegation\StoreRequest;
+use App\Http\Requests\Delegation\Delegation\UpdateRequest;
+use App\Services\Interfaces\Delegation\DelegationServiceInterface as DelegationService;
 use App\Services\Interfaces\User\UserServiceInterface as UserService;
 use App\Services\Interfaces\User\UserCatalogueServiceInterface as UserCatalogueService;
-use Illuminate\Support\Facades\Auth;
+use App\Services\Interfaces\Evaluation\EvaluationServiceInterface as EvaluationService;
+use App\Services\Interfaces\Status\StatusServiceInterface as StatusService;
 use Illuminate\Http\Request;
-use Illuminate\Contracts\View\View;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Http\Request as CustomRequest;
+use Illuminate\Support\Facades\Auth;
 use App\Models\User;
-use App\Models\Task;
-use App\Services\Interfaces\Team\TeamServiceInterface as TeamService;
-use Illuminate\Support\Carbon;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
+use App\Models\Delegation;
+use Illuminate\Http\Request as CustomRequest;
 
-class EvaluationController extends BaseController{
+class DelegationController extends BaseController{
 
-    protected $namespace = 'evaluation';
-    protected $route = 'evaluations';
-    
+    protected $namespace = 'delegation';
+
+    protected $route = 'delegations';
+
     protected $service;
-    protected $taskService;
-    protected $statusService;
+
     protected $userService;
+
+    protected $evaluationService;
+
+    protected $statusService;
+
     protected $userCatalogueService;
-    protected $teamService;
 
     private const CANBO_LEVEL = 5;
-    private const DOIPHO_LEVEL = 4;
-
 
     public function __construct(
-        EvaluationService $service,
-        TaskService $taskService,
-        StatusService $statusService,
+        DelegationService $service,
         UserService $userService,
+        EvaluationService $evaluationService,
+        StatusService $statusService,
         UserCatalogueService $userCatalogueService,
-        TeamService $teamService,
     )
     {
         $this->service = $service;
-        $this->taskService = $taskService;
-        $this->statusService = $statusService;
         $this->userService = $userService;
+        $this->evaluationService = $evaluationService;
+        $this->statusService = $statusService;
         $this->userCatalogueService = $userCatalogueService;
-        $this->teamService = $teamService;
         parent::__construct($service);
     }
 
-
-    public function index(Request $request): View | RedirectResponse{
-        try {
-            $user = Auth::user();
-            $date = now()->format('m/Y');
-            $monthCurrent = \Carbon\Carbon::createFromFormat('m/Y', $date);
-            $startOfMonth = $monthCurrent->copy()->startOfMonth()->toDateTimeString();
-            $endOfMonth = $monthCurrent->copy()->endOfMonth()->toDateTimeString();
-            if(!$request->perpage){
-                $request->merge([
-                    'user_id' => $user->id,
-                    'due_date' => [
-                        'gte' => $startOfMonth,
-                        'lte' => $endOfMonth
-                    ]
-                ]);
-            }else{
-                $request->merge([
-                    'user_id' => $user->id,
-                    'due_date' => $request->due_date
-                ]);
-            }
-            $records = $this->service->paginate($request);
-            $config = $this->config();
-            $data = $this->getData();
-            extract($data);
-            $template = ($user->user_catalogues->level < 5) ? "backend.{$this->namespace}.indexSuperior" : "backend.{$this->namespace}.index";
-            return view($template, compact(
-                'records',
-                'config',
-                'user',
-                ...array_keys($data),
-            ));
-        } catch (\Throwable $th) {
-            return $this->handleWebLogException($th);
-        }
-    }
-
-
     public function create(Request $request){
         try {
-            $user = Auth::user();
+            $auth = Auth::user();
+            $users = $this->getUserInsideNode($auth);
             $config = $this->config();
-            $config['user_id'] = Auth::user()->id;
             $config['method'] = 'create';
-            $data = $this->getData();
-            $tasks = $this->getTask($request , $user);
-            extract($data);
-            $template = ($user->user_catalogue_id != config('apps.general.officer')) ? "backend.{$this->namespace}.superior" :  "backend.{$this->namespace}.save";
-            return view($template, compact(
+            return view("backend.{$this->namespace}.save", compact(
+                'auth',
+                'users',
                 'config',
-                'tasks',
-                ...array_keys($data)
+                'auth',
             ));
         }catch (ModelNotFoundException $e) {
             flash()->error($e->getMessage());
@@ -120,19 +74,16 @@ class EvaluationController extends BaseController{
 
     public function edit(Request $request, int $id) : View | RedirectResponse{
         try {
-            $user = Auth::user();
             $model = $this->service->findById($id);
+            $auth = Auth::user();
+            $users = $this->getUserInsideNode($auth);
             $config = $this->config();
-            $data = $this->getData();
-            $tasks = $this->getTask($request , $user);
-            extract($data);
             $config['method'] = 'update';
-            $template = ($user->rgt - $user ->lft > 1) ? "backend.{$this->namespace}.superior" :  "backend.{$this->namespace}.save";
-            return view($template, compact(
-                'config',
+            return view("backend.{$this->namespace}.save", compact(
                 'model',
-                'tasks',
-                ...array_keys($data)
+                'auth',
+                'users',
+                'config',
             ));
 
         } catch (ModelNotFoundException $e) {
@@ -143,7 +94,7 @@ class EvaluationController extends BaseController{
             return $this->handleWebLogException($th);
         }
     }
-   
+
     public function store(StoreRequest $request): RedirectResponse{
         return $this->baseSave($request);
     }
@@ -152,28 +103,33 @@ class EvaluationController extends BaseController{
         return $this->baseSave($request, $id);
     }
 
-    protected function getData(): array{
-        return [
-            'statuses' => $this->statusService->all(),
-            'teams' => $this->teamService->teamPublish(),
-        ];
+    public function getUserInsideNode($auth){
+        $officer_level = 5;
+        $users = User::where('lft', '>', $auth->lft)
+                ->where('rgt', '<', $auth->rgt)
+                ->with('user_catalogues') 
+                ->whereHas('user_catalogues', function ($query) use ($auth, $officer_level) {
+                    $query->where('level', '>', $auth->user_catalogues->level)
+                    ->where('level', '<', $officer_level); 
+                })
+                ->get();
+        return $users;
     }
 
-    public function teams(Request $request, int $level)
-    {
+    public function teams(Request $request , int $level){
         try {
 
             $date = now()->format('m/Y');
 
             $monthCurrent = \Carbon\Carbon::createFromFormat('m/Y', $date);
 
-            $startOfMonth = $monthCurrent->copy()->startOfMonth()->toDateTimeString();
-
-            $endOfMonth = $monthCurrent->copy()->endOfMonth()->toDateTimeString();
-
             $auth = Auth::user();
 
-            $currentUserCatalogue = $auth->user_catalogues;
+            $delegator_id = Delegation::where('delegate_id', $auth->id)->first()->delegator_id;
+
+            $delegator = $this->userService->findById($delegator_id);
+
+            $currentUserCatalogue = $delegator->user_catalogues;
 
             $listSubordinate = $this->userCatalogueService->listSubordinate($auth,$currentUserCatalogue);
 
@@ -182,24 +138,21 @@ class EvaluationController extends BaseController{
             $currentUserLevel = $currentUserCatalogue->level;
 
             $isDeputyTeamLeader = $currentUserLevel == 4;
-
+            
             $records = match ($level) {
-                5 => $this->getCongChucInsideNodeEvaluation($request, $level, $monthCurrent),
-                default => $this->getInsideNodeEvaluation($request, $level, $monthCurrent),
+                5 => $this->getCongChucInsideNodeEvaluation($request, $level, $monthCurrent, $delegator),
+                default => $this->getInsideNodeEvaluation($request, $level, $monthCurrent, $delegator),
             };
-
-            $allPositionsData = [];
-            $hasCurrentUserEvaluated = false;
 
             if (!is_null($records)) {
                 
                 $records->load(['tasks', 'statuses', 'users.user_catalogues']);
 
                 foreach ($records as $record) {
-                    $record->pointForCurrentUser = $record->statuses()->where('user_id', $auth->id)->first()?->pivot->point;
+                    $record->pointForCurrentUser = $record->statuses()->where('user_id', $delegator->id)->first()?->pivot->point;
                     $record->selfEvaluation = $record->statuses()->where('user_id', $record->user_id)->first()?->pivot->status_id;
                     $currentUserEvaluation = $record->statuses()
-                        ->where('user_id', $auth->id)
+                        ->where('user_id', $delegator->id)
                         ->first();
                     $record->currentUserStatusId = $currentUserEvaluation ? $currentUserEvaluation->pivot->status_id : 0;
                     $record->lock = $currentUserEvaluation ? $currentUserEvaluation->pivot->lock : 0;
@@ -238,19 +191,6 @@ class EvaluationController extends BaseController{
                     }
 
                     foreach ($evaluations as $evaluation) {
-
-                        $delegator = [];
-
-                        $delegator_id = $evaluation->pivot->delegate_id ?? null;
-
-                        if(!is_null($delegator_id)){
-
-                            $delegator = [
-                                'name' => $this->userService->findById($delegator_id)->name
-                            ];
-
-                        }
-
                         $userId = $evaluation->pivot->user_id;
 
                         if ($userId == $record->user_id) {
@@ -258,7 +198,6 @@ class EvaluationController extends BaseController{
                         }
 
                         $user = $this->userService->findById($userId);
-
                         if ($user) {
                             $user->load('user_catalogues');
                             $userCatalogue = $user->user_catalogues()->first();
@@ -279,7 +218,6 @@ class EvaluationController extends BaseController{
                                         'status_id' => $evaluation->pivot->status_id,
                                         'user_name' => $user->name,
                                         'point' => $evaluation->pivot->point,
-                                        'delegator' => $delegator
                                     ];
                                 }
                             }
@@ -289,13 +227,11 @@ class EvaluationController extends BaseController{
                     $record->positionEvaluations = $positionEvaluations;
 
                     $record->higherLevelEvaluated = false;
-
-
                     if ($currentUserLevel !== null) {
                         foreach ($record->statuses as $status) {
                             $evaluatorId = $status->pivot->user_id;
 
-                            if ($evaluatorId == $auth->id || $evaluatorId == $record->user_id) {
+                            if ($evaluatorId == $delegator->id || $evaluatorId == $record->user_id) {
                                 continue;
                             }
 
@@ -315,6 +251,12 @@ class EvaluationController extends BaseController{
                 }
             }
 
+            $userByLevel = $this->userService->getUserByLevel($level);
+
+            $allPositionsData = [];
+
+            $hasCurrentUserEvaluated = false;
+            
             if (!$hasCurrentUserEvaluated && !$isDeputyTeamLeader) {
                 $allPositionsData['__CURRENT_USER__'] = [
                     'name' => 'Đánh giá của bạn',
@@ -335,59 +277,53 @@ class EvaluationController extends BaseController{
                 'route' => $this->route,
                 'isCreate' => false,
                 'filter' => false,
-                'usersOnBranch' => $this->getCongChucInsideNode($request, $level),
                 'level' => $level
             ];
 
-            $userByLevel = $this->userService->getUserByLevel($level);
-
-            $deputyDepartment = null;
-
-            if($auth->parent_id == 0){
-                $request->merge([
-                    'lft' => ['gt' => $auth->lft],
-                    'rgt' => ['lt' => $auth->rgt],
-                    'relationFilter' => ['user_catalogues' => ['level' => ['eq' => $auth->user_catalogues->level + 1]]], // 4 --> là level của đội phó
-                    'type' => 'all'
-                ]);
-                $deputyDepartment = $this->userService->paginate($request);
-            }
-
             $data = $this->getData();
+
             extract($data);
+
             $template = ($level != self::CANBO_LEVEL) ? "backend.{$this->namespace}.team.teamSuperior" : "backend.{$this->namespace}.team.team";
+
             return view($template, compact(
-                'records',
                 'auth',
+                'records',
+                'delegator',
                 'config',
                 'allPositionsData',
                 'isDeputyTeamLeader',
                 'listSubordinate',
-                'statuses',
                 'userByLevel',
-                'deputyDepartment',
                 ...array_keys($data),
             ));
+
         } catch (\Throwable $th) {
             dd($th);
         }
     }
 
-   
-    public function getCongChucInsideNodeEvaluation($request, $level, $monthCurrent = null){
+    protected function getData(): array{
+        return [
+            'statuses' => $this->statusService->all(),
+        ];
+    }
+
+    public function getCongChucInsideNodeEvaluation($request, $level, $monthCurrent = null, $delegator){
 
 
-        /** @var \App\Models\User $auth */
-        $auth = Auth::user();
-        $auth->load(['subordinates']);
+        $delegator->load(['subordinates']);
 
         $subordinateIds = [];
+
         $startOfMonth = $monthCurrent->copy()->startOfMonth()->toDateTimeString();
+
         $endOfMonth = $monthCurrent->copy()->endOfMonth()->toDateTimeString();
-        if($auth->user_catalogues->level < 4){
+
+        if($delegator->user_catalogues->level < 4){
             $request->merge([
-                'lft' => ['gt' => $auth->lft],
-                'rgt' => ['lt' => $auth->rgt],
+                'lft' => ['gt' => $delegator->lft],
+                'rgt' => ['lt' => $delegator->rgt],
                 'relationFilter' => ['user_catalogues' => ['level' => ['lte' => $level - 1]]], // 4 --> là level của đội phó
                 'type' => 'all'
             ]);
@@ -400,8 +336,8 @@ class EvaluationController extends BaseController{
             }
             $subordinateIds = array_unique($subordinateIds);
         }else{
-            if($auth->user_catalogues->level == 4){
-                $subordinateIds = $auth->subordinates()->get()->pluck('id')->toArray();
+            if($delegator->user_catalogues->level == 4){
+                $subordinateIds = $delegator->subordinates()->get()->pluck('id')->toArray();
             }
         }
 
@@ -449,7 +385,7 @@ class EvaluationController extends BaseController{
                 ]
             ];
         }
-        
+
         if($request->user != 0 && $request->vice_id != 0){
             $relationFilter = [
                 'users' => [
@@ -475,24 +411,24 @@ class EvaluationController extends BaseController{
             ]);
         }
 
-        $evaluations = $this->service->paginate($evaluationRequest);
+        $evaluations = $this->evaluationService->paginate($evaluationRequest);
 
         return $evaluations;
     }
 
-    public function getInsideNodeEvaluation($request, $level, $monthCurrent = null)
+    public function getInsideNodeEvaluation($request, $level, $monthCurrent = null, $delegator)
     {
-        /** @var \App\Models\User $user */
-        $auth = Auth::user();
     
-        // Lấy danh sách user thuộc cấp $level trong nhánh của người đăng nhập
         $userIds = [];
+
         $startOfMonth = $monthCurrent->copy()->startOfMonth()->toDateTimeString();
+
         $endOfMonth = $monthCurrent->copy()->endOfMonth()->toDateTimeString();
+
         $request->merge([
-            'lft' => ['gt' => $auth->lft],
-            'rgt' => ['lt' => $auth->rgt],
-            'relationFilter' => ['user_catalogues' => ['level' => ['eq' => $level]]], // Lấy user ở cấp $level (ví dụ: 4 cho Đội phó)
+            'lft' => ['gt' => $delegator->lft],
+            'rgt' => ['lt' => $delegator->rgt],
+            'relationFilter' => ['user_catalogues' => ['level' => ['eq' => $level]]], 
             'type' => 'all'
         ]);
 
@@ -502,7 +438,6 @@ class EvaluationController extends BaseController{
             $userIds = $users->pluck('id')->toArray();
         }
     
-        // Nếu không có user nào, trả về null
         if (empty($userIds)) {
             return null;
         }
@@ -525,7 +460,6 @@ class EvaluationController extends BaseController{
             ]
         ];
 
-        // Thêm điều kiện team_id nếu có
         if ($request->has('team_id') && $request->team_id != 0) {
             $relationFilter['users.teams'] = [
                 'id' => [
@@ -571,55 +505,8 @@ class EvaluationController extends BaseController{
             ]);
         }
 
-        $evaluations = $this->service->paginate($evaluationRequest);
+        $evaluations = $this->evaluationService->paginate($evaluationRequest);
 
         return $evaluations;
     }
-   
-    public function getCongChucInsideNode($request , $level){
-        /** @var \App\Models\User $auth */
-        $auth = Auth::user();
-        $auth->load(['subordinates']);
-        $subordinateIds = [];
-        if($auth->user_catalogues->level < 4){
-
-            $users = $this->userService->getManager($auth, $level);
-
-            if(!is_null($users) && count($users)){
-                foreach($users as $key => $deputy){ 
-                    $subordinates = $deputy->subordinates()->get()->pluck('id')->toArray();
-                    $subordinateIds = array_merge($subordinateIds, $subordinates);
-                }
-            }
-            $subordinateIds = array_unique($subordinateIds);
-        }else{
-            if($auth->user_catalogues->level == 4){
-                $subordinateIds = $auth->subordinates()->get()->pluck('id')->toArray();
-            }
-        }
-        $users = User::whereIn('id', $subordinateIds)->get();
-        return $users;
-    }
-    
-    private function getTask($request, $user){
-        $level = $user->user_catalogues->level;
-        $request->merge([
-            'lft' => ['lte' => $user->lft],
-            'rgt' => ['gte' => $user->rgt],
-            'relationFilter' => 
-                [
-                    'user_catalogues' => [
-                        'level' => [
-                            'lte' => $level,
-                            'gte' => $level - 2
-                        ],
-                    ]
-                ], 
-            'type' => 'all'
-        ]);
-        $users = $this->userService->paginate($request)->pluck('id')->toArray();
-        $tasks = Task::whereIn('user_id', $users)->where('publish', 2)->get();
-        return $tasks;
-    }
-
 }   

@@ -75,7 +75,6 @@ class BaseController extends Controller{
             $config['user_id'] = Auth::user()->id;
             $config['method'] = 'create';
             $data = $this->getData();
-            // dd($data);
             extract($data);
             return view("backend.{$this->namespace}.save", compact(
                 'config',

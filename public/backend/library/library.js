@@ -24,7 +24,6 @@
 
     HT.changeStatus = () => {
         $(document).on('change', '.status', function(e){
-
             let _this = $(this)
             let option = {
                 'value' : _this.val(),
@@ -278,9 +277,14 @@
     HT.changeStatusEvaluate = () => {
         $(document).ready(function(){
             $('.evaluations select[name=status_id]').on('change', function(){
+
                 let _this = $(this)
+
                 let recordId = _this.data('record-id')
+
                 let statusId = _this.val()
+
+                let delegateId = $('input[name="delegate_id"]').val();
 
                 $.ajax({
                     url: '/evaluations/evaluate/' + recordId,
@@ -289,6 +293,7 @@
                         _token: _token,
                         _method: 'PUT',
                         status_id: statusId,
+                        delegate_id: delegateId,
                     },
                     success: function(response) {
                         if (response.flag) {
@@ -840,7 +845,6 @@
             }
         });
     }
-
 
     HT.exportRankQuality = () => {
         $(document).on('click', '.btn-export-rank', function(e){

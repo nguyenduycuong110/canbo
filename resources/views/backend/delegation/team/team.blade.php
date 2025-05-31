@@ -12,9 +12,8 @@
             </div>
             <div class="ibox-content">
                 @php
-                    $level = $auth->user_catalogues->level;
+                    $level = $delegator->user_catalogues->level;
                 @endphp
-                @include('backend.evaluation.component.filterCongChuc-lv'.$level)
                 <div class="table-responsive">
                     <table class="table table-striped table-bordered">
                         @php
@@ -125,6 +124,7 @@
                                                         $evaluationFound = false;
                                                         $evaluationData = null;
                                                         $currentUserPosition = null;
+                                                        
                                                         foreach($positionsGroup as $posKey => $posData) {
                                                             if($posData['is_current_user']) {
                                                                 $currentUserInLevel = true;
@@ -132,7 +132,8 @@
                                                                 break;
                                                             }
                                                         }
-
+                                                        
+                                                        // Find first evaluation for this level group
                                                         foreach($positionsGroup as $posKey => $posData) {
                                                             if(isset($record->positionEvaluations[$posData['name']])) {
                                                                 $evaluationFound = true;
@@ -140,9 +141,8 @@
                                                                 break;
                                                             }
                                                         }
-
                                                     @endphp
-
+                                                    
                                                     @if($currentUserInLevel && !$record->higherLevelEvaluated)
                                                         <select name="status_id" class="form-control setupSelect2 w-100" data-record-id="{{ $record->id }}">
                                                             <option value="0">[Chọn Đánh Giá]</option>
@@ -152,15 +152,6 @@
                                                                 </option>
                                                             @endforeach
                                                         </select>
-                                                        @php
-                                                            $delegator_name = $evaluationData['delegator']['name'] ?? null;
-                                                        @endphp
-                                                        <br>
-                                                        @if(!is_null($delegator_name))
-                                                            <small class="text-success" style="display:block;margin-top:5px;">
-                                                                Người ủy quyền đánh giá : {{ $delegator_name }} 
-                                                            </small>
-                                                        @endif
                                                     @elseif($currentUserInLevel && $record->higherLevelEvaluated && $record->currentUserStatusId > 0)
                                                         {{ $statuses->where('id', $record->currentUserStatusId)->first()->name ?? 'N/A' }}
                                                         <br>
@@ -176,15 +167,6 @@
                                                             <small class="text-success">
                                                                 Họ Tên: {{ $evaluationData['user_name'] }} <span class="text-danger">({{ $evaluationData['point'] }}đ)</span>
                                                             </small>
-                                                            @php
-                                                                $delegator_name = $evaluationData['delegator']['name'] ?? null;
-                                                            @endphp
-                                                            <br>
-                                                            @if(!is_null($delegator_name))
-                                                                <small class="text-success" style="display:block;margin-top:5px;">
-                                                                    Người ủy quyền đánh giá : {{ $delegator_name }} 
-                                                                </small>
-                                                            @endif
                                                         @else
                                                             <span class="text-muted">Chưa đánh giá</span>
                                                         @endif
@@ -203,13 +185,14 @@
                                                 name="point"
                                                 value="{{ $record->pointForCurrentUser ?? 0  }}"
                                                 min="1"
-                                                data-id="{{ $auth->id }}"
+                                                data-id="{{ $delegator->id }}"
                                                 data-user-seft-evaluation="{{ $record->user_id }}"
                                                 data-evaluation="{{ $record->id }}"
                                                 max="100"
                                                 {{ $record->higherLevelEvaluated ? 'disabled' : ''  }}
                                             >
                                         </td>
+                                        <input type="hidden" name="delegate_id" value="{{ $auth->id }}">
                                     </tr>
                                 @endforeach
                             @else

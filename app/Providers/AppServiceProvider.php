@@ -31,6 +31,8 @@ use App\Services\Interfaces\Status\StatusServiceInterface;
 use App\Services\Impl\Status\StatusService;
 use App\Services\Interfaces\Statistic\StatisticServiceInterface;
 use App\Services\Impl\Statistic\StatisticService;
+use App\Services\Interfaces\Delegation\DelegationServiceInterface;
+use App\Services\Impl\Delegation\DelegationService;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -52,11 +54,10 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(EvaluationServiceInterface::class, EvaluationService::class);
         $this->app->bind(StatusServiceInterface::class, StatusService::class);
         $this->app->bind(StatisticServiceInterface::class, StatisticService::class);
+        $this->app->bind(DelegationServiceInterface::class, DelegationService::class);
     }
 
-    /**
-     * Bootstrap any application services.
-     */
+
     public function boot(): void
     {
         //

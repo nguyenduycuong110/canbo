@@ -79,42 +79,100 @@ class EvaluationService extends BaseService implements EvaluationServiceInterfac
         try {
             DB::beginTransaction();
             $now = now();
-            DB::table('evaluation_status')
-            ->where('evaluation_id', $id)
-            ->update(['lock' => 1]);
-            DB::table('evaluation_status')->updateOrInsert(
-                [
-                    'evaluation_id' => $id,
-                    'user_id' => Auth::id()
-                ],
-                [
-                    'status_id' => $request->status_id,
-                    'lock' => 0,
-                    'created_at' => $now,
-                    'updated_at' => $now
-                ]
-            );
-            DB::commit();
-            $record = DB::table('evaluation_status')
-                ->where('evaluation_id', $id)
-                ->where('user_id', Auth::id())
-                ->first();
-            $status = DB::table('statuses')
-                ->where('id', $record->status_id)
-                ->first();
-            $range = $status->point;
-            list($min, $max) = explode('-', $range);
-            $max = (int) $max; 
-            DB::table('evaluation_status')->updateOrInsert(
-                [
-                    'evaluation_id' => $id,
-                    'user_id' => Auth::id()
-                ],
-                [
-                    'point' => $max
-                ]
-            );
-            return $max;
+            $delegate_id = $request->delegate_id ? (int)$request->delegate_id : null;
+            if(!is_null($delegate_id)){
+
+                $delegator_id = DB::table('delegations')->where('delegate_id', $delegate_id)->first()->delegator_id;
+
+                DB::table('evaluation_status')
+                    ->where('evaluation_id', $id)
+                    ->update(['lock' => 1]);
+
+                DB::table('evaluation_status')->updateOrInsert(
+                    [
+                        'evaluation_id' => $id,
+                        'user_id' => $delegator_id
+                    ],
+                    [
+                        'status_id' => $request->status_id,
+                        'lock' => 0,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                        'delegate_id' => $delegate_id,
+                    ]
+                );
+
+                DB::commit();
+
+                $record = DB::table('evaluation_status')
+                    ->where('evaluation_id', $id)
+                    ->where('user_id',  $delegator_id)
+                    ->first();
+
+                $record = DB::table('evaluation_status')
+                    ->where('evaluation_id', $id)
+                    ->where('user_id', $delegator_id)
+                    ->first();
+                $status = DB::table('statuses')
+                    ->where('id', $record->status_id)
+                    ->first();
+                $range = $status->point;
+                list($min, $max) = explode('-', $range);
+                $max = (int) $max; 
+                DB::table('evaluation_status')->updateOrInsert(
+                    [
+                        'evaluation_id' => $id,
+                        'user_id' => $delegator_id
+                    ],
+                    [
+                        'point' => $max
+                    ]
+                );
+                return $max;
+
+            }else{
+                DB::table('evaluation_status')
+                    ->where('evaluation_id', $id)
+                    ->update(['lock' => 1]);
+                DB::table('evaluation_status')->updateOrInsert(
+                    [
+                        'evaluation_id' => $id,
+                        'user_id' => Auth::id()
+                    ],
+                    [
+                        'status_id' => $request->status_id,
+                        'lock' => 0,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                        'delegate_id' => $delegate_id,
+                    ]
+                );
+
+                DB::commit();
+
+                /*Cập nhật điểm */
+
+                $record = DB::table('evaluation_status')
+                    ->where('evaluation_id', $id)
+                    ->where('user_id', Auth::id())
+                    ->first();
+                $status = DB::table('statuses')
+                    ->where('id', $record->status_id)
+                    ->first();
+                $range = $status->point;
+                list($min, $max) = explode('-', $range);
+                $max = (int) $max; 
+                DB::table('evaluation_status')->updateOrInsert(
+                    [
+                        'evaluation_id' => $id,
+                        'user_id' => Auth::id()
+                    ],
+                    [
+                        'point' => $max
+                    ]
+                );
+                return $max;
+            }
         } catch (\Throwable $th) {
            return false;
         }
