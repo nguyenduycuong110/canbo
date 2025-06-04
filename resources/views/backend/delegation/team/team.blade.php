@@ -144,7 +144,7 @@
                                                     @endphp
                                                     
                                                     @if($currentUserInLevel && !$record->higherLevelEvaluated)
-                                                        <select name="status_id" class="form-control setupSelect2 w-100" data-record-id="{{ $record->id }}">
+                                                        <select name="status_id" class="form-control setupSelect2 w-100" data-record-id="{{ $record->id }}" data-delegate={{ $auth->id }}>
                                                             <option value="0">[Chọn Đánh Giá]</option>
                                                             @foreach($statuses as $status)
                                                                 <option value="{{ $status->id }}" {{ $status->id == $record->currentUserStatusId ? 'selected' : '' }}>

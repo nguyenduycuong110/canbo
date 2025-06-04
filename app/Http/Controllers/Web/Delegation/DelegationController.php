@@ -16,6 +16,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use App\Models\Delegation;
 use Illuminate\Http\Request as CustomRequest;
+use Illuminate\Support\Str;
 
 class DelegationController extends BaseController{
 
@@ -50,6 +51,27 @@ class DelegationController extends BaseController{
         $this->userCatalogueService = $userCatalogueService;
         parent::__construct($service);
     }
+
+    public function index(Request $request): View | RedirectResponse{
+        try {
+            $auth = Auth::user();
+            $request->merge([
+                'delegator_id' => $auth->id
+            ]);
+            $records = $this->service->paginate($request);
+            $config = $this->config();
+            $config['model'] = Str::studly(Str::singular($this->route));
+            return view("backend.{$this->namespace}.index", compact(
+                'auth',
+                'records',
+                'config',
+            ));
+        } catch (\Throwable $th) {
+            dd($th);
+            return $this->handleWebLogException($th);
+        }
+    }
+
 
     public function create(Request $request){
         try {
@@ -129,13 +151,13 @@ class DelegationController extends BaseController{
 
             $delegator = $this->userService->findById($delegator_id);
 
-            $currentUserCatalogue = $delegator->user_catalogues;
+            $currentUserCatalogueDelegator = $delegator->user_catalogues;
 
-            $listSubordinate = $this->userCatalogueService->listSubordinate($auth,$currentUserCatalogue);
+            $listSubordinate = $this->userCatalogueService->listSubordinate($auth,$currentUserCatalogueDelegator);
 
-            $currentUserPosition = $currentUserCatalogue->name;
+            $currentUserPosition = $currentUserCatalogueDelegator->name;
 
-            $currentUserLevel = $currentUserCatalogue->level;
+            $currentUserLevel = $currentUserCatalogueDelegator->level;
 
             $isDeputyTeamLeader = $currentUserLevel == 4;
             
@@ -295,6 +317,7 @@ class DelegationController extends BaseController{
                 'isDeputyTeamLeader',
                 'listSubordinate',
                 'userByLevel',
+                'currentUserCatalogueDelegator',
                 ...array_keys($data),
             ));
 

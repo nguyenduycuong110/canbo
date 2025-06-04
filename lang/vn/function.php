@@ -2,9 +2,11 @@
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 
 /** @var \App\Models\User|null $user */
+$currentDate = Carbon::now()->format('Y-m-d');
 $user = Auth::user();
 $user->load(['user_catalogues.permissions']);
 $user_catalogues = DB::table('user_catalogues')
@@ -21,7 +23,10 @@ $user_catalogues = DB::table('user_catalogues')
 
 $authorizedMenu = null;
 
-$delegator_id = DB::table('delegations')->where('delegate_id', $user->id)->first()->delegator_id ?? null;
+$delegator_id = DB::table('delegations')->where('delegate_id', $user->id)
+                ->where('start_date', '<=', $currentDate)
+                ->where('end_date', '>=', $currentDate)
+                ->first()->delegator_id ?? null;
 
 if(!is_null($delegator_id)){
     $temp = [];
@@ -54,6 +59,19 @@ if(!is_null($delegator_id)){
             ...$temp
         ]
     ];
+}
+
+$authorityMenu =  null;
+
+if($user->user_catalogues->level == 3){
+
+    $authorityMenu = [
+            'title' => 'Uỷ quyền',
+            'icon' => 'fa fa-github',
+            'name' => ['delegations'],
+            'route' => 'delegations'
+    ];
+
 }
 
 $item = [];
@@ -199,12 +217,7 @@ $fullMenu = [
                 ]
             ]
         ],
-        [
-            'title' => 'Uỷ quyền',
-            'icon' => 'fa fa-github',
-            'name' => ['delegations'],
-            'route' => 'delegations'
-        ],
+        $authorityMenu,
         $authorizedMenu
     ]
 ];

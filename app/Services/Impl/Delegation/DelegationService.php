@@ -11,6 +11,8 @@ class DelegationService extends BaseService implements DelegationServiceInterfac
 
     protected $repository;
 
+    protected $simpleFilter = ['delegator_id']; // hook
+
     public function __construct(
         DelegationRepository $repository
     )

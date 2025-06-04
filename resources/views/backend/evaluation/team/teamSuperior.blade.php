@@ -23,7 +23,7 @@
                     // Khởi tạo mảng chứa tất cả các vị trí và thông tin
                     $allPositionsData = [];
                     
-                    // Lấy thông tin của người đăng nhập
+                
                     $currentUser = Auth::user();
                     $currentUserCatalogue = $currentUser->user_catalogues()->first();
                     $currentUserPosition = $currentUserCatalogue ? $currentUserCatalogue->name : 'Chưa xác định';
@@ -80,6 +80,7 @@
                             }
                         }
                     }
+                    
                     // Sắp xếp mảng theo level (level càng lớn thì chức vụ càng thấp, nên dùng arsort)
                     uasort($allPositionsData, function($a, $b) {
                         return $b['level'] - $a['level']; // Sắp xếp từ cấp cao xuống cấp thấp (level thấp lên trên)
@@ -237,7 +238,6 @@
                                                     Chưa đánh giá
                                                 @endif
                                             </td>
-                                            
                                             @foreach($allPositionsData as $posKey => $posData)
                                                 <td>
                                                     @if($posData['is_current_user'])
@@ -255,11 +255,19 @@
                                                                     </option>
                                                                 @endforeach
                                                             </select>
+                                                            @php
+                                                                $delegator_name = $record->positionEvaluations[$posData['name']]['delegator']['name'] ?? null;
+                                                            @endphp
+                                                            <br>
+                                                            @if(!is_null($delegator_name))
+                                                                <small class="text-success" style="display:block;margin-top:5px;">
+                                                                    Người ủy quyền đánh giá : {{ $delegator_name }} 
+                                                                </small>
+                                                            @endif
                                                         @else
                                                             <span class="text-warning">Không có quyền đánh giá</span>
                                                         @endif
                                                     @else
-                                                        {{-- Hiển thị đánh giá của các vị trí khác --}}
                                                         @if(isset($positionEvaluations[$posData['name']]))
                                                             {{ $statuses->where('id', $positionEvaluations[$posData['name']]['status_id'])->first()->name ?? 'N/A' }}
                                                             <br>

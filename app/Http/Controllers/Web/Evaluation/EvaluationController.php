@@ -314,7 +314,7 @@ class EvaluationController extends BaseController{
                     }
                 }
             }
-
+            
             if (!$hasCurrentUserEvaluated && !$isDeputyTeamLeader) {
                 $allPositionsData['__CURRENT_USER__'] = [
                     'name' => 'Đánh giá của bạn',

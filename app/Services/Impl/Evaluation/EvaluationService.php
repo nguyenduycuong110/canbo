@@ -77,9 +77,13 @@ class EvaluationService extends BaseService implements EvaluationServiceInterfac
 
     public function evaluate(Request $request, int $id){
         try {
+
             DB::beginTransaction();
+
             $now = now();
+
             $delegate_id = $request->delegate_id ? (int)$request->delegate_id : null;
+
             if(!is_null($delegate_id)){
 
                 $delegator_id = DB::table('delegations')->where('delegate_id', $delegate_id)->first()->delegator_id;

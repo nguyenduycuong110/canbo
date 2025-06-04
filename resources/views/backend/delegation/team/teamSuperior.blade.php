@@ -11,13 +11,17 @@
             <div class="ibox-content">
                 @php
                     $allPositionsData = [];
+
                     $currentUser = $delegator;
+
                     $currentUserCatalogue = $currentUser->user_catalogues()->first();
+
                     $currentUserPosition = $currentUserCatalogue ? $currentUserCatalogue->name : 'Chưa xác định';
+
                     $currentUserLevel = $currentUserCatalogue ? $currentUserCatalogue->level : 999;
+
                     $selfPosition = null;
                     
-                    // Thêm vị trí của người đăng nhập vào mảng với một key đặc biệt
                     $allPositionsData['__CURRENT_USER__'] = [
                         'name' => $currentUserPosition,
                         'level' => $currentUserLevel,
@@ -26,7 +30,6 @@
                     
                     if(isset($records) && count($records) > 0) {
                         foreach($records as $record) {
-                            // Lấy chức vụ của người được đánh giá
                             $recordUser = \App\Models\User::find($record->user_id);
                             if ($recordUser) {
                                 $recordUserCatalogue = $recordUser->user_catalogues()->first();
@@ -38,14 +41,14 @@
                             $evaluationUsers = $record->statuses;
                             
                             foreach($evaluationUsers as $evaluation) {
+
                                 $userId = $evaluation->pivot->user_id;
+
+                                $user = \App\Models\User::find($userId);
                                 
-                                // Bỏ qua nếu là người đang đăng nhập hoặc người được đánh giá
-                                if($userId == Auth::id() || $userId == $record->user_id) {
+                                if($userId == Auth::id() || $userId == $record->user_id || $currentUserCatalogueDelegator->level == $user->user_catalogues->level) {
                                     continue;
                                 }
-                                
-                                $user = \App\Models\User::find($userId);
                                 
                                 if($user) {
                                     $userCatalogue = $user->user_catalogues()->first();
@@ -67,9 +70,8 @@
                             }
                         }
                     }
-                    // Sắp xếp mảng theo level (level càng lớn thì chức vụ càng thấp, nên dùng arsort)
                     uasort($allPositionsData, function($a, $b) {
-                        return $b['level'] - $a['level']; // Sắp xếp từ cấp cao xuống cấp thấp (level thấp lên trên)
+                        return $b['level'] - $a['level']; 
                     });
                 @endphp
                 <div class="table-responsive">
@@ -101,17 +103,11 @@
                         <tbody>
                             @if(isset($records) && (is_object($records) || is_array($records)) && count($records) > 0)
                                 @foreach($records as $k => $record)
-                                    {{-- @if(isset($allParams['perpage']) ?  true : $record->created_at >= $startOfMonth && $record->created_at <= $endOfMonth ) --}}
                                         @php
-                                            // Lấy đánh giá của bản thân
                                             $seftEvaluation = $record->statuses()->where('user_id', $record->user_id)->first()->pivot->status_id ?? null;
-                                            
-                                            // Lấy đánh giá hiện tại của người đăng nhập (nếu có)
-                                            $currentUser = Auth::user();
                                             $currentUserEvaluation = $record->statuses()
-                                                ->where('user_id', $currentUser->id)
+                                                ->where('user_id', $delegator->id)
                                                 ->first();
-                                            
                                             $currentUserStatusId = $currentUserEvaluation ? $currentUserEvaluation->pivot->status_id : 0;
                                             $lock = $currentUserEvaluation ? $currentUserEvaluation->pivot->lock : 0;
                                             
@@ -224,7 +220,6 @@
                                                     Chưa đánh giá
                                                 @endif
                                             </td>
-                                            
                                             @foreach($allPositionsData as $posKey => $posData)
                                                 <td>
                                                     @if($posData['is_current_user'])
@@ -234,7 +229,7 @@
                                                         @elseif($higherLevelEvaluated && $currentUserStatusId > 0)
                                                             {{ $statuses->where('id', $currentUserStatusId)->first()->name ?? 'N/A' }}
                                                         @elseif($isHighestLevel || (!$higherLevelEvaluated && $record->canEvaluate))
-                                                            <select name="status_id" class="form-control setupSelect2" data-record-id="{{ $record->id }}">
+                                                            <select name="status_id" class="form-control setupSelect2" data-record-id="{{ $record->id }}" data-delegate={{ $auth->id }}>
                                                                 <option value="0">[Chọn Đánh Giá]</option>
                                                                 @foreach($statuses as $status)
                                                                     <option value="{{ $status->id }}" {{ $status->id == $currentUserStatusId ? 'selected' : '' }}>

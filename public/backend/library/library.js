@@ -284,7 +284,7 @@
 
                 let statusId = _this.val()
 
-                let delegateId = $('input[name="delegate_id"]').val();
+                let delegateId = _this.data('delegate')
 
                 $.ajax({
                     url: '/evaluations/evaluate/' + recordId,
