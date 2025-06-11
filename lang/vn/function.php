@@ -63,7 +63,7 @@ if(!is_null($delegator_id)){
 
 $authorityMenu =  null;
 
-if($user->user_catalogues->level == 3){
+if($user->user_catalogues->level < 3){
 
     $authorityMenu = [
             'title' => 'Uỷ quyền',
