@@ -84,6 +84,7 @@ class CheckWebPermission
 
         } catch (\Exception $e) {
             // return $this->handleLogException($e);
+            // Upgrade
         }
 
         return $next($request);
