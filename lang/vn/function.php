@@ -212,8 +212,16 @@ $fullMenu = [
             'name' => ['statuses'],
             'items' => [
                 [
-                    'title' => 'QL Trạng Thái',
+                    'title' => 'Tiến độ',
                     'route' => 'statuses'
+                ],
+                [
+                    'title' => 'Chất lượng',
+                    'route' => 'qualities'
+                ],
+                [
+                    'title' => 'Tính chất cv',
+                    'route' => 'properties'
                 ]
             ]
         ],

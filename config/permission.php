@@ -10,5 +10,7 @@ return [
     'statuses' => "Status",
     'evaluations' => "Evaluation",
     'statistics' => "Statistic",
-    'delegations' => "Delegation"
+    'delegations' => "Delegation",
+    'qualities' => "Chất lượng",
+    'properties' => "Tính chất",
 ];

@@ -83,7 +83,7 @@ class CheckWebPermission
             }
 
         } catch (\Exception $e) {
-            return $this->handleLogException($e);
+            // return $this->handleLogException($e);
         }
 
         return $next($request);
